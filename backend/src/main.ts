@@ -10,6 +10,8 @@ async function bootstrap() {
     credentials: true,
   });
 
+  console.log('CORS DEBUG ENABLED');
+
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
