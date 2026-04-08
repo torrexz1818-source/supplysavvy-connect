@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
   app.use(json({ limit: '10mb' }));
   app.use(urlencoded({ extended: true, limit: '10mb' }));
 
@@ -13,8 +14,10 @@ async function bootstrap() {
     credentials: true,
   });
 
-  console.log('CORS DEBUG ENABLED');
+  const port = process.env.PORT || 3000;
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(port, '0.0.0.0'); // 👈 CLAVE
+
+  console.log(`🚀 Server running on port ${port}`);
 }
 bootstrap();
