@@ -1,0 +1,660 @@
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { BriefcaseBusiness, MapPin, Plus, Search, Sparkles, Users } from 'lucide-react';
+import {
+  applyToEmployabilityJob,
+  createConversation,
+  createEmployabilityJob,
+  getEmployabilityFeed,
+  sendConversationMessage,
+  upsertEmployabilityTalentProfile,
+} from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { toast } from '@/hooks/use-toast';
+
+const Employability = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [activeSection, setActiveSection] = useState<'jobs' | 'talent'>('jobs');
+  const [search, setSearch] = useState('');
+  const [showJobForm, setShowJobForm] = useState(false);
+  const [showTalentForm, setShowTalentForm] = useState(false);
+  const [jobForm, setJobForm] = useState({
+    title: '',
+    description: '',
+    skills: '',
+    experience: '',
+    location: '',
+  });
+  const [talentForm, setTalentForm] = useState({
+    description: '',
+    skills: '',
+    experience: '',
+    certifications: '',
+    availability: '',
+  });
+
+  const feedQuery = useQuery({
+    queryKey: ['employability-feed', search],
+    queryFn: () => getEmployabilityFeed(search.trim() || undefined),
+  });
+
+  const createJobMutation = useMutation({
+    mutationFn: createEmployabilityJob,
+    onSuccess: () => {
+      setJobForm({
+        title: '',
+        description: '',
+        skills: '',
+        experience: '',
+        location: '',
+      });
+      setShowJobForm(false);
+      queryClient.invalidateQueries({ queryKey: ['employability-feed'] });
+      toast({
+        title: 'Oferta publicada',
+        description: 'La vacante ya aparece en la seccion de publicaciones laborales.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'No se pudo publicar',
+        description: error instanceof Error ? error.message : 'Ocurrio un error inesperado.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const applyMutation = useMutation({
+    mutationFn: applyToEmployabilityJob,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employability-feed'] });
+      toast({
+        title: 'Postulacion enviada',
+        description: 'Tu postulacion fue registrada correctamente.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'No se pudo postular',
+        description: error instanceof Error ? error.message : 'Ocurrio un error inesperado.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const talentMutation = useMutation({
+    mutationFn: upsertEmployabilityTalentProfile,
+    onSuccess: () => {
+      setTalentForm({
+        description: '',
+        skills: '',
+        experience: '',
+        certifications: '',
+        availability: '',
+      });
+      setShowTalentForm(false);
+      queryClient.invalidateQueries({ queryKey: ['employability-feed'] });
+      toast({
+        title: 'Perfil publicado',
+        description: 'Tu perfil ya se muestra en la seccion "Busco empleo".',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'No se pudo publicar el perfil',
+        description: error instanceof Error ? error.message : 'Ocurrio un error inesperado.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const contactMutation = useMutation({
+    mutationFn: async (targetUserId: string) => {
+      if (!user?.id || !user.role) {
+        throw new Error('Debes iniciar sesion para contactar.');
+      }
+
+      const targetProfile = talentProfiles.find((profile) => profile.user.id === targetUserId);
+      if (!targetProfile) {
+        throw new Error('No se encontro el perfil seleccionado.');
+      }
+
+      if (targetProfile.user.id === user.id) {
+        throw new Error('No puedes abrir una conversacion contigo mismo.');
+      }
+
+      const conversation = await createConversation({ toUserId: targetProfile.user.id });
+
+      if (conversation.isNew) {
+        await sendConversationMessage(conversation.id, {
+          message: '',
+          attachments: [
+            {
+              id: crypto.randomUUID(),
+              kind: 'profile',
+              name: targetProfile.user.fullName,
+              profileId: targetProfile.id,
+              label: targetProfile.headline,
+              description: targetProfile.description,
+            },
+          ],
+        });
+      }
+
+      return {
+        conversation,
+        targetProfile,
+      };
+    },
+    onSuccess: ({ conversation, targetProfile }) => {
+      const params = new URLSearchParams({
+        conversationId: conversation.id,
+        source: 'employability',
+        targetName: targetProfile.user.fullName,
+        targetHeadline: targetProfile.headline,
+      });
+      navigate(`/mensajes?${params.toString()}`);
+    },
+    onError: (error) => {
+      toast({
+        title: 'No se pudo contactar',
+        description: error instanceof Error ? error.message : 'Ocurrio un error inesperado.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const jobs = feedQuery.data?.jobs ?? [];
+  const talentProfiles = feedQuery.data?.talentProfiles ?? [];
+  const canPublishJob = Boolean(user);
+  const canContactProfile = (targetUserId: string) => {
+    if (!user?.id) {
+      return false;
+    }
+
+    return targetUserId !== user.id;
+  };
+
+  const handleCreateJob = () => {
+    if (!jobForm.title || !jobForm.description || !jobForm.skills || !jobForm.experience) {
+      toast({
+        title: 'Completa la oferta',
+        description: 'Ingresa titulo, descripcion, skills y experiencia requerida.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    createJobMutation.mutate({
+      title: jobForm.title,
+      description: jobForm.description,
+      skillsRequired: jobForm.skills.split(',').map((skill) => skill.trim()).filter(Boolean),
+      experienceRequired: jobForm.experience,
+      location: jobForm.location.trim() || undefined,
+    });
+  };
+
+  const handleCreateTalentProfile = () => {
+    if (!talentForm.description || !talentForm.skills || !talentForm.experience) {
+      toast({
+        title: 'Completa tu perfil',
+        description: 'Agrega descripcion, skills y experiencia antes de publicar tu perfil.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    talentMutation.mutate({
+      description: talentForm.description,
+      skills: talentForm.skills.split(',').map((skill) => skill.trim()).filter(Boolean),
+      experience: talentForm.experience,
+      certifications: talentForm.certifications.split(',').map((item) => item.trim()).filter(Boolean),
+      availability: talentForm.availability.trim() || undefined,
+    });
+  };
+
+  return (
+    <div className="mx-auto max-w-6xl space-y-8">
+      <section className="overflow-hidden rounded-[30px] border border-sky-100 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.15),transparent_34%),linear-gradient(135deg,#eef6ff_0%,#ffffff_48%,#f3f9ff_100%)] text-slate-900 shadow-sm">
+        <div className="grid gap-8 px-6 py-8 md:grid-cols-[1.3fr_0.95fr] md:px-8 lg:px-10">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700 shadow-sm">
+              <Sparkles className="h-3.5 w-3.5 text-sky-600" />
+              Modulo Empleabilidad
+            </div>
+            <h1 className="mt-5 max-w-2xl text-3xl font-bold tracking-tight text-[#0f2a5e] md:text-4xl">
+              Empleo, talento y crecimiento profesional en una sola vista.
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#4f6b95] md:text-base">
+              Publica vacantes, encuentra profesionales disponibles.
+            </p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className={`rounded-2xl ${
+                  activeSection === 'jobs'
+                    ? 'border-[#0f2a5e] bg-[#0f2a5e] text-white hover:bg-[#12306a] hover:text-white'
+                    : 'border-sky-200 bg-sky-50/70 text-[#0f2a5e] hover:bg-sky-100'
+                }`}
+                onClick={() => {
+                  setActiveSection('jobs');
+                  setShowTalentForm(false);
+                }}
+              >
+                Publicaciones laborales
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className={`rounded-2xl ${
+                  activeSection === 'talent'
+                    ? 'border-[#0f2a5e] bg-[#0f2a5e] text-white hover:bg-[#12306a] hover:text-white'
+                    : 'border-sky-200 bg-sky-50/70 text-[#0f2a5e] hover:bg-sky-100'
+                }`}
+                onClick={() => {
+                  setActiveSection('talent');
+                  setShowJobForm(false);
+                }}
+              >
+                Busco empleo
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-1">
+            <Card className="rounded-[26px] border-sky-100 bg-white/90 text-slate-900 shadow-none">
+              <CardContent className="p-6">
+                <p className="text-xs uppercase tracking-[0.2em] text-sky-600">Vacantes activas</p>
+                <p className="mt-3 text-4xl font-bold text-[#0f2a5e]">{feedQuery.data?.stats.jobs ?? 0}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Publicaciones listas para recibir postulaciones.</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-[26px] border-sky-100 bg-white/90 text-slate-900 shadow-none">
+              <CardContent className="p-6">
+                <p className="text-xs uppercase tracking-[0.2em] text-sky-600">Talento visible</p>
+                <p className="mt-3 text-4xl font-bold text-[#0f2a5e]">{feedQuery.data?.stats.talentProfiles ?? 0}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Profesionales mostrando skills y experiencia.</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      <Card className="rounded-[28px] border-sky-100 bg-white shadow-sm">
+        <CardContent className="p-5">
+          {activeSection === 'jobs' ? (
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Buscar por cargo, empresa o skill"
+                className="h-11 rounded-2xl border-slate-200 bg-slate-50 pl-10"
+              />
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              Explora perfiles publicados y crea el tuyo dentro de esta sección.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {showJobForm && canPublishJob && activeSection === 'jobs' && (
+        <Card className="rounded-[28px] border-slate-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-xl">Publicar empleo</CardTitle>
+            <CardDescription>
+              Crea una oferta laboral real y persistida en backend para atraer mejores postulaciones.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            <Input
+              placeholder="Titulo del puesto"
+              value={jobForm.title}
+              onChange={(event) => setJobForm((current) => ({ ...current, title: event.target.value }))}
+              className="h-11 rounded-2xl"
+            />
+            <Input
+              placeholder="Experiencia requerida"
+              value={jobForm.experience}
+              onChange={(event) => setJobForm((current) => ({ ...current, experience: event.target.value }))}
+              className="h-11 rounded-2xl"
+            />
+            <div className="md:col-span-2">
+              <Textarea
+                placeholder="Describe el rol, objetivos y contexto de la vacante"
+                value={jobForm.description}
+                onChange={(event) => setJobForm((current) => ({ ...current, description: event.target.value }))}
+                rows={5}
+                className="rounded-2xl"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <Input
+                placeholder="Skills requeridos separados por comas"
+                value={jobForm.skills}
+                onChange={(event) => setJobForm((current) => ({ ...current, skills: event.target.value }))}
+                className="h-11 rounded-2xl"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <Input
+                placeholder="Ubicacion o modalidad"
+                value={jobForm.location}
+                onChange={(event) => setJobForm((current) => ({ ...current, location: event.target.value }))}
+                className="h-11 rounded-2xl"
+              />
+            </div>
+            <div className="md:col-span-2 flex flex-wrap gap-3">
+              <Button type="button" onClick={handleCreateJob} disabled={createJobMutation.isPending} className="rounded-2xl px-5">
+                {createJobMutation.isPending ? 'Publicando...' : 'Publicar oferta'}
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setShowJobForm(false)} className="rounded-2xl">
+                Cancelar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {activeSection === 'jobs' && (
+      <section id="publicaciones-laborales" className="space-y-5">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-600">Vacantes</p>
+            <h2 className="mt-2 text-2xl font-bold text-foreground">Publicaciones laborales</h2>
+            <p className="text-sm text-muted-foreground">
+              Explora oportunidades abiertas y postula en un clic.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="hidden rounded-full border-sky-200 bg-sky-50 px-3 py-1 text-sky-700 md:inline-flex">
+              {jobs.length} resultados
+            </Badge>
+            {canPublishJob && (
+              <Button
+                type="button"
+                className="rounded-2xl px-5"
+                onClick={() => setShowJobForm((current) => !current)}
+              >
+                <Plus className="h-4 w-4" />
+                Publicar empleo
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {feedQuery.isLoading && (
+          <Card className="rounded-3xl border-dashed border-slate-300">
+            <CardContent className="p-10 text-center text-sm text-muted-foreground">
+              Cargando vacantes y talento disponible...
+            </CardContent>
+          </Card>
+        )}
+
+        {feedQuery.isError && (
+          <Card className="rounded-3xl border-dashed border-red-200">
+            <CardContent className="p-10 text-center text-sm text-destructive">
+              No se pudo cargar el modulo de empleabilidad.
+            </CardContent>
+          </Card>
+        )}
+
+        {!feedQuery.isLoading && !feedQuery.isError && (
+          <div className="grid gap-4">
+            {jobs.map((job) => (
+              <Card key={job.id} className="rounded-[28px] border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+                <CardContent className="p-6">
+                  <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-xl font-semibold text-foreground">{job.title}</h3>
+                          <Badge variant="outline" className="border-sky-200 bg-sky-50 text-sky-700">
+                            {job.applicants} postulaciones
+                          </Badge>
+                        </div>
+                        <p className="mt-1 text-sm font-medium text-slate-700">{job.company}</p>
+                        <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4" />
+                          {job.location}
+                        </div>
+                      </div>
+
+                      <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-muted-foreground">{job.description}</p>
+
+                      <div className="space-y-2">
+                        <p className="text-sm font-semibold text-foreground">Requisitos (skills)</p>
+                        <div className="flex flex-wrap gap-2">
+                          {job.skillsRequired.map((skill) => (
+                            <Badge key={skill} variant="secondary" className="bg-slate-100 text-slate-700">
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">
+                        <BriefcaseBusiness className="h-4 w-4" />
+                        {job.experienceRequired}
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 flex-col gap-3 lg:w-48">
+                      <Button
+                        type="button"
+                        onClick={() => applyMutation.mutate(job.id)}
+                        disabled={job.hasApplied || applyMutation.isPending || job.author.id === user?.id}
+                        className="rounded-2xl"
+                      >
+                        {job.author.id === user?.id
+                          ? 'Tu publicacion'
+                          : job.hasApplied
+                            ? 'Ya postulaste'
+                            : applyMutation.isPending
+                              ? 'Postulando...'
+                              : 'Postular'}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            {jobs.length === 0 && (
+              <Card className="rounded-3xl border-dashed border-slate-300">
+                <CardContent className="p-10 text-center text-sm text-muted-foreground">
+                  No encontramos vacantes con ese criterio de busqueda.
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+      </section>
+      )}
+
+      {activeSection === 'talent' && (
+      <section id="busco-empleo" className="space-y-5">
+        <div className="space-y-5">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-600">Talento</p>
+              <h2 className="mt-2 text-2xl font-bold text-foreground">Busco empleo</h2>
+              <p className="text-sm text-muted-foreground">
+                Profesionales mostrando experiencia, skills y certificaciones.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-2xl border-sky-200 bg-white px-5 text-[#0f2a5e] hover:bg-sky-50"
+              onClick={() => setShowTalentForm((current) => !current)}
+            >
+              <Users className="h-4 w-4" />
+              Publicarme como talento
+            </Button>
+          </div>
+
+          {showTalentForm && (
+            <Card className="rounded-[28px] border-slate-200 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-xl">Publicarme como profesional</CardTitle>
+                <CardDescription>
+                  Comparte tu propuesta de valor y guardala de forma persistente en el backend.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <Textarea
+                  placeholder="Descripcion personal"
+                  value={talentForm.description}
+                  onChange={(event) => setTalentForm((current) => ({ ...current, description: event.target.value }))}
+                  rows={5}
+                  className="rounded-2xl"
+                />
+                <Input
+                  placeholder="Skills separados por comas"
+                  value={talentForm.skills}
+                  onChange={(event) => setTalentForm((current) => ({ ...current, skills: event.target.value }))}
+                  className="h-11 rounded-2xl"
+                />
+                <Input
+                  placeholder="Experiencia"
+                  value={talentForm.experience}
+                  onChange={(event) => setTalentForm((current) => ({ ...current, experience: event.target.value }))}
+                  className="h-11 rounded-2xl"
+                />
+                <Input
+                  placeholder="Certificaciones separadas por comas"
+                  value={talentForm.certifications}
+                  onChange={(event) => setTalentForm((current) => ({ ...current, certifications: event.target.value }))}
+                  className="h-11 rounded-2xl"
+                />
+                <Input
+                  placeholder="Disponibilidad"
+                  value={talentForm.availability}
+                  onChange={(event) => setTalentForm((current) => ({ ...current, availability: event.target.value }))}
+                  className="h-11 rounded-2xl"
+                />
+                <div className="flex flex-wrap gap-3">
+                  <Button type="button" onClick={handleCreateTalentProfile} disabled={talentMutation.isPending} className="rounded-2xl px-5">
+                    {talentMutation.isPending ? 'Publicando...' : 'Publicar perfil'}
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={() => setShowTalentForm(false)} className="rounded-2xl">
+                    Cancelar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            {talentProfiles.map((profile) => (
+              <Card key={profile.id} className="rounded-[28px] border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+                <CardContent className="p-6">
+                  <div className="flex flex-col gap-5">
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-lg font-semibold text-foreground">{profile.user.fullName}</h3>
+                          <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                            {profile.availability}
+                          </Badge>
+                          {profile.isOwner && (
+                            <Badge variant="secondary" className="bg-sky-100 text-sky-700">
+                              Tu perfil
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm font-medium text-slate-700">{profile.headline}</p>
+                        <p className="text-xs text-slate-500">
+                          {profile.user.position}
+                          {profile.user.company ? ` · ${profile.user.company}` : ''}
+                        </p>
+                      </div>
+
+                      <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-muted-foreground">{profile.description}</p>
+
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Skills</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {profile.skills.map((skill) => (
+                            <Badge key={skill} variant="secondary" className="bg-slate-100 text-slate-700">
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div className="rounded-2xl bg-slate-50 p-4">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Experiencia</p>
+                          <p className="mt-2 text-sm text-slate-700">{profile.experience}</p>
+                        </div>
+                        <div className="rounded-2xl bg-slate-50 p-4">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Certificaciones</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {profile.certifications.length > 0 ? (
+                              profile.certifications.map((certification) => (
+                                <Badge key={certification} variant="outline">
+                                  {certification}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-sm text-muted-foreground">Sin certificaciones registradas</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-xl"
+                        onClick={() => contactMutation.mutate(profile.user.id)}
+                        disabled={
+                          contactMutation.isPending ||
+                          !canContactProfile(profile.user.id)
+                        }
+                      >
+                        {profile.user.id === user?.id
+                          ? 'Tu perfil'
+                          : !canContactProfile(profile.user.id)
+                            ? 'No disponible'
+                            : contactMutation.isPending
+                              ? 'Abriendo...'
+                              : 'Contactar'}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            {!feedQuery.isLoading && !feedQuery.isError && talentProfiles.length === 0 && (
+              <Card className="rounded-3xl border-dashed border-slate-300">
+                <CardContent className="p-10 text-center text-sm text-muted-foreground">
+                  Aun no hay perfiles profesionales publicados.
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </section>
+      )}
+    </div>
+  );
+};
+
+export default Employability;

@@ -18,9 +18,16 @@ type CreatePostBody = {
   title: string;
   description: string;
   categoryId: string;
-  type?: 'educational' | 'community';
+  type?: 'educational' | 'community' | 'liquidation';
+  mediaType?: 'video' | 'image';
   videoUrl?: string;
   thumbnailUrl?: string;
+  resources?: Array<{
+    id: string;
+    type: 'image' | 'file' | 'link';
+    name: string;
+    url: string;
+  }>;
 };
 
 type CreateCommentBody = {
@@ -56,8 +63,10 @@ export class PostsController {
       description: body.description,
       categoryId: body.categoryId,
       type: body.type,
+      mediaType: body.mediaType,
       videoUrl: body.videoUrl,
       thumbnailUrl: body.thumbnailUrl,
+      resources: body.resources,
       authorId: user.sub,
       isAdmin: false,
     });
@@ -66,7 +75,7 @@ export class PostsController {
   @Get()
   listPosts(
     @Query('search') search: string | undefined,
-    @Query('type') type: 'educational' | 'community' | undefined,
+    @Query('type') type: 'educational' | 'community' | 'liquidation' | undefined,
     @Query('categoryId') categoryId: string | undefined,
     @Req() request: Request,
   ): Promise<unknown> {

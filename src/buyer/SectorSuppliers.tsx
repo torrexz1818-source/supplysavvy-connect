@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Search, MapPin, Star, Award, Briefcase } from 'lucide-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import BackButton from '@/components/BackButton';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -127,14 +128,36 @@ export default function SectorSuppliers() {
 
   return (
     <div className="max-w-6xl mx-auto animate-fade-in">
-      <div className="mb-8">
-        <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
-          Encuentra el proveedor de servicios ideal para tu empresa
-        </h1>
-        <p className="text-muted-foreground">
-          Busca, filtra y compara entre cientos de proveedores verificados en Peru.
-        </p>
-      </div>
+      <BackButton fallback="/buyer/directory" className="mb-4" />
+
+      <section className="mb-8 overflow-hidden rounded-3xl border border-sky-100 bg-[linear-gradient(135deg,#eef6ff_0%,#ffffff_48%,#f3f9ff_100%)] shadow-sm">
+        <div className="grid gap-4 px-6 py-8 md:grid-cols-[1.25fr_0.9fr] md:px-8">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-[#0f2a5e]">
+              Proveedores del sector {sector}
+            </h1>
+            <p className="mt-3 text-sm text-[#4f6b95] md:text-base">
+              Busca, filtra y compara proveedores con una experiencia visual alineada al resto del modulo.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-1">
+            <Card className="border-sky-100 bg-white/85 text-slate-900 shadow-none">
+              <CardContent className="p-5">
+                <p className="text-xs uppercase tracking-[0.2em] text-sky-600">Resultados</p>
+                <p className="mt-2 text-3xl font-bold">{filtrados.length}</p>
+                <p className="mt-1 text-sm text-slate-600">Proveedores visibles con los filtros actuales.</p>
+              </CardContent>
+            </Card>
+            <Card className="border-sky-100 bg-white/85 text-slate-900 shadow-none">
+              <CardContent className="p-5">
+                <p className="text-xs uppercase tracking-[0.2em] text-sky-600">Sector</p>
+                <p className="mt-2 text-lg font-bold text-[#0f2a5e]">{sector}</p>
+                <p className="mt-1 text-sm text-slate-600">Navegacion enfocada por categoria.</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
 
       <div className="relative mb-6">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -216,7 +239,7 @@ export default function SectorSuppliers() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filtrados.map((p) => (
-          <Card id={`item-${p.id}`} key={p.id} className="bg-card hover:shadow-md transition-shadow">
+          <Card id={`item-${p.id}`} key={p.id} className="rounded-3xl border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
             <CardContent className="p-5">
               <div className="flex items-start justify-between mb-3">
                 <div>

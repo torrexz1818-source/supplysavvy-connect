@@ -1,7 +1,9 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { CheckCircle2, Copy, Share2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
+import { createSupplierOnboardingSession, registerSupplierOnboardingShare } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { z } from 'zod';
@@ -82,6 +84,28 @@ const CATEGORIES = ['Tecnologia', 'Insumos', 'Marketing', 'Logistica', 'RRHH', '
 const VOLUMES = ['Menos de $5,000', '$5,000 - $20,000', '$20,000 - $100,000', '+$100,000'];
 const COVERAGES = ['Local (ciudad)', 'Nacional', 'Latinoamerica', 'Global'];
 const YEARS = ['Menos de 1 ano', '1-3 anos', '3-10 anos', '+10 anos'];
+const SUPPLIER_ONBOARDING_STORAGE_KEY = 'supplynexu_supplier_onboarding_session';
+
+function readStoredShareSessionId() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return window.localStorage.getItem(SUPPLIER_ONBOARDING_STORAGE_KEY);
+}
+
+function writeStoredShareSessionId(sessionId: string | null) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  if (sessionId) {
+    window.localStorage.setItem(SUPPLIER_ONBOARDING_STORAGE_KEY, sessionId);
+    return;
+  }
+
+  window.localStorage.removeItem(SUPPLIER_ONBOARDING_STORAGE_KEY);
+}
 
 const SUPPLIER_TYPES = [
   { value: 'provider', icon: '🏪', title: 'Solo proveedor', desc: 'Ofrece productos o servicios de terceros' },
@@ -307,6 +331,12 @@ const Register = () => {
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPw, setShowPw] = useState(false);
+  const [shareError, setShareError] = useState('');
+  const [shareFeedback, setShareFeedback] = useState('');
+  const [shareCount, setShareCount] = useState(0);
+  const [requiredShareCount, setRequiredShareCount] = useState(3);
+  const [shareSessionId, setShareSessionId] = useState<string | null>(null);
+  const [isPreparingShareSession, setIsPreparingShareSession] = useState(false);
 
   const set = (key: keyof FormState, value: string) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -334,6 +364,83 @@ const Register = () => {
     return 'buyer';
   };
 
+  const sharePageUrl =
+    typeof window !== 'undefined' ? `${window.location.origin}/register?role=supplier` : '';
+
+  const syncShareSession = (session: {
+    id: string;
+    shareCount: number;
+    requiredShares: number;
+  }) => {
+    setShareSessionId(session.id);
+    setShareCount(session.shareCount);
+    setRequiredShareCount(session.requiredShares);
+    writeStoredShareSessionId(session.id);
+  };
+
+  const ensureShareSession = async () => {
+    const storedSessionId =
+      shareSessionId ?? readStoredShareSessionId() ?? undefined;
+    const session = await createSupplierOnboardingSession(storedSessionId);
+    syncShareSession(session);
+    return session;
+  };
+
+  const registerShareSuccess = (
+    actionLabel: string,
+    session: { shareCount: number; requiredShares: number; remainingShares: number },
+  ) => {
+    setShareError('');
+    setShareFeedback(
+      session.remainingShares === 0
+        ? `${actionLabel}. Requisito completado: ${session.shareCount} de ${session.requiredShares} compartidos.`
+        : `${actionLabel}. Enviado ${session.shareCount} de ${session.requiredShares} compartidos requeridos.`,
+    );
+  };
+
+  const handleCopyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(sharePageUrl);
+      const session = await ensureShareSession();
+      const updatedSession = await registerSupplierOnboardingShare(session.id, {
+        method: 'copy',
+      });
+      syncShareSession(updatedSession);
+      registerShareSuccess('Link copiado', updatedSession);
+    } catch {
+      setShareFeedback('');
+      setShareError('No se pudo copiar el link de la pagina. Intenta nuevamente.');
+    }
+  };
+
+  const handleNativeShare = async () => {
+    if (typeof navigator === 'undefined' || typeof navigator.share !== 'function') {
+      await handleCopyShareLink();
+      return;
+    }
+
+    try {
+      await navigator.share({
+        title: 'Supply Nexu',
+        text: 'Te comparto la pagina de registro para proveedores.',
+        url: sharePageUrl,
+      });
+      const session = await ensureShareSession();
+      const updatedSession = await registerSupplierOnboardingShare(session.id, {
+        method: 'native',
+      });
+      syncShareSession(updatedSession);
+      registerShareSuccess('Pagina compartida', updatedSession);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
+
+      setShareFeedback('');
+      setShareError('No se pudo compartir la pagina. Intenta nuevamente.');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = registerSchema.safeParse({ ...form, role: form.role || undefined });
@@ -347,6 +454,14 @@ const Register = () => {
     }
     setErrors({});
     setSubmitError('');
+    setShareFeedback('');
+
+    if (form.role === 'supplier' && (!shareSessionId || shareCount < requiredShareCount)) {
+      setShareError(`Comparte el link de esta pagina con ${requiredShareCount} personas antes de crear la cuenta de proveedor.`);
+      return;
+    }
+
+    setShareError('');
     setIsSubmitting(true);
     try {
       const normalizedCoverage = (form.coverage || '').trim();
@@ -359,16 +474,52 @@ const Register = () => {
       const response = await register({
         fullName: form.fullName,
         company: form.razonSocial,
+        commercialName: form.company || undefined,
         position: form.position,
         ruc: form.ruc,
         phone: form.phone,
         sector: form.sector || undefined,
         location: form.role === 'supplier' ? supplierLocation || undefined : (form.coverage || '').trim() || undefined,
         description: form.role === 'supplier' ? (form.supplierDescription || '').trim() || undefined : undefined,
+        employeeCount: form.employees || undefined,
+        digitalPresence: {
+          linkedin: form.linkedin || undefined,
+          website: form.website || undefined,
+          whatsapp: form.whatsapp || undefined,
+          instagram: form.instagram || undefined,
+        },
+        buyerProfile: form.role === 'buyer'
+          ? {
+              interestCategories: form.categories,
+              purchaseVolume: form.volume || undefined,
+              isCompanyDigitalized: form.digitalized || undefined,
+              usesGenerativeAI: form.usesAI || undefined,
+            }
+          : undefined,
+        supplierProfile: form.role === 'supplier'
+          ? {
+              supplierType: form.supplierType || undefined,
+              productsOrServices: form.offerCategories,
+              hasDigitalCatalog: form.hasCatalog || undefined,
+              isCompanyDigitalized: form.digitalized || undefined,
+              usesGenerativeAI: form.usesAI || undefined,
+              coverage: normalizedCoverage || undefined,
+              province: normalizedProvince || undefined,
+              district: normalizedDistrict || undefined,
+              yearsInMarket: form.yearsInMarket || undefined,
+            }
+          : undefined,
+        supplierOnboarding:
+          form.role === 'supplier' && shareSessionId
+            ? { sessionId: shareSessionId }
+            : undefined,
         email: form.email,
         password: form.password,
         role: form.role as 'buyer' | 'supplier',
       });
+      if (form.role === 'supplier') {
+        writeStoredShareSessionId(null);
+      }
       const role = getRoleFromToken(response.accessToken);
       navigate(role === 'supplier' ? '/supplier/dashboard' : '/buyer/dashboard');
     } catch (error) {
@@ -381,6 +532,61 @@ const Register = () => {
   const isBuyer = form.role === 'buyer';
   const isSupplier = form.role === 'supplier';
   const strength = pwStrength(form.password);
+  const isSupplierFormReadyToShare =
+    isSupplier &&
+    form.fullName.trim().length > 0 &&
+    form.position.trim().length > 0 &&
+    form.ruc.trim().length >= 8 &&
+    form.razonSocial.trim().length > 0 &&
+    form.sector.trim().length > 0 &&
+    form.phone.trim().length > 0 &&
+    form.email.trim().length > 0 &&
+    form.password.length >= 6 &&
+    form.supplierType.trim().length > 0 &&
+    form.offerCategories.length > 0;
+  const supplierCanSubmit =
+    !isSupplier || (Boolean(shareSessionId) && shareCount >= requiredShareCount);
+
+  useEffect(() => {
+    if (!isSupplierFormReadyToShare) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const bootstrapShareSession = async () => {
+      setIsPreparingShareSession(true);
+
+      try {
+        const storedSessionId =
+          shareSessionId ?? readStoredShareSessionId() ?? undefined;
+        const session = await createSupplierOnboardingSession(storedSessionId);
+        if (!cancelled) {
+          setShareSessionId(session.id);
+          setShareCount(session.shareCount);
+          setRequiredShareCount(session.requiredShares);
+          writeStoredShareSessionId(session.id);
+        }
+      } catch {
+        if (!cancelled) {
+          setShareFeedback('');
+          setShareError(
+            'No se pudo preparar el seguimiento de compartidos. Recarga la pagina e intenta nuevamente.',
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setIsPreparingShareSession(false);
+        }
+      }
+    };
+
+    void bootstrapShareSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isSupplierFormReadyToShare, shareSessionId]);
 
   return (
     <div className="min-h-screen flex items-start justify-center bg-[#F8FAFC] p-4 py-10">
@@ -391,7 +597,7 @@ const Register = () => {
         className="w-full max-w-[560px]"
       >
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-gradient mb-1">SUPPLYCONNECT</h1>
+          <h1 className="text-2xl font-bold text-gradient mb-1">SUPPLY NEXU</h1>
           <h1 className="text-xl font-semibold text-foreground tracking-tight">Crear cuenta</h1>
           <p className="text-[13px] text-muted-foreground mt-1">
             Unete a la plataforma de compradores y proveedores
@@ -653,7 +859,7 @@ const Register = () => {
 
             <SectionLabel>Digitalizacion</SectionLabel>
             <div className="space-y-3">
-              <FieldWrap label="Tu empresa esta digitalizada?">
+              <FieldWrap label="¿Tu empresa esta digitalizada en el proceso de compras ?">
                 <YNGroup
                   value={form.digitalized}
                   onChange={(v) => set('digitalized', v)}
@@ -664,7 +870,7 @@ const Register = () => {
                   ]}
                 />
               </FieldWrap>
-              <FieldWrap label="Usan IA generativa?">
+              <FieldWrap label="¿Usan IA generativa en el proceso de compras?">
                 <YNGroup
                   value={form.usesAI}
                   onChange={(v) => set('usesAI', v)}
@@ -711,6 +917,105 @@ const Register = () => {
               </FieldWrap>
             </div>
 
+            {isSupplier && isSupplierFormReadyToShare && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+                <SectionLabel>Activa tu cuenta de proveedor</SectionLabel>
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-emerald-900">
+                        Comparte esta pagina con {requiredShareCount} personas
+                      </p>
+                      <p className="text-xs text-emerald-800/80 mt-1">
+                        Cuando completes los {requiredShareCount} compartidos, se habilitara el boton de crear cuenta para proveedor.
+                      </p>
+                    </div>
+                    <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                      {shareCount}/{requiredShareCount} compartidos
+                    </div>
+                  </div>
+
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-emerald-100">
+                    <div
+                      className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                      style={{ width: `${Math.min((shareCount / Math.max(requiredShareCount, 1)) * 100, 100)}%` }}
+                    />
+                  </div>
+
+                  <div className="mt-4 rounded-xl border border-emerald-200/80 bg-white/80 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                      Link para compartir
+                    </p>
+                    <div className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2 text-xs text-emerald-900 break-all">
+                      {sharePageUrl}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <Button type="button" variant="outline" onClick={handleCopyShareLink} disabled={isPreparingShareSession}>
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copiar link
+                      </Button>
+                      <Button type="button" variant="outline" onClick={handleNativeShare} disabled={isPreparingShareSession}>
+                        <Share2 className="w-4 h-4 mr-2" />
+                        Compartir pagina
+                      </Button>
+                    </div>
+
+                    <div className="flex gap-2 mt-4">
+                      {Array.from({ length: requiredShareCount }, (_, index) => index + 1).map((step) => (
+                        <div
+                          key={step}
+                          className={`flex-1 rounded-lg border px-3 py-2 text-center text-xs font-medium ${
+                            shareCount >= step
+                              ? 'border-emerald-300 bg-emerald-100 text-emerald-800'
+                              : 'border-amber-200 bg-amber-50 text-amber-700'
+                          }`}
+                        >
+                          {shareCount >= step ? (
+                            <span className="inline-flex items-center gap-1">
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Compartido {step}
+                            </span>
+                          ) : (
+                            <span>Pendiente {step}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {shareError && (
+                    <p className="text-xs text-destructive bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-2 mt-3">
+                      {shareError}
+                    </p>
+                  )}
+
+                  {!shareError && shareFeedback && (
+                    <p className="text-xs text-emerald-700 bg-white border border-emerald-200 rounded-lg px-3 py-2 mt-3">
+                      {shareFeedback}
+                    </p>
+                  )}
+
+                  {!shareError && isPreparingShareSession && (
+                    <p className="text-xs text-emerald-700 bg-white border border-emerald-200 rounded-lg px-3 py-2 mt-3">
+                      Preparando el seguimiento persistente de compartidos...
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {isSupplier && !isSupplierFormReadyToShare && (
+              <div className="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/40 p-4 mt-6">
+                <p className="text-sm font-semibold text-emerald-900">
+                  Completa los datos del proveedor para activar el compartir
+                </p>
+                <p className="text-xs text-emerald-800/80 mt-1">
+                  Cuando termines el formulario, aparecera el link para compartir la pagina con {requiredShareCount} personas.
+                </p>
+              </div>
+            )}
+
             {submitError && (
               <p className="text-xs text-destructive bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-2 mt-3">
                 {submitError}
@@ -720,11 +1025,17 @@ const Register = () => {
             <Button
               type="submit"
               className={`w-full mt-5 ${isSupplier ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !supplierCanSubmit}
             >
               {isSubmitting
                 ? 'Creando cuenta...'
-                : `Crear cuenta${form.role === 'buyer' ? ' como Comprador' : form.role === 'supplier' ? ' como Proveedor' : ''}`}
+                : isSupplier && !isSupplierFormReadyToShare
+                  ? 'Completa el formulario para activar compartir'
+                  : isSupplier && isPreparingShareSession
+                  ? 'Preparando activacion del proveedor...'
+                  : isSupplier && !supplierCanSubmit
+                  ? `Comparte con ${Math.max(requiredShareCount - shareCount, 0)} persona${Math.max(requiredShareCount - shareCount, 0) === 1 ? '' : 's'} mas para activar la cuenta`
+                  : `Crear cuenta${form.role === 'buyer' ? ' como Comprador' : form.role === 'supplier' ? ' como Proveedor' : ''}`}
             </Button>
 
             <p className="text-center text-[12px] text-muted-foreground mt-3 leading-relaxed">

@@ -49,7 +49,7 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
-  list(
+  async list(
     @Query('role') role: string | undefined,
     @Query('isRead') isRead: string | undefined,
     @Query('type') type: NotificationType | undefined,
@@ -81,27 +81,27 @@ export class NotificationsController {
   }
 
   @Get('unread-count')
-  unreadCount(@CurrentUser() user: { sub: string }) {
+  async unreadCount(@CurrentUser() user: { sub: string }) {
     return this.notificationsService.unreadCount(user.sub);
   }
 
   @Patch(':id/read')
-  markAsRead(@Param('id') id: string, @CurrentUser() user: { sub: string }) {
+  async markAsRead(@Param('id') id: string, @CurrentUser() user: { sub: string }) {
     return this.notificationsService.markAsRead(id, user.sub);
   }
 
   @Patch('read-all')
-  markAllAsRead(@CurrentUser() user: { sub: string }) {
+  async markAllAsRead(@CurrentUser() user: { sub: string }) {
     return this.notificationsService.markAllAsRead(user.sub);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @CurrentUser() user: { sub: string }) {
+  async remove(@Param('id') id: string, @CurrentUser() user: { sub: string }) {
     return this.notificationsService.remove(id, user.sub);
   }
 
   @Post()
-  create(@Body() body: CreateNotificationBody) {
+  async create(@Body() body: CreateNotificationBody) {
     if (
       !body.icon ||
       !body.title ||

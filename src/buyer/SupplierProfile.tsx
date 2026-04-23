@@ -14,6 +14,7 @@ import {
   sendConversationMessage,
 } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { isBuyerLikeRole } from '@/lib/roles';
 
 const SupplierProfile = () => {
   const navigate = useNavigate();
@@ -50,7 +51,7 @@ const SupplierProfile = () => {
       const conversation = existing ?? await createConversation({ toUserId: id, publicationId: null });
 
       if (mensaje.trim()) {
-        await sendConversationMessage(conversation.id, mensaje.trim());
+        await sendConversationMessage(conversation.id, { message: mensaje.trim() });
       }
 
       return conversation;
@@ -215,8 +216,8 @@ const SupplierProfile = () => {
                 size="sm"
                 className="w-full bg-primary text-primary-foreground"
                 onClick={() => {
-                  if (user?.role !== 'buyer') {
-                    setFeedback('Solo compradores pueden contactar proveedores.');
+                  if (!isBuyerLikeRole(user?.role)) {
+                    setFeedback('Solo compradores o expertos pueden contactar proveedores.');
                     return;
                   }
                   contactMutation.mutate();

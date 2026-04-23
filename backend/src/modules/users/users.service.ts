@@ -9,17 +9,24 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { User } from './domain/user.model';
 import { UserRole } from './domain/user-role.enum';
 import { UserStatus } from './domain/user-status.enum';
+import { UsersRepository } from './persistence/users.repository';
 
 type CreateUserData = Pick<
   User,
   'email' | 'passwordHash' | 'fullName' | 'company' | 'position'
 > & {
+  commercialName?: string;
   role?: UserRole;
   phone?: string;
   ruc?: string;
   sector?: string;
   location?: string;
   description?: string;
+  employeeCount?: string;
+  digitalPresence?: User['digitalPresence'];
+  buyerProfile?: User['buyerProfile'];
+  supplierProfile?: User['supplierProfile'];
+  expertProfile?: User['expertProfile'];
 };
 
 type SupplierReviewRecord = {
@@ -77,6 +84,7 @@ type ProfileViewNotificationRecord = {
 export class UsersService {
   constructor(
     private readonly databaseService: DatabaseService,
+    private readonly usersRepository: UsersRepository,
     private readonly notificationsService: NotificationsService,
   ) {}
 
@@ -94,21 +102,33 @@ export class UsersService {
       passwordHash: data.passwordHash,
       fullName: data.fullName,
       company: data.company,
+      commercialName: data.commercialName,
       position: data.position,
       phone: data.phone,
       ruc: data.ruc,
       sector: data.sector,
       location: data.location,
       description: data.description,
+      employeeCount: data.employeeCount,
+      digitalPresence: data.digitalPresence,
+      buyerProfile: data.buyerProfile,
+      supplierProfile: data.supplierProfile,
+      expertProfile: data.expertProfile,
       role:
-        data.role === UserRole.SUPPLIER ? UserRole.SUPPLIER : UserRole.BUYER,
+        data.role === UserRole.ADMIN
+          ? UserRole.ADMIN
+          : data.role === UserRole.EXPERT
+            ? UserRole.EXPERT
+          : data.role === UserRole.SUPPLIER
+            ? UserRole.SUPPLIER
+            : UserRole.BUYER,
       status: UserStatus.ACTIVE,
       points: 0,
       createdAt: now,
       updatedAt: now,
     };
 
-    await this.collection().insertOne(user);
+    await this.usersRepository.create(user);
     await this.ensureMembershipRecord(user);
     return user;
   }
@@ -244,13 +264,11 @@ export class UsersService {
   }
 
   findByEmail(email: string): Promise<User | null> {
-    return this.collection().findOne({
-      email: email.trim().toLowerCase(),
-    });
+    return this.usersRepository.findByEmail(email);
   }
 
   findById(id: string): Promise<User | null> {
-    return this.collection().findOne({ id });
+    return this.usersRepository.findById(id);
   }
 
   async findManyByIds(ids: string[]): Promise<User[]> {
@@ -258,9 +276,7 @@ export class UsersService {
       return [];
     }
 
-    return this.collection()
-      .find({ id: { $in: Array.from(new Set(ids)) } })
-      .toArray();
+    return this.usersRepository.findManyByIds(ids);
   }
 
   async getBuyerSectors(): Promise<Array<{ sector: string; count: number }>> {
@@ -444,7 +460,7 @@ export class UsersService {
   }
 
   async findBuyerById(id: string): Promise<User | null> {
-    return this.collection().findOne({
+    return this.usersRepository.findOne({
       id,
       role: UserRole.BUYER,
       status: UserStatus.ACTIVE,
@@ -452,9 +468,27 @@ export class UsersService {
   }
 
   async findSupplierById(id: string): Promise<User | null> {
-    return this.collection().findOne({
+    return this.usersRepository.findOne({
       id,
       role: UserRole.SUPPLIER,
+      status: UserStatus.ACTIVE,
+    });
+  }
+
+  async listExperts(): Promise<User[]> {
+    return this.usersRepository
+      .find({
+        role: UserRole.EXPERT,
+        status: UserStatus.ACTIVE,
+      })
+      .sort({ createdAt: -1 })
+      .toArray();
+  }
+
+  async findExpertById(id: string): Promise<User | null> {
+    return this.usersRepository.findOne({
+      id,
+      role: UserRole.EXPERT,
       status: UserStatus.ACTIVE,
     });
   }
@@ -482,7 +516,9 @@ export class UsersService {
     }>
   > {
     const reviews = await this.supplierReviewsCollection()
-      .find({ supplierId })
+      .find({
+        supplierId,
+      })
       .sort({ createdAt: -1 })
       .toArray();
 
@@ -522,8 +558,8 @@ export class UsersService {
     };
   }> {
     const buyer = await this.requireActiveUser(data.buyerId);
-    if (buyer.role !== UserRole.BUYER) {
-      throw new ForbiddenException('Solo compradores pueden calificar proveedores');
+    if (!this.isBuyerLikeRole(buyer.role)) {
+      throw new ForbiddenException('Solo compradores o expertos pueden calificar proveedores');
     }
 
     const supplier = await this.findSupplierById(data.supplierId);
@@ -621,7 +657,7 @@ export class UsersService {
   }
 
   list(): Promise<User[]> {
-    return this.collection().find().sort({ createdAt: -1 }).toArray();
+    return this.usersRepository.list();
   }
 
   async listActiveUserIdsByRole(role: UserRole, excludeUserId?: string): Promise<string[]> {
@@ -641,9 +677,43 @@ export class UsersService {
     return users.map((user) => user.id);
   }
 
+  async listActiveUserIdsByRoles(roles: UserRole[], excludeUserId?: string): Promise<string[]> {
+    const normalizedRoles = Array.from(new Set(roles));
+    if (!normalizedRoles.length) {
+      return [];
+    }
+
+    const filter: Record<string, unknown> = {
+      role: { $in: normalizedRoles },
+      status: UserStatus.ACTIVE,
+    };
+
+    if (excludeUserId) {
+      filter.id = { $ne: excludeUserId };
+    }
+
+    const users = await this.collection()
+      .find(filter, { projection: { id: 1 } })
+      .toArray();
+
+    return users.map((user) => user.id);
+  }
+
+  isBuyerLikeRole(role: UserRole | string | undefined): boolean {
+    return role === UserRole.BUYER || role === UserRole.EXPERT;
+  }
+
+  async findBuyerLikeById(id: string): Promise<User | null> {
+    return this.usersRepository.findOne({
+      id,
+      role: { $in: [UserRole.BUYER, UserRole.EXPERT] },
+      status: UserStatus.ACTIVE,
+    });
+  }
+
   async notifyProfileInteraction(data: {
     viewerId: string;
-    viewerRole: UserRole.BUYER | UserRole.SUPPLIER;
+    viewerRole: UserRole.BUYER | UserRole.EXPERT | UserRole.SUPPLIER;
     targetUserId: string;
     targetRole: UserRole.BUYER | UserRole.SUPPLIER;
   }): Promise<void> {
@@ -704,9 +774,9 @@ export class UsersService {
       score: number;
     }>
   > {
-    const buyer = await this.findBuyerById(buyerId);
+    const buyer = await this.findBuyerLikeById(buyerId);
     if (!buyer) {
-      throw new NotFoundException('Comprador no encontrado');
+      throw new NotFoundException('Comprador o experto no encontrado');
     }
 
     const suppliers = await this.collection()
@@ -813,7 +883,7 @@ export class UsersService {
     }
 
     if (targetUser.role === UserRole.ADMIN) {
-      throw new ForbiddenException('The only administrator cannot be modified');
+      throw new ForbiddenException('Administrator users cannot be modified from this action');
     }
 
     if (targetUser.id === actorUserId) {
@@ -826,7 +896,7 @@ export class UsersService {
       updatedAt: new Date(),
     };
 
-    await this.collection().updateOne(
+    await this.usersRepository.updateOne(
       { id: targetUserId },
       {
         $set: {
@@ -842,7 +912,7 @@ export class UsersService {
   }
 
   async updatePassword(userId: string, passwordHash: string): Promise<void> {
-    const result = await this.collection().updateOne(
+    const result = await this.usersRepository.updateOne(
       { id: userId },
       {
         $set: {
@@ -857,13 +927,49 @@ export class UsersService {
     }
   }
 
+  async updateExpertProfile(
+    userId: string,
+    expertProfile: User['expertProfile'],
+  ): Promise<User> {
+    const user = await this.findById(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.role !== UserRole.EXPERT) {
+      throw new ForbiddenException('Solo los expertos pueden actualizar este perfil');
+    }
+
+    const nextUser: User = {
+      ...user,
+      expertProfile: {
+        ...user.expertProfile,
+        ...expertProfile,
+      },
+      updatedAt: new Date(),
+    };
+
+    await this.usersRepository.updateOne(
+      { id: userId },
+      {
+        $set: {
+          expertProfile: nextUser.expertProfile,
+          updatedAt: nextUser.updatedAt,
+        },
+      },
+    );
+
+    return nextUser;
+  }
+
   toSafeUser(user: User): Omit<User, 'passwordHash'> {
     const { passwordHash: _passwordHash, ...safeUser } = user;
     return safeUser;
   }
 
   private collection() {
-    return this.databaseService.collection<User>('users');
+    return this.usersRepository.collection();
   }
 
   private messagesCollection() {

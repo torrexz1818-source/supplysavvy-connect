@@ -1,15 +1,26 @@
-import { Bell, BookOpen, Building2, FileText, LayoutDashboard, LogOut, MessageCircle, Shield, Users } from 'lucide-react';
+import { BookOpen, Bot, BriefcaseBusiness, Building2, FileText, LayoutDashboard, LogOut, MessageCircle, Newspaper, Shield, Users } from 'lucide-react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import NotificationBell from '@/components/NotificationBell';
+import MessageBell from '@/components/MessageBell';
+import NewsAccessButton from '@/components/NewsAccessButton';
+import { isBuyerLikeRole } from '@/lib/roles';
 
 const buyerNavItems = [
   { to: '/buyer/dashboard', label: 'Inicio', icon: LayoutDashboard },
-  { to: '/buyer/directory', label: 'Directorio de proveedores', icon: Building2 },
-  { to: '/buyer/sale', label: 'Liquidaciones', icon: FileText },
-  { to: '/contenido-educativo', label: 'Contenido educativo', icon: BookOpen },
   { to: '/community', label: 'Comunidad', icon: MessageCircle },
-  { to: '/notifications', label: 'Notificaciones', icon: Bell },
+  {
+    to: '/contenido-educativo',
+    label: 'Contenido Educativo',
+    icon: BookOpen,
+    children: [
+      { to: '/empleabilidad', label: 'Empleabilidad', icon: BriefcaseBusiness },
+      { to: '/nexu-experts', label: 'Nexu Experts', icon: Users },
+    ],
+  },
+  { to: '/buyer/sale', label: 'Liquidaciones', icon: FileText },
+  { to: '/nexu-ia', label: 'Nexu IA', icon: Bot },
+  { to: '/buyer/directory', label: 'Directorio de proveedores', icon: Building2 },
 ];
 
 const supplierNavItems = [
@@ -23,14 +34,37 @@ const BuyerLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const isAdmin = user?.role === 'admin';
+  const roleBadge = isAdmin
+    ? {
+        label: 'Administrador',
+        icon: Shield,
+        className: 'bg-amber-500/25 border border-amber-300/40 text-amber-100',
+      }
+    : user?.role === 'expert'
+      ? {
+          label: 'Experto Nexu',
+          icon: Users,
+          className: 'bg-cyan-500/25 border border-cyan-300/40 text-cyan-100',
+        }
+    : {
+        label: 'Comprador',
+        icon: Users,
+        className: 'bg-blue-500/25 border border-blue-300/40',
+      };
 
   const navSections = isAdmin
     ? [
-        { title: 'Administrador', items: [{ to: '/admin/dashboard', label: 'Panel administrativo', icon: Shield }] },
+        {
+          title: 'Administrador',
+          items: [
+            { to: '/admin/dashboard', label: 'Panel administrativo', icon: Shield },
+            { to: '/novedades', label: 'Novedades', icon: Newspaper },
+          ],
+        },
         { title: 'Comprador', items: buyerNavItems },
         { title: 'Proveedor', items: supplierNavItems },
       ]
-    : [{ title: '', items: buyerNavItems }];
+    : [{ title: '', items: isBuyerLikeRole(user?.role) ? buyerNavItems : buyerNavItems }];
 
   const isActive = (path: string) => {
     if (path === '/buyer/directory') {
@@ -45,8 +79,16 @@ const BuyerLayout = () => {
       return location.pathname === '/community' || location.pathname.startsWith('/post/');
     }
 
+    if (path === '/buyer/sale') {
+      return location.pathname === '/buyer/sale' || location.pathname.startsWith('/buyer/sale/');
+    }
+
     if (path === '/contenido-educativo') {
-      return location.pathname === '/contenido-educativo';
+      return (
+        location.pathname === '/contenido-educativo' ||
+        location.pathname === '/empleabilidad' ||
+        location.pathname === '/nexu-experts'
+      );
     }
 
     return location.pathname === path;
@@ -61,10 +103,10 @@ const BuyerLayout = () => {
     <div className="h-screen bg-background flex overflow-hidden">
       <aside className="w-72 h-screen bg-[#0f2a5e] text-white flex flex-col overflow-hidden">
         <div className="px-4 py-4 border-b border-white/15">
-          <p className="text-xl font-bold tracking-tight">SupplyConnect</p>
-          <span className="inline-flex items-center gap-1 mt-3 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/25 border border-blue-300/40">
-            <Users className="w-3 h-3" />
-            Comprador
+          <p className="text-xl font-bold tracking-tight">Supply Nexu</p>
+          <span className={`inline-flex items-center gap-1 mt-3 px-2.5 py-1 rounded-full text-xs font-semibold ${roleBadge.className}`}>
+            <roleBadge.icon className="w-3 h-3" />
+            {roleBadge.label}
           </span>
         </div>
 
@@ -77,18 +119,50 @@ const BuyerLayout = () => {
                 </p>
               )}
               {section.items.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive(item.to)
-                      ? 'bg-white text-[#0f2a5e]'
-                      : 'text-white/85 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  <item.icon className="w-4 h-4" />
-                  {item.label}
-                </NavLink>
+                item.children ? (
+                  <div key={item.label} className="space-y-1">
+                    <NavLink
+                      to={item.to}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        isActive(item.to)
+                          ? 'bg-white text-[#0f2a5e]'
+                          : 'text-white/85 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      <item.icon className="w-4 h-4" />
+                      {item.label}
+                    </NavLink>
+                    <div className="ml-4 space-y-1 border-l border-white/10 pl-3">
+                      {item.children.map((child) => (
+                        <NavLink
+                          key={child.to}
+                          to={child.to}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            isActive(child.to)
+                              ? 'bg-white text-[#0f2a5e]'
+                              : 'text-white/75 hover:bg-white/10 hover:text-white'
+                          }`}
+                        >
+                          <child.icon className="w-4 h-4" />
+                          {child.label}
+                        </NavLink>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isActive(item.to)
+                        ? 'bg-white text-[#0f2a5e]'
+                        : 'text-white/85 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <item.icon className="w-4 h-4" />
+                    {item.label}
+                  </NavLink>
+                )
               ))}
             </div>
           ))}
@@ -114,7 +188,9 @@ const BuyerLayout = () => {
             <span className="text-sm font-medium text-foreground truncate max-w-[260px]">
               {user?.fullName ?? 'Comprador'}
             </span>
+            <MessageBell />
             <NotificationBell />
+            <NewsAccessButton />
           </div>
           <Outlet />
         </div>

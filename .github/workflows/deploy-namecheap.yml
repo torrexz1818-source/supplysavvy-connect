@@ -1,0 +1,104 @@
+name: Deploy To Namecheap cPanel
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://api.supplynexu.com' }}
+
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Build backend
+        run: npm run build
+        working-directory: backend
+
+      - name: Prepare backend package
+        run: |
+          mkdir -p .deploy/backend
+          cp backend/package.json .deploy/backend/package.json
+          cp backend/package-lock.json .deploy/backend/package-lock.json
+          cp backend/app.js .deploy/backend/app.js
+          cp -R backend/dist .deploy/backend/dist
+
+      - name: Deploy frontend to public_html
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.CPANEL_FTP_HOST }}
+          username: ${{ secrets.CPANEL_FTP_USERNAME }}
+          password: ${{ secrets.CPANEL_FTP_PASSWORD }}
+          protocol: ftps
+          port: ${{ secrets.CPANEL_FTP_PORT || 21 }}
+          local-dir: ./dist/
+          server-dir: ${{ vars.CPANEL_FRONTEND_DIR || '/public_html/' }}
+          state-name: .ftp-state-frontend.json
+
+      - name: Deploy backend bundle to app root
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.CPANEL_FTP_HOST }}
+          username: ${{ secrets.CPANEL_FTP_USERNAME }}
+          password: ${{ secrets.CPANEL_FTP_PASSWORD }}
+          protocol: ftps
+          port: ${{ secrets.CPANEL_FTP_PORT || 21 }}
+          local-dir: ./.deploy/backend/
+          server-dir: ${{ vars.CPANEL_BACKEND_DIR || '/backend/' }}
+          state-name: .ftp-state-backend.json
+
+      - name: Trigger Passenger restart
+        run: |
+          mkdir -p .deploy/restart
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .deploy/restart/restart.txt
+
+      - name: Upload restart file
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.CPANEL_FTP_HOST }}
+          username: ${{ secrets.CPANEL_FTP_USERNAME }}
+          password: ${{ secrets.CPANEL_FTP_PASSWORD }}
+          protocol: ftps
+          port: ${{ secrets.CPANEL_FTP_PORT || 21 }}
+          local-dir: ./.deploy/restart/
+          server-dir: ${{ vars.CPANEL_PASSENGER_TMP_DIR || '/api.supplynexu.com/tmp/' }}
+          state-name: .ftp-state-restart.json
+
+      - name: Install backend dependencies and restart app over SSH
+        if: ${{ secrets.CPANEL_SSH_HOST != '' }}
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.CPANEL_SSH_HOST }}
+          username: ${{ secrets.CPANEL_SSH_USERNAME }}
+          password: ${{ secrets.CPANEL_SSH_PASSWORD }}
+          port: ${{ secrets.CPANEL_SSH_PORT || 22 }}
+          script: |
+            cd ${{ vars.CPANEL_BACKEND_ABS_PATH || '/home/supptug/backend' }}
+            npm install --omit=dev
+            npm run build
+            mkdir -p ${{ vars.CPANEL_PASSENGER_TMP_ABS_PATH || '/home/supptug/api.supplynexu.com/tmp' }}
+            touch ${{ vars.CPANEL_PASSENGER_TMP_ABS_PATH || '/home/supptug/api.supplynexu.com/tmp' }}/restart.txt

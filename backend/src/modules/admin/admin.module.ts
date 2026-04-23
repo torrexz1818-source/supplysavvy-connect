@@ -11,7 +11,7 @@ import { AdminController } from './admin.controller';
     UsersModule,
     PostsModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET ?? 'dev-supplyconnect-secret',
+      secret: process.env.JWT_SECRET ?? 'dev-supplynexu-secret',
     }),
   ],
   controllers: [AdminController],

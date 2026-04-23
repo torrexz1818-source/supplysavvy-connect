@@ -10,7 +10,7 @@ import { UserRole } from '../users/domain/user-role.enum';
 import { UserStatus } from '../users/domain/user-status.enum';
 import { UsersService } from '../users/users.service';
 
-type PostType = 'educational' | 'community';
+type PostType = 'educational' | 'community' | 'liquidation';
 
 type PostCategory = {
   id: string;
@@ -25,8 +25,15 @@ type PostRecord = {
   title: string;
   description: string;
   type: PostType;
+  mediaType?: 'video' | 'image';
   videoUrl?: string;
   thumbnailUrl?: string;
+  resources?: Array<{
+    id: string;
+    type: 'image' | 'file' | 'link';
+    name: string;
+    url: string;
+  }>;
   shares: number;
   likedBy: string[];
   createdAt: Date;
@@ -83,8 +90,15 @@ type CreatePostData = {
   description: string;
   categoryId: string;
   type?: PostType;
+  mediaType?: 'video' | 'image';
   videoUrl?: string;
   thumbnailUrl?: string;
+  resources?: Array<{
+    id: string;
+    type: 'image' | 'file' | 'link';
+    name: string;
+    url: string;
+  }>;
   authorId: string;
   isAdmin: boolean;
 };
@@ -100,11 +114,21 @@ type PublicUser = {
   fullName: string;
   email: string;
   company: string;
+  commercialName?: string;
   position: string;
+  phone?: string;
+  ruc?: string;
+  sector?: string;
+  location?: string;
+  description?: string;
   role: string;
   status: string;
   points: number;
   avatarUrl?: string;
+  employeeCount?: string;
+  digitalPresence?: User['digitalPresence'];
+  buyerProfile?: User['buyerProfile'];
+  supplierProfile?: User['supplierProfile'];
   createdAt: string;
 };
 
@@ -114,8 +138,15 @@ type PostResponse = {
   category: PostCategory;
   title: string;
   description: string;
+  mediaType?: 'video' | 'image';
   videoUrl?: string;
   thumbnailUrl?: string;
+  resources?: Array<{
+    id: string;
+    type: 'image' | 'file' | 'link';
+    name: string;
+    url: string;
+  }>;
   type: PostType;
   likes: number;
   comments: number;
@@ -278,7 +309,10 @@ export class PostsService {
   }
 
   listCategories(): Promise<PostCategory[]> {
-    return this.categoriesCollection().find().sort({ name: 1 }).toArray();
+    return this.categoriesCollection()
+      .find()
+      .toArray()
+      .then((categories) => this.sortCategories(categories));
   }
 
   async listPosts(filters: ListPostsFilters) {
@@ -345,7 +379,17 @@ export class PostsService {
       throw new ForbiddenException('Only the administrator can publish educational videos');
     }
 
-    await this.ensureCategoryExists(data.categoryId);
+    const category = await this.ensureCategoryExists(data.categoryId);
+
+    if (
+      type === 'community' &&
+      this.usersService.isBuyerLikeRole(author.role) &&
+      !['tips', 'pregunta', 'recomendacion', 'experiencia'].includes(category.slug)
+    ) {
+      throw new ForbiddenException(
+        'En Comunidad solo se permiten tips, preguntas, recomendaciones y experiencias.',
+      );
+    }
 
     const now = new Date();
     const post: PostRecord = {
@@ -355,8 +399,15 @@ export class PostsService {
       title: data.title.trim(),
       description: data.description.trim(),
       type,
+      mediaType: data.mediaType ?? (data.videoUrl ? 'video' : data.thumbnailUrl ? 'image' : undefined),
       videoUrl: data.videoUrl?.trim() || undefined,
       thumbnailUrl: data.thumbnailUrl?.trim() || undefined,
+      resources: data.resources?.filter((item) => item.url?.trim() && item.name?.trim()).map((item) => ({
+        id: item.id,
+        type: item.type,
+        name: item.name.trim(),
+        url: item.url.trim(),
+      })),
       shares: 0,
       likedBy: [],
       createdAt: now,
@@ -366,35 +417,71 @@ export class PostsService {
     await this.postsCollection().insertOne(post);
 
     if (type === 'community') {
-      const recipients = await this.usersService.listActiveUserIdsByRole(UserRole.BUYER, author.id);
-      this.notificationsService.createForUsers({
-        icon: 'FileText',
-        type: 'SYSTEM',
-        title: 'Nueva publicacion en Comunidad',
-        body: `${author.company} publico: "${post.title}".`,
-        entityType: 'publication',
-        entityId: post.id,
-        fromUserId: author.id,
-        role: UserRole.BUYER,
-        userIds: recipients,
-        url: `/buyer/sale/${post.id}`,
-        time: 'Ahora',
-      });
-    } else {
-      const recipients = await this.usersService.listActiveUserIdsByRole(UserRole.BUYER, author.id);
-      this.notificationsService.createForUsers({
-        icon: 'FileText',
-        type: 'NEW_EDUCATIONAL_CONTENT',
-        title: `Nuevo contenido educativo: "${post.title}"`,
-        body: `${post.categoryId} · ${post.description.slice(0, 80)}`,
-        entityType: 'content',
-        entityId: post.id,
-        fromUserId: author.id,
-        role: UserRole.BUYER,
-        userIds: recipients,
-        url: `/contenido-educativo?highlight=${post.id}`,
-        time: 'Ahora',
-      });
+      const [buyerRecipients, supplierRecipients] = await Promise.all([
+        this.usersService.listActiveUserIdsByRoles([UserRole.BUYER, UserRole.EXPERT], author.id),
+        this.usersService.listActiveUserIdsByRole(UserRole.SUPPLIER, author.id),
+      ]);
+      await Promise.all([
+        this.notificationsService.createForUsers({
+          icon: 'FileText',
+          type: 'SYSTEM',
+          title: 'Nueva publicacion en Comunidad',
+          body: `${author.company} publico: "${post.title}".`,
+          entityType: 'publication',
+          entityId: post.id,
+          fromUserId: author.id,
+          role: UserRole.BUYER,
+          userIds: buyerRecipients,
+          url: `/buyer/community/post/${post.id}`,
+          time: 'Ahora',
+        }),
+        this.notificationsService.createForUsers({
+          icon: 'FileText',
+          type: 'SYSTEM',
+          title: 'Nueva publicacion en Comunidad',
+          body: `${author.company} publico: "${post.title}".`,
+          entityType: 'publication',
+          entityId: post.id,
+          fromUserId: author.id,
+          role: UserRole.SUPPLIER,
+          userIds: supplierRecipients,
+          url: `/buyer/community/post/${post.id}`,
+          time: 'Ahora',
+        }),
+      ]);
+    } else if (type === 'educational') {
+      const [buyerRecipients, supplierRecipients] = await Promise.all([
+        this.usersService.listActiveUserIdsByRoles([UserRole.BUYER, UserRole.EXPERT], author.id),
+        this.usersService.listActiveUserIdsByRole(UserRole.SUPPLIER, author.id),
+      ]);
+      await Promise.all([
+        this.notificationsService.createForUsers({
+          icon: 'FileText',
+          type: 'NEW_EDUCATIONAL_CONTENT',
+          title: `Nuevo contenido educativo: "${post.title}"`,
+          body: `${post.categoryId} - ${post.description.slice(0, 80)}`,
+          entityType: 'content',
+          entityId: post.id,
+          fromUserId: author.id,
+          role: UserRole.BUYER,
+          userIds: buyerRecipients,
+          url: `/contenido-educativo?highlight=${post.id}`,
+          time: 'Ahora',
+        }),
+        this.notificationsService.createForUsers({
+          icon: 'FileText',
+          type: 'NEW_EDUCATIONAL_CONTENT',
+          title: `Nuevo contenido educativo: "${post.title}"`,
+          body: `${post.categoryId} - ${post.description.slice(0, 80)}`,
+          entityType: 'content',
+          entityId: post.id,
+          fromUserId: author.id,
+          role: UserRole.SUPPLIER,
+          userIds: supplierRecipients,
+          url: `/post/${post.id}`,
+          time: 'Ahora',
+        }),
+      ]);
     }
 
     const categoriesMap = await this.createCategoriesMap([post.categoryId]);
@@ -422,15 +509,19 @@ export class PostsService {
     const post = await this.findPost(postId);
     const author = await this.usersService.requireActiveUser(data.authorId);
     const postAuthor = await this.usersService.findById(post.authorId);
+    const parentComment = data.parentId
+      ? await this.commentsCollection().findOne({ id: data.parentId, postId })
+      : null;
+    const parentCommentAuthor = parentComment
+      ? await this.usersService.findById(parentComment.userId)
+      : null;
 
-    if (post.type === 'community' && author.role !== UserRole.BUYER) {
-      throw new ForbiddenException('Solo compradores pueden comentar en Comunidad');
+    if (post.type === 'community' && author.role === UserRole.ADMIN) {
+      throw new ForbiddenException('Solo compradores y proveedores pueden comentar en Comunidad');
     }
 
     if (data.parentId) {
-      const parent = await this.commentsCollection().findOne({ id: data.parentId, postId });
-
-      if (!parent) {
+      if (!parentComment) {
         throw new NotFoundException('Parent comment not found');
       }
     }
@@ -464,7 +555,29 @@ export class PostsService {
         fromUserId: author.id,
         role: postAuthor.role,
         userId: postAuthor.id,
-        url: `/publicaciones?highlight=${post.id}&expand=messages`,
+        url: this.getPostNotificationUrl(post),
+        time: 'Ahora',
+      });
+    }
+
+    if (
+      parentComment &&
+      parentCommentAuthor &&
+      parentCommentAuthor.id !== author.id &&
+      parentCommentAuthor.id !== postAuthor?.id &&
+      (parentCommentAuthor.role === UserRole.BUYER || parentCommentAuthor.role === UserRole.SUPPLIER)
+    ) {
+      this.notificationsService.create({
+        icon: 'MessageCircle',
+        type: 'COMMENT_PUBLICATION',
+        title: `${author.fullName} respondio tu comentario en "${post.title}"`,
+        body: comment.content.slice(0, 80),
+        entityType: 'publication',
+        entityId: post.id,
+        fromUserId: author.id,
+        role: parentCommentAuthor.role,
+        userId: parentCommentAuthor.id,
+        url: this.getPostNotificationUrl(post),
         time: 'Ahora',
       });
     }
@@ -566,8 +679,8 @@ export class PostsService {
 
     const [posts, messages] = await Promise.all([
       isAdmin
-        ? this.postsCollection().find({}).sort({ createdAt: -1 }).toArray()
-        : this.postsCollection().find({ authorId: supplierId }).sort({ createdAt: -1 }).toArray(),
+        ? this.postsCollection().find({ type: 'liquidation' }).sort({ createdAt: -1 }).toArray()
+        : this.postsCollection().find({ authorId: supplierId, type: 'liquidation' }).sort({ createdAt: -1 }).toArray(),
       isAdmin
         ? this.messagesCollection().find({}).sort({ createdAt: 1 }).toArray()
         : this.messagesCollection().find({ supplierId }).sort({ createdAt: 1 }).toArray(),
@@ -819,9 +932,17 @@ export class PostsService {
     const categoriesMap = await this.createCategoriesMap(posts.map((post) => post.categoryId));
     const commentsCountMap = await this.createCommentsCountMap(posts.map((post) => post.id));
 
-    return posts.map((post) =>
-      this.mapPostFromMaps(post, viewerId, usersMap, categoriesMap, commentsCountMap),
-    );
+    return posts.flatMap((post) => {
+      const mapped = this.tryMapPostFromMaps(
+        post,
+        viewerId,
+        usersMap,
+        categoriesMap,
+        commentsCountMap,
+      );
+
+      return mapped ? [mapped] : [];
+    });
   }
 
   private mapPostFromMaps(
@@ -837,8 +958,10 @@ export class PostsService {
       category: this.getRequiredCategoryFromMap(categoriesMap, post.categoryId),
       title: post.title,
       description: post.description,
+      mediaType: post.mediaType,
       videoUrl: post.videoUrl,
       thumbnailUrl: post.thumbnailUrl,
+      resources: post.resources ?? [],
       type: post.type,
       likes: post.likedBy.length,
       comments: commentsCountMap.get(post.id) ?? 0,
@@ -856,7 +979,7 @@ export class PostsService {
     const byParent = new Map<string | undefined, CommentRecord[]>();
 
     comments.forEach((comment) => {
-      const key = comment.parentId;
+      const key = comment.parentId ?? undefined;
       const items = byParent.get(key) ?? [];
       items.push(comment);
       byParent.set(key, items);
@@ -911,6 +1034,12 @@ export class PostsService {
         return [];
       }
 
+      const author = authorMap.get(post.authorId);
+
+      if (!author) {
+        return [];
+      }
+
       return [
         {
           id: lesson.id,
@@ -921,10 +1050,55 @@ export class PostsService {
           thumbnailUrl: post.thumbnailUrl ?? '',
           duration: lesson.duration,
           progress: lesson.progress,
-          author: this.mapUserFromMap(authorMap, post.authorId),
+          author: this.mapUser(author),
         },
       ];
     });
+  }
+
+  private tryMapPostFromMaps(
+    post: PostRecord,
+    viewerId: string | undefined,
+    usersMap: Map<string, User>,
+    categoriesMap: Map<string, PostCategory>,
+    commentsCountMap: Map<string, number>,
+  ): PostResponse | null {
+    const author = usersMap.get(post.authorId);
+    const category = categoriesMap.get(post.categoryId);
+
+    if (!author || !category) {
+      return null;
+    }
+
+    return {
+      id: post.id,
+      author: this.mapUser(author),
+      category,
+      title: post.title,
+      description: post.description,
+      mediaType: post.mediaType,
+      videoUrl: post.videoUrl,
+      thumbnailUrl: post.thumbnailUrl,
+      resources: post.resources ?? [],
+      type: post.type,
+      likes: post.likedBy.length,
+      comments: commentsCountMap.get(post.id) ?? 0,
+      shares: post.shares,
+      isLiked: viewerId ? post.likedBy.includes(viewerId) : false,
+      createdAt: post.createdAt.toISOString(),
+    };
+  }
+
+  private getPostNotificationUrl(post: PostRecord): string {
+    if (post.type === 'community') {
+      return `/buyer/community/post/${post.id}`;
+    }
+
+    if (post.type === 'educational') {
+      return `/post/${post.id}`;
+    }
+
+    return `/publicaciones?highlight=${post.id}&expand=messages`;
   }
 
   private async buildCommunityActivityByDay(startDate: Date): Promise<HomeActivityPoint[]> {
@@ -981,12 +1155,14 @@ export class PostsService {
     return post;
   }
 
-  private async ensureCategoryExists(categoryId: string): Promise<void> {
+  private async ensureCategoryExists(categoryId: string): Promise<PostCategory> {
     const category = await this.categoriesCollection().findOne({ id: categoryId });
 
     if (!category) {
       throw new NotFoundException('Category not found');
     }
+
+    return category;
   }
 
   private async createUsersMap(userIds: string[]): Promise<Map<string, User>> {
@@ -1027,11 +1203,21 @@ export class PostsService {
       fullName: user.fullName,
       email: user.email,
       company: user.company,
+      commercialName: user.commercialName,
       position: user.position,
+      phone: user.phone,
+      ruc: user.ruc,
+      sector: user.sector,
+      location: user.location,
+      description: user.description,
       role: user.role,
       status: user.status,
       points: user.points,
       avatarUrl: user.avatarUrl,
+      employeeCount: user.employeeCount,
+      digitalPresence: user.digitalPresence,
+      buyerProfile: user.buyerProfile,
+      supplierProfile: user.supplierProfile,
       createdAt: user.createdAt.toISOString(),
     };
   }
@@ -1098,5 +1284,22 @@ export class PostsService {
 
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  private sortCategories(categories: PostCategory[]): PostCategory[] {
+    const preferredOrder = ['cat-1', 'cat-5', 'cat-2', 'cat-3', 'cat-6', 'cat-7', 'cat-4'];
+
+    return [...categories].sort((left, right) => {
+      const leftIndex = preferredOrder.indexOf(left.id);
+      const rightIndex = preferredOrder.indexOf(right.id);
+
+      if (leftIndex !== -1 || rightIndex !== -1) {
+        if (leftIndex === -1) return 1;
+        if (rightIndex === -1) return -1;
+        return leftIndex - rightIndex;
+      }
+
+      return left.name.localeCompare(right.name);
+    });
   }
 }

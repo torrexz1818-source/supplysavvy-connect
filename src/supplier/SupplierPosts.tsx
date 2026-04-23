@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ImagePlus, Send } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -6,19 +6,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { createPost, getSupplierPublications, sendMessage } from '@/lib/api';
+import { createPost, getSupplierPublications, sendMessage, uploadFile } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { PublicationMessage } from '@/types';
 import { useHighlight } from '@/hooks/useHighlight';
-
-async function toDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ''));
-    reader.onerror = () => reject(new Error('No se pudo leer la imagen seleccionada.'));
-    reader.readAsDataURL(file);
-  });
-}
 
 const SupplierPosts = () => {
   const navigate = useNavigate();
@@ -34,7 +25,6 @@ const SupplierPosts = () => {
   const [url, setUrl] = useState('');
   const [imagen, setImagen] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [imagePayload, setImagePayload] = useState<string | undefined>(undefined);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [published, setPublished] = useState(false);
@@ -48,15 +38,18 @@ const SupplierPosts = () => {
   });
 
   const createMutation = useMutation({
-    mutationFn: async () =>
-      createPost({
-        title: titulo.trim() || 'Publicacion del proveedor',
+    mutationFn: async () => {
+      const uploadedImage = imagen ? await uploadFile(imagen, 'posts') : null;
+
+      return createPost({
+        title: titulo.trim() || 'Liquidacion del proveedor',
         description: descripcion.trim() || 'Sin descripcion.',
-        categoryId: 'cat-3',
-        type: 'community',
+        categoryId: 'cat-6',
+        type: 'liquidation',
         videoUrl: url.trim() || undefined,
-        thumbnailUrl: imagePayload,
-      }),
+        thumbnailUrl: uploadedImage?.url,
+      });
+    },
     onSuccess: async () => {
       setPublished(true);
       setFeedback('');
@@ -65,7 +58,6 @@ const SupplierPosts = () => {
       setUrl('');
       setImagen(null);
       setPreview(null);
-      setImagePayload(undefined);
       await queryClient.invalidateQueries({ queryKey: ['sale-feed-posts'] });
       await queryClient.invalidateQueries({ queryKey: ['community-posts'] });
       await queryClient.invalidateQueries({ queryKey: ['supplier-publications', user?.id] });
@@ -75,6 +67,14 @@ const SupplierPosts = () => {
       setFeedback(error.message);
     },
   });
+
+  useEffect(() => {
+    return () => {
+      if (preview?.startsWith('blob:')) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [preview]);
 
   const replyMutation = useMutation({
     mutationFn: async (message: PublicationMessage) => {
@@ -100,17 +100,19 @@ const SupplierPosts = () => {
     },
   });
 
-  const handleImagen = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImagen = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
       return;
     }
 
     try {
-      const dataUrl = await toDataUrl(file);
+      if (preview?.startsWith('blob:')) {
+        URL.revokeObjectURL(preview);
+      }
+
       setImagen(file);
-      setPreview(dataUrl);
-      setImagePayload(dataUrl);
+      setPreview(URL.createObjectURL(file));
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : 'No se pudo cargar la imagen.');
     }
@@ -143,23 +145,23 @@ const SupplierPosts = () => {
 
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
-      <h1 className="text-xl font-bold text-foreground mb-1">Publicaciones del proveedor</h1>
+      <h1 className="text-xl font-bold text-foreground mb-1">Liquidaciones del proveedor</h1>
       <p className="text-sm text-muted-foreground mb-6">
-        Crea actualizaciones y revisa mensajes privados por cada publicación.
+        Publica liquidaciones y revisa los mensajes privados asociados a cada oportunidad.
       </p>
 
       <div className="bg-card border border-border rounded-xl p-5 mb-8">
         <Input
           value={titulo}
           onChange={(event) => setTitulo(event.target.value)}
-          placeholder="Titulo de la publicacion"
+          placeholder="Titulo de la liquidacion"
           className="mb-3"
         />
 
         <Textarea
           value={descripcion}
           onChange={(event) => setDescripcion(event.target.value)}
-          placeholder="Describe tu promocion, servicio o novedad"
+          placeholder="Describe el stock, condiciones, cantidades o vigencia"
           rows={4}
           className="resize-none mb-3"
         />
@@ -172,8 +174,8 @@ const SupplierPosts = () => {
         />
 
         {preview && (
-          <div className="mb-3 rounded-lg overflow-hidden border border-border">
-            <img src={preview} alt="Preview" className="w-full max-h-48 object-cover" />
+          <div className="mb-3 rounded-lg overflow-hidden border border-border bg-muted/30">
+            <img src={preview} alt="Preview" className="w-full max-h-64 object-contain mx-auto" />
           </div>
         )}
 
@@ -183,7 +185,7 @@ const SupplierPosts = () => {
           <input type="file" accept="image/*" className="hidden" onChange={handleImagen} />
         </label>
 
-        {published && <p className="text-sm text-green-600 mb-3">Publicacion publicada exitosamente.</p>}
+        {published && <p className="text-sm text-green-600 mb-3">Liquidacion publicada exitosamente.</p>}
         {feedback && !published && <p className="text-sm text-emerald-700 mb-3">{feedback}</p>}
 
         <Button
@@ -192,16 +194,16 @@ const SupplierPosts = () => {
           className="bg-primary text-primary-foreground"
           size="sm"
         >
-          {createMutation.isPending ? 'Publicando...' : 'Publicar'}
+          {createMutation.isPending ? 'Publicando...' : 'Publicar liquidacion'}
         </Button>
       </div>
 
       <h2 className="text-sm font-semibold text-foreground mb-4 tracking-wide uppercase">
-        Publicaciones anteriores
+        Liquidaciones anteriores
       </h2>
 
       {publicationsQuery.isLoading && (
-        <p className="text-sm text-muted-foreground mb-4">Cargando publicaciones...</p>
+        <p className="text-sm text-muted-foreground mb-4">Cargando liquidaciones...</p>
       )}
 
       <div className="flex flex-col gap-5">
@@ -244,11 +246,11 @@ const SupplierPosts = () => {
               </div>
 
               {publication.image && (
-                <div className="mb-4 rounded-lg overflow-hidden border border-border">
+                <div className="mb-4 rounded-lg overflow-hidden border border-border bg-muted/30">
                   <img
                     src={publication.image}
                     alt={`Imagen de ${publication.title}`}
-                    className="w-full max-h-56 object-cover"
+                    className="w-full max-h-80 object-contain mx-auto"
                   />
                 </div>
               )}

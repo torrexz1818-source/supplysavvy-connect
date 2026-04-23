@@ -5,15 +5,41 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import BackButton from '@/components/BackButton';
 import {
+  createConversation,
+  getBuyerById,
+  getConversationByPair,
   getPostDetail,
   getPosts,
   getSupplierById,
   getSupplierReviews,
-  sendMessage,
+  sendConversationMessage,
   togglePostLike,
 } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+
+function isLiquidationPost(title: string, description: string, categorySlug: string) {
+  if (categorySlug === 'liquidaciones') {
+    return true;
+  }
+
+  const haystack = `${title} ${description}`.toLowerCase();
+  return [
+    'liquidacion',
+    'venta de',
+    'stock',
+    'ultimas',
+    'ultimos',
+    'unidades',
+    'palet',
+    'palets',
+    'pallet',
+    'pallets',
+    'dispensador',
+    'dispensadores',
+  ].some((keyword) => haystack.includes(keyword));
+}
 
 const SaleDetailPage = () => {
   const navigate = useNavigate();
@@ -25,18 +51,22 @@ const SaleDetailPage = () => {
 
   const { data: posts = [] } = useQuery({
     queryKey: ['sale-feed-posts'],
-    queryFn: () => getPosts({ type: 'community' }),
+    queryFn: () => getPosts({ type: 'liquidation' }),
   });
 
-  const supplierPosts = useMemo(
-    () => posts.filter((post) => post.author.role === 'supplier'),
+  const liquidationPosts = useMemo(
+    () =>
+      posts.filter((post) => isLiquidationPost(post.title, post.description, post.category.slug)),
     [posts],
   );
 
   const selectedPost = useMemo(
-    () => supplierPosts.find((post) => post.id === id) ?? supplierPosts[0] ?? null,
-    [supplierPosts, id],
+    () => liquidationPosts.find((post) => post.id === id) ?? liquidationPosts[0] ?? null,
+    [liquidationPosts, id],
   );
+
+  const saleListPath = user?.role === 'supplier' ? '/supplier/sale' : '/buyer/sale';
+  const isSupplierAuthor = selectedPost?.author.role === 'supplier';
 
   const postDetailQuery = useQuery({
     queryKey: ['post-detail', selectedPost?.id],
@@ -44,16 +74,19 @@ const SaleDetailPage = () => {
     enabled: Boolean(selectedPost?.id),
   });
 
-  const supplierProfileQuery = useQuery({
-    queryKey: ['supplier-profile', selectedPost?.author.id],
-    queryFn: () => getSupplierById(selectedPost?.author.id ?? ''),
+  const authorProfileQuery = useQuery({
+    queryKey: ['sale-author-profile', selectedPost?.author.role, selectedPost?.author.id],
+    queryFn: () =>
+      isSupplierAuthor
+        ? getSupplierById(selectedPost?.author.id ?? '')
+        : getBuyerById(selectedPost?.author.id ?? ''),
     enabled: Boolean(selectedPost?.author.id),
   });
 
   const supplierReviewsQuery = useQuery({
     queryKey: ['supplier-reviews', selectedPost?.author.id],
     queryFn: () => getSupplierReviews(selectedPost?.author.id ?? ''),
-    enabled: Boolean(selectedPost?.author.id),
+    enabled: Boolean(selectedPost?.author.id && isSupplierAuthor),
   });
 
   const likeMutation = useMutation({
@@ -69,15 +102,40 @@ const SaleDetailPage = () => {
       if (!selectedPost || !mensaje.trim()) {
         return;
       }
-      return sendMessage({
-        supplierId: selectedPost.author.id,
+      if (!user?.id) {
+        throw new Error('Sesion no disponible');
+      }
+      if (user.role === selectedPost.author.role) {
+        throw new Error('Solo puedes contactar publicaciones del perfil opuesto.');
+      }
+
+      const buyerId = selectedPost.author.role === 'buyer' ? selectedPost.author.id : user.id;
+      const supplierId = selectedPost.author.role === 'supplier' ? selectedPost.author.id : user.id;
+      const existing = await getConversationByPair(buyerId, supplierId, selectedPost.id);
+      const conversation = existing ?? await createConversation({
+        toUserId: selectedPost.author.id,
         publicationId: selectedPost.id,
-        message: mensaje.trim(),
       });
+
+      await sendConversationMessage(conversation.id, {
+        message: mensaje.trim(),
+        attachments: [
+          {
+            id: crypto.randomUUID(),
+            kind: 'publication',
+            name: selectedPost.title,
+            publicationId: selectedPost.id,
+            description: selectedPost.description,
+            thumbnailUrl: selectedPost.thumbnailUrl,
+          },
+        ],
+      });
+      return conversation;
     },
-    onSuccess: () => {
-      setFeedback('Mensaje enviado al proveedor.');
+    onSuccess: (conversation) => {
       setMensaje('');
+      setFeedback('');
+      navigate(`/mensajes?conversationId=${conversation.id}`);
     },
     onError: (error: Error) => {
       setFeedback(error.message);
@@ -85,22 +143,25 @@ const SaleDetailPage = () => {
   });
 
   if (!selectedPost) {
-    return <p className="text-sm text-muted-foreground px-6 py-8">No hay publicaciones de proveedores.</p>;
+    return <p className="text-sm text-muted-foreground px-6 py-8">No hay liquidaciones activas.</p>;
   }
 
-  const supplier = supplierProfileQuery.data;
+  const authorProfile = authorProfileQuery.data;
   const supplierReviews = supplierReviewsQuery.data ?? [];
   const comments = postDetailQuery.data?.comments ?? [];
+  const authorRoleLabel = isSupplierAuthor ? 'proveedor' : 'comprador';
+  const canContact = user?.role !== selectedPost.author.role && user?.role !== 'admin';
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
+      <BackButton fallback={saleListPath} className="mb-4" />
       <h1 className="text-2xl font-bold text-foreground mb-6">Liquidaciones</h1>
 
       <div className="flex gap-3 mb-6 overflow-x-auto pb-2">
-        {supplierPosts.map((post) => (
+        {liquidationPosts.map((post) => (
           <button
             key={post.id}
-            onClick={() => navigate(`/buyer/sale/${post.id}`)}
+            onClick={() => navigate(user?.role === 'supplier' ? `/supplier/sale/${post.id}` : `/buyer/sale/${post.id}`)}
             className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
               selectedPost.id === post.id
                 ? 'bg-primary text-primary-foreground border-primary'
@@ -135,12 +196,12 @@ const SaleDetailPage = () => {
             <div>
               <button
                 type="button"
-                onClick={() => navigate(`/buyer/user/supplier/${selectedPost.author.id}`)}
+                onClick={() => navigate(`/perfil/${selectedPost.author.role}/${selectedPost.author.id}`)}
                 className="text-sm font-semibold text-foreground leading-tight hover:text-primary"
               >
                 {selectedPost.author.company}
               </button>
-              <p className="text-xs text-muted-foreground">{supplier?.location ?? 'Sin ubicacion'}</p>
+              <p className="text-xs text-muted-foreground">{authorProfile?.location ?? 'Sin ubicacion'}</p>
             </div>
           </div>
 
@@ -155,19 +216,19 @@ const SaleDetailPage = () => {
                 rel="noreferrer"
                 className="text-sm text-primary hover:underline inline-block mt-3"
               >
-                Ver enlace del proveedor
+                Ver enlace de la publicacion
               </a>
             )}
           </div>
 
           <div className="px-4 pb-4 border-t border-border pt-4">
             <p className="text-xs font-medium text-muted-foreground mb-2">
-              Contactar proveedor
+              {canContact ? `Contactar ${authorRoleLabel}` : `Publicacion del ${authorRoleLabel}`}
             </p>
             <Textarea
               value={mensaje}
               onChange={(e) => setMensaje(e.target.value)}
-              placeholder="Escribe tu mensaje para contactar al proveedor..."
+              placeholder={`Escribe tu mensaje para contactar al ${authorRoleLabel}...`}
               className="text-sm resize-none mb-2"
               rows={3}
             />
@@ -175,8 +236,8 @@ const SaleDetailPage = () => {
               size="sm"
               className="w-full"
               onClick={() => {
-                if (user?.role !== 'buyer') {
-                  setFeedback('Solo compradores pueden contactar en Liquidaciones.');
+                if (!canContact) {
+                  setFeedback(`Solo el perfil opuesto puede contactar a este ${authorRoleLabel}.`);
                   return;
                 }
                 contactMutation.mutate();
@@ -184,7 +245,7 @@ const SaleDetailPage = () => {
               disabled={!mensaje.trim() || contactMutation.isPending}
             >
               <Send className="w-3.5 h-3.5 mr-1.5" />
-              {contactMutation.isPending ? 'Enviando...' : 'Contactar'}
+              {contactMutation.isPending ? 'Enviando...' : `Contactar ${authorRoleLabel}`}
             </Button>
           </div>
 
@@ -222,36 +283,38 @@ const SaleDetailPage = () => {
           <div className="bg-card border border-border rounded-xl p-4">
             <button
               type="button"
-              onClick={() => navigate(`/buyer/user/supplier/${selectedPost.author.id}`)}
+              onClick={() => navigate(`/perfil/${selectedPost.author.role}/${selectedPost.author.id}`)}
               className="font-semibold text-foreground mb-1 hover:text-primary"
             >
               {selectedPost.author.company}
             </button>
             <p className="text-xs text-muted-foreground mb-3">
-              {supplier?.description ?? 'Sin descripcion registrada.'}
+              {authorProfile?.description ?? 'Sin descripcion registrada.'}
             </p>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-              {supplier?.location ?? 'Sin ubicacion'}
+              {authorProfile?.location ?? 'Sin ubicacion'}
             </div>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="secondary" className="text-xs">
-                {supplier?.sector ?? selectedPost.author.sector ?? 'General'}
+                {authorProfile?.sector ?? selectedPost.author.sector ?? 'General'}
               </Badge>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                <span className="font-medium text-foreground">{supplier?.averageRating ?? 0}</span>
-                <span>({supplier?.reviewsCount ?? 0})</span>
-              </div>
+              {isSupplierAuthor && authorProfile && 'averageRating' in authorProfile && 'reviewsCount' in authorProfile && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                  <span className="font-medium text-foreground">{authorProfile.averageRating ?? 0}</span>
+                  <span>({authorProfile.reviewsCount ?? 0})</span>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="bg-card border border-border rounded-xl p-4">
             <p className="text-sm font-semibold text-foreground mb-3">
-              Comentarios de compradores
+              {isSupplierAuthor ? 'Comentarios de compradores' : 'Comentarios de la publicacion'}
             </p>
             <div className="flex flex-col gap-3">
-              {supplierReviews.length > 0
+              {isSupplierAuthor && supplierReviews.length > 0
                 ? supplierReviews.map((c) => (
                     <div key={c.id} className="flex items-start gap-2">
                       <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground flex-shrink-0">
@@ -269,7 +332,7 @@ const SaleDetailPage = () => {
                         </div>
                         <button
                           type="button"
-                          onClick={() => navigate(`/buyer/user/buyer/${c.buyer.id}`)}
+                          onClick={() => navigate(`/perfil/buyer/${c.buyer.id}`)}
                           className="text-xs text-muted-foreground hover:text-primary"
                         >
                           {c.buyer.company}
@@ -288,7 +351,7 @@ const SaleDetailPage = () => {
                           type="button"
                           onClick={() => {
                             if (c.user.role === 'buyer' || c.user.role === 'supplier') {
-                              navigate(`/buyer/user/${c.user.role}/${c.user.id}`);
+                              navigate(`/perfil/${c.user.role}/${c.user.id}`);
                             }
                           }}
                           className="text-xs font-medium text-foreground truncate hover:text-primary"
@@ -299,7 +362,7 @@ const SaleDetailPage = () => {
                           type="button"
                           onClick={() => {
                             if (c.user.role === 'buyer' || c.user.role === 'supplier') {
-                              navigate(`/buyer/user/${c.user.role}/${c.user.id}`);
+                              navigate(`/perfil/${c.user.role}/${c.user.id}`);
                             }
                           }}
                           className="text-xs text-muted-foreground hover:text-primary"
@@ -310,6 +373,16 @@ const SaleDetailPage = () => {
                       </div>
                     </div>
                   ))}
+              {!isSupplierAuthor && comments.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Aun no hay comentarios para esta publicacion.
+                </p>
+              )}
+              {isSupplierAuthor && supplierReviews.length === 0 && comments.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Aun no hay comentarios para este proveedor.
+                </p>
+              )}
             </div>
           </div>
         </div>

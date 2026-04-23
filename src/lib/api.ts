@@ -4,6 +4,7 @@ import {
   BuyerDirectoryItem,
   BuyerProfile,
   SupplierDirectoryItem,
+  SupplierOnboardingSession,
   SupplierProfileData,
   SupplierReview,
   SupplierSector,
@@ -11,25 +12,41 @@ import {
   Comment,
   ConversationMessage,
   ConversationSummary,
+  MessageAttachment,
   HomeFeed,
   NotificationItem,
+  NewsComment,
+  NewsPost,
   MonthlyReport,
   Post,
   PostCategory,
+  PostResource,
   PostDetailData,
   PlatformStats,
   SupplierPublication,
-  SupplierInboxMessage,
+  ExpertAppointment,
+  ExpertAvailability,
+  ExpertAvailabilitySettings,
+  ExpertCalendarConnectionStatus,
+  ExpertProfile,
+  ExpertSummary,
+  Agent,
+  AgentExecution,
+  EmployabilityFeed,
+  EmployabilityJob,
+  EmployabilityTalentProfile,
   User,
   UserStatus,
 } from '@/types';
 
 const RAW_API_BASE_URL = import.meta.env.VITE_API_URL?.trim() || '/api';
+const DEFAULT_PRODUCTION_API_URL = 'https://api.supplynexu.com';
+
 const API_BASE_URL = RAW_API_BASE_URL.endsWith('/')
   ? RAW_API_BASE_URL.slice(0, -1)
   : RAW_API_BASE_URL;
 
-const TOKEN_KEY = 'supplyconnect_token';
+const TOKEN_KEY = 'supplynexu_token';
 
 type RequestOptions = RequestInit & {
   auth?: boolean;
@@ -57,6 +74,33 @@ type ForgotPasswordVerifyResponse = {
   resetToken: string;
 };
 
+type SupplierOnboardingSessionResponse = {
+  session: SupplierOnboardingSession;
+};
+
+type UploadedFileResponse = {
+  file: {
+    url: string;
+    name: string;
+    mimeType?: string;
+    size?: number;
+  };
+};
+
+type NewsListResponse = {
+  items: NewsPost[];
+};
+
+type NewsPostMutationResponse = {
+  post: NewsPost;
+};
+
+type NewsCommentMutationResponse = {
+  comment: NewsComment;
+};
+
+const ADMIN_VIDEO_CHUNK_SIZE = 8 * 1024 * 1024;
+
 export function getStoredToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -75,11 +119,69 @@ function buildUrl(path: string) {
   return `${API_BASE_URL}${normalizedPath}`;
 }
 
+function isPrivateIpv4Host(hostname: string) {
+  if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
+    return false;
+  }
+
+  const octets = hostname.split('.').map((part) => Number(part));
+
+  if (octets.some((octet) => Number.isNaN(octet) || octet < 0 || octet > 255)) {
+    return false;
+  }
+
+  return (
+    octets[0] === 10 ||
+    octets[0] === 127 ||
+    (octets[0] === 169 && octets[1] === 254) ||
+    (octets[0] === 192 && octets[1] === 168) ||
+    (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31)
+  );
+}
+
+function getFallbackBaseUrls() {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  const isLocalEnvironment =
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    isPrivateIpv4Host(window.location.hostname);
+
+  if (!isLocalEnvironment) {
+    return API_BASE_URL === '/api' ? [DEFAULT_PRODUCTION_API_URL] : [];
+  }
+
+  return ['http://127.0.0.1:10000', 'http://localhost:10000'].filter(
+    (baseUrl) => baseUrl !== API_BASE_URL,
+  );
+}
+
+async function performFetch(url: string, options: RequestInit) {
+  return fetch(url, options);
+}
+
+async function tryFallbackFetch(path: string, options: RequestInit) {
+  const fallbackBaseUrls = getFallbackBaseUrls();
+
+  for (const fallbackBaseUrl of fallbackBaseUrls) {
+    try {
+      const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+      return await performFetch(`${fallbackBaseUrl}${normalizedPath}`, options);
+    } catch {
+      // keep trying fallback URLs
+    }
+  }
+
+  return null;
+}
+
 async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const headers = new Headers(options.headers);
   headers.set('Accept', 'application/json');
 
-  if (options.body && !headers.has('Content-Type')) {
+  if (options.body && !(options.body instanceof FormData) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
 
@@ -91,10 +193,37 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
     }
   }
 
-  const response = await fetch(buildUrl(path), {
+  const requestOptions = {
     ...options,
     headers,
-  });
+  };
+
+  let response: Response;
+
+  try {
+    response = await performFetch(buildUrl(path), requestOptions);
+  } catch (primaryError) {
+    const fallbackResponse = await tryFallbackFetch(path, requestOptions);
+    if (!fallbackResponse) {
+      if (typeof window !== 'undefined') {
+        throw new Error(
+          'No se pudo conectar con el servidor. Verifica que el backend este encendido en http://127.0.0.1:10000.',
+        );
+      }
+
+      throw primaryError;
+    }
+
+    response = fallbackResponse;
+  }
+
+  if (!response.ok && response.status >= 500) {
+    const fallbackResponse = await tryFallbackFetch(path, requestOptions);
+
+    if (fallbackResponse) {
+      response = fallbackResponse;
+    }
+  }
 
   if (!response.ok) {
     let message = 'No se pudo completar la solicitud';
@@ -118,7 +247,13 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
     return undefined as T;
   }
 
-  return response.json() as Promise<T>;
+  const raw = await response.text();
+
+  if (!raw.trim()) {
+    return undefined as T;
+  }
+
+  return JSON.parse(raw) as T;
 }
 
 function buildQuery(params: Record<string, string | undefined>) {
@@ -144,13 +279,65 @@ export async function login(payload: { email: string; password: string }) {
 export async function register(payload: {
   fullName: string;
   company: string;
+  commercialName?: string;
   position: string;
   ruc?: string;
   phone?: string;
   sector?: string;
   location?: string;
   description?: string;
-  role?: 'buyer' | 'supplier';
+  employeeCount?: string;
+  digitalPresence?: {
+    linkedin?: string;
+    website?: string;
+    whatsapp?: string;
+    instagram?: string;
+  };
+  buyerProfile?: {
+    interestCategories?: string[];
+    purchaseVolume?: string;
+    isCompanyDigitalized?: string;
+    usesGenerativeAI?: string;
+  };
+  supplierProfile?: {
+    supplierType?: string;
+    productsOrServices?: string[];
+    hasDigitalCatalog?: string;
+    isCompanyDigitalized?: string;
+    usesGenerativeAI?: string;
+    coverage?: string;
+    province?: string;
+    district?: string;
+    yearsInMarket?: string;
+  };
+  supplierOnboarding?: {
+    sessionId: string;
+  };
+  expertProfile?: {
+    weeklyAvailability?: Array<{
+      day: string;
+      enabled: boolean;
+      slots: Array<{
+        id: string;
+        startTime: string;
+        endTime: string;
+      }>;
+    }>;
+    currentProfessionalProfile?: string;
+    industry?: string;
+    specialty?: string;
+    experience?: string;
+    skills?: string[];
+    biography?: string;
+    companies?: string;
+    education?: string;
+    achievements?: string;
+    photo?: string;
+    service?: string;
+    availabilityDays?: string[];
+    googleCalendarConnected?: boolean;
+  };
+  role?: 'buyer' | 'supplier' | 'expert';
   email: string;
   password: string;
 }) {
@@ -158,6 +345,40 @@ export async function register(payload: {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+}
+
+export async function createSupplierOnboardingSession(existingSessionId?: string) {
+  const data = await apiRequest<SupplierOnboardingSessionResponse>(
+    '/auth/supplier-onboarding/session',
+    {
+      method: 'POST',
+      body: JSON.stringify(
+        existingSessionId ? { sessionId: existingSessionId } : {},
+      ),
+    },
+  );
+  return data.session;
+}
+
+export async function getSupplierOnboardingSession(sessionId: string) {
+  const data = await apiRequest<SupplierOnboardingSessionResponse>(
+    `/auth/supplier-onboarding/session/${sessionId}`,
+  );
+  return data.session;
+}
+
+export async function registerSupplierOnboardingShare(
+  sessionId: string,
+  payload: { method?: 'copy' | 'native' },
+) {
+  const data = await apiRequest<SupplierOnboardingSessionResponse>(
+    `/auth/supplier-onboarding/session/${sessionId}/share`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+  );
+  return data.session;
 }
 
 export async function getMe() {
@@ -175,7 +396,7 @@ export async function getCategories() {
 }
 
 export async function getPosts(params: {
-  type?: 'educational' | 'community';
+  type?: 'educational' | 'community' | 'liquidation';
   search?: string;
   categoryId?: string;
 }) {
@@ -199,15 +420,36 @@ export async function createPost(payload: {
   title: string;
   description: string;
   categoryId: string;
-  type?: 'educational' | 'community';
+  type?: 'educational' | 'community' | 'liquidation';
+  mediaType?: 'video' | 'image';
   videoUrl?: string;
   thumbnailUrl?: string;
+  resources?: PostResource[];
 }) {
   return apiRequest<PostMutationResponse>('/posts', {
     method: 'POST',
     auth: true,
     body: JSON.stringify(payload),
   });
+}
+
+export async function uploadFile(
+  file: File,
+  purpose: 'general' | 'messages' | 'posts' | 'resources' = 'general',
+) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const data = await apiRequest<UploadedFileResponse>(
+    `/uploads/file${buildQuery({ purpose })}`,
+    {
+      method: 'POST',
+      auth: true,
+      body: formData,
+    },
+  );
+
+  return data.file;
 }
 
 export async function createComment(
@@ -239,15 +481,70 @@ export async function adminCreatePost(payload: {
   title: string;
   description: string;
   categoryId: string;
-  type: 'educational' | 'community';
+  type: 'educational' | 'community' | 'liquidation';
+  mediaType?: 'video' | 'image';
   videoUrl?: string;
   thumbnailUrl?: string;
-}) {
+  resources?: PostResource[];
+} | FormData) {
   return apiRequest<PostMutationResponse>('/admin/posts', {
     method: 'POST',
     auth: true,
-    body: JSON.stringify(payload),
+    body: payload instanceof FormData ? payload : JSON.stringify(payload),
   });
+}
+
+export async function uploadAdminVideoInChunks(
+  file: File,
+  onProgress?: (progress: number) => void,
+) {
+  const totalChunks = Math.max(1, Math.ceil(file.size / ADMIN_VIDEO_CHUNK_SIZE));
+  const initResponse = await apiRequest<{
+    uploadId: string;
+    chunkSize: number;
+    totalChunks: number;
+  }>('/admin/uploads/init', {
+    method: 'POST',
+    auth: true,
+    body: JSON.stringify({
+      originalName: file.name,
+      totalChunks,
+      totalSize: file.size,
+      mimeType: file.type,
+    }),
+  });
+
+  const chunkSize = initResponse.chunkSize || ADMIN_VIDEO_CHUNK_SIZE;
+
+  for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex += 1) {
+    const start = chunkIndex * chunkSize;
+    const end = Math.min(start + chunkSize, file.size);
+    const formData = new FormData();
+
+    formData.append('uploadId', initResponse.uploadId);
+    formData.append('chunkIndex', String(chunkIndex));
+    formData.append('chunk', file.slice(start, end), `${file.name}.part-${chunkIndex}`);
+
+    await apiRequest('/admin/uploads/chunk', {
+      method: 'POST',
+      auth: true,
+      body: formData,
+    });
+
+    onProgress?.(Math.round(((chunkIndex + 1) / totalChunks) * 100));
+  }
+
+  const completeResponse = await apiRequest<{ url: string }>('/admin/uploads/complete', {
+    method: 'POST',
+    auth: true,
+    body: JSON.stringify({
+      uploadId: initResponse.uploadId,
+      originalName: file.name,
+      totalChunks,
+    }),
+  });
+
+  return completeResponse.url;
 }
 
 export async function adminDeletePost(postId: string) {
@@ -307,6 +604,52 @@ export async function getNotifications(role: 'buyer' | 'supplier') {
     `/notifications${buildQuery({ role })}`,
     { auth: true },
   );
+}
+
+export async function getNewsPosts() {
+  const data = await apiRequest<NewsListResponse>('/news', { auth: true });
+  return data.items;
+}
+
+export async function createNewsPost(payload: {
+  title: string;
+  body?: string;
+  image?: File | null;
+}) {
+  const formData = new FormData();
+  formData.set('title', payload.title);
+
+  if (payload.body?.trim()) {
+    formData.set('body', payload.body.trim());
+  }
+
+  if (payload.image) {
+    formData.append('image', payload.image);
+  }
+
+  return apiRequest<NewsPostMutationResponse>('/news', {
+    method: 'POST',
+    auth: true,
+    body: formData,
+  });
+}
+
+export async function toggleNewsLike(postId: string) {
+  return apiRequest<LikeResponse>(`/news/${postId}/like`, {
+    method: 'POST',
+    auth: true,
+  });
+}
+
+export async function createNewsComment(
+  postId: string,
+  payload: { content: string; parentId?: string },
+) {
+  return apiRequest<NewsCommentMutationResponse>(`/news/${postId}/comments`, {
+    method: 'POST',
+    auth: true,
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function getNotificationsV2(params?: {
@@ -428,6 +771,7 @@ export async function sendMessage(payload: {
   message: string;
   publicationId?: string;
   postId?: string;
+  attachments?: MessageAttachment[];
 }) {
   return apiRequest<{ id: string; createdAt: string }>('/messages', {
     method: 'POST',
@@ -442,6 +786,7 @@ export async function sendSupplierMessage(payload: {
   message: string;
   publicationId?: string;
   postId?: string;
+  attachments?: MessageAttachment[];
 }) {
   return sendMessage(payload);
 }
@@ -454,41 +799,6 @@ export async function getMonthlyReport(month?: string) {
   return apiRequest<MonthlyReport>(`/reportes${buildQuery({ month })}`, { auth: true });
 }
 
-export async function getRecommendedSuppliers(params?: { buyerId?: string; limit?: number }) {
-  return apiRequest<Array<{
-    id: string;
-    name: string;
-    company: string;
-    sector: string;
-    averageRating: number;
-    matchReasons: string[];
-    score: number;
-  }>>(
-    `/suppliers/recommended${buildQuery({
-      buyerId: params?.buyerId,
-      limit: params?.limit ? String(params.limit) : undefined,
-    })}`,
-    { auth: true },
-  );
-}
-
-export async function getTopEducationalContent(month?: string, limit = 3) {
-  return apiRequest<Array<{ id: string; title: string; description: string; viewCount?: number; views?: number }>>(
-    `/educational-content/top${buildQuery({ month, limit: String(limit) })}`,
-    { auth: true },
-  );
-}
-
-export async function getRecommendedEducationalContent(params?: { buyerId?: string; limit?: number }) {
-  return apiRequest<Array<{ id: string; title: string; description: string; score: number }>>(
-    `/educational-content/recommended${buildQuery({
-      buyerId: params?.buyerId,
-      limit: params?.limit ? String(params.limit) : undefined,
-    })}`,
-    { auth: true },
-  );
-}
-
 export async function registerEducationalContentView(contentId: string) {
   return apiRequest<{ success: true; contentId: string }>(`/educational-content/${contentId}/view`, {
     method: 'POST',
@@ -496,17 +806,13 @@ export async function registerEducationalContentView(contentId: string) {
   });
 }
 
-export async function getSupplierInboxMessages() {
-  return apiRequest<SupplierInboxMessage[]>('/messages/inbox', { auth: true });
-}
-
 export async function getConversations() {
   return apiRequest<ConversationSummary[]>('/conversations', { auth: true });
 }
 
-export async function getConversationByPair(buyerId: string, supplierId: string) {
+export async function getConversationByPair(buyerId: string, supplierId: string, publicationId?: string) {
   return apiRequest<ConversationSummary | null>(
-    `/conversations${buildQuery({ buyerId, supplierId })}`,
+    `/conversations${buildQuery({ buyerId, supplierId, publicationId })}`,
     { auth: true },
   );
 }
@@ -525,13 +831,16 @@ export async function getConversationMessages(conversationId: string) {
   });
 }
 
-export async function sendConversationMessage(conversationId: string, message: string) {
+export async function sendConversationMessage(
+  conversationId: string,
+  payload: { message: string; attachments?: MessageAttachment[] },
+) {
   return apiRequest<{ id: string; conversationId: string; createdAt: string }>(
     `/conversations/${conversationId}/messages`,
     {
       method: 'POST',
       auth: true,
-      body: JSON.stringify({ message }),
+      body: JSON.stringify(payload),
     },
   );
 }
@@ -561,4 +870,190 @@ export async function updateSupplierPublication(
     body: JSON.stringify(payload),
   });
   return data.publication;
+}
+
+export async function getExperts() {
+  const data = await apiRequest<{ items: ExpertSummary[] }>('/experts', { auth: true });
+  return data.items;
+}
+
+export async function getEmployabilityFeed(search?: string) {
+  return apiRequest<EmployabilityFeed>(
+    `/employability${buildQuery({ search })}`,
+    { auth: true },
+  );
+}
+
+export async function createEmployabilityJob(payload: {
+  title: string;
+  description: string;
+  skillsRequired: string[];
+  experienceRequired: string;
+  location?: string;
+}) {
+  return apiRequest<{ job: EmployabilityJob }>('/employability/jobs', {
+    method: 'POST',
+    auth: true,
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function applyToEmployabilityJob(jobId: string) {
+  return apiRequest<{ success: true; applicationId: string }>(`/employability/jobs/${jobId}/apply`, {
+    method: 'POST',
+    auth: true,
+  });
+}
+
+export async function upsertEmployabilityTalentProfile(payload: {
+  description: string;
+  skills: string[];
+  experience: string;
+  certifications?: string[];
+  availability?: string;
+}) {
+  return apiRequest<{ talentProfile: EmployabilityTalentProfile }>('/employability/talent-profile', {
+    method: 'POST',
+    auth: true,
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getExpertProfile(id: string) {
+  return apiRequest<ExpertProfile>(`/experts/${id}`, { auth: true });
+}
+
+export async function getExpertAvailability(expertId: string, date?: string) {
+  return apiRequest<ExpertAvailability>(
+    `/experts/${expertId}/availability${buildQuery({ date })}`,
+    { auth: true },
+  );
+}
+
+export async function getMyExpertAppointments() {
+  return apiRequest<{ role: 'buyer' | 'expert'; items: ExpertAppointment[] }>(
+    '/experts/appointments/mine',
+    { auth: true },
+  );
+}
+
+export async function createExpertAppointment(payload: {
+  expertId: string;
+  startsAt: string;
+  topic: string;
+}) {
+  return apiRequest<{ appointment: ExpertAppointment; emailWarning?: string }>(
+    '/experts/appointments',
+    {
+      method: 'POST',
+      auth: true,
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export async function getMyExpertCalendarConnection() {
+  return apiRequest<ExpertCalendarConnectionStatus>('/experts/me/calendar', {
+    auth: true,
+  });
+}
+
+export async function getMyCalendarOauthUrl(frontendPath?: string) {
+  return apiRequest<{ url: string }>(
+    `/experts/me/calendar/oauth-url${buildQuery({ frontendPath })}`,
+    {
+      auth: true,
+    },
+  );
+}
+
+export async function getMyExpertAvailabilitySettings() {
+  return apiRequest<ExpertAvailabilitySettings>('/experts/me/availability', {
+    auth: true,
+  });
+}
+
+export async function updateMyExpertAvailabilitySettings(payload: {
+  weeklyAvailability: Array<{
+    day: string;
+    enabled: boolean;
+    slots: Array<{
+      id: string;
+      startTime: string;
+      endTime: string;
+    }>;
+  }>;
+}) {
+  return apiRequest<ExpertAvailabilitySettings>('/experts/me/availability', {
+    method: 'POST',
+    auth: true,
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function connectMyExpertCalendar(payload: {
+  refreshToken: string;
+  calendarId?: string;
+  timezone?: string;
+  googleEmail?: string;
+}) {
+  return apiRequest<ExpertCalendarConnectionStatus>(
+    '/experts/me/calendar/connect',
+    {
+      method: 'POST',
+      auth: true,
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export async function disconnectMyExpertCalendar() {
+  return apiRequest<{ connected: false }>('/experts/me/calendar/disconnect', {
+    method: 'POST',
+    auth: true,
+  });
+}
+
+export async function getAgents(params?: {
+  category?: string;
+  automationType?: string;
+}) {
+  const data = await apiRequest<{ items: Agent[] }>(
+    `/agents${buildQuery({
+      category: params?.category,
+      automationType: params?.automationType,
+    })}`,
+    { auth: true },
+  );
+  return data.items;
+}
+
+export async function getAgentDetail(id: string) {
+  return apiRequest<Agent>(`/agents/${id}`, { auth: true });
+}
+
+export async function activateAgent(agentId: string) {
+  return apiRequest<{ agent: Agent; message: string }>('/agents/activate', {
+    method: 'POST',
+    auth: true,
+    body: JSON.stringify({ agentId }),
+  });
+}
+
+export async function runAgent(payload: {
+  agentId: string;
+  inputData: Record<string, unknown>;
+}) {
+  return apiRequest<{ execution: AgentExecution }>('/agents/run', {
+    method: 'POST',
+    auth: true,
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getMyAgentExecutions() {
+  const data = await apiRequest<{ items: AgentExecution[] }>('/agents/executions/mine', {
+    auth: true,
+  });
+  return data.items;
 }

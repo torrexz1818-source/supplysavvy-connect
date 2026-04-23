@@ -25,14 +25,20 @@ import Index from "./pages/Index.tsx";
 import PostDetail from "./pages/PostDetail.tsx";
 import Landing from "./pages/Landing.tsx";
 import Login from "./pages/Login.tsx";
+import News from "./pages/News.tsx";
 import Register from "./pages/Register.tsx";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
 import Admin from "./pages/Admin.tsx";
 import Notifications from "./pages/Notifications.tsx";
-import EducationalContent from "./pages/EducationalContent.tsx";
 import Messages from "./pages/Messages.tsx";
 import Reports from "./pages/Reports.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import EducationalContent from "./pages/EducationalContent.tsx";
+import Employability from "./pages/Employability.tsx";
+import NexuExperts from "./expert/NexuExperts.tsx";
+import NexuIA from "./pages/NexuIA.tsx";
+import ExpertCalendarSetup from "./expert/ExpertCalendarSetup.tsx";
+import RegisterExpert from "./expert/RegisterExpert.tsx";
 
 const queryClient = new QueryClient();
 
@@ -103,7 +109,20 @@ const DashboardRedirect = () => {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
-  return <Navigate to="/buyer/dashboard" replace />;
+  if (user.role === 'expert') {
+    return (
+      <Navigate
+        to={
+          user.expertProfile?.googleCalendarConnected
+            ? "/buyer/dashboard"
+            : "/expert/calendar-setup"
+        }
+        replace
+      />
+    );
+  }
+
+  return <Navigate to="/novedades" replace />;
 };
 
 const ProfileLayoutRedirect = () => {
@@ -121,7 +140,7 @@ const ProfileLayoutRedirect = () => {
     return <SupplierLayout />;
   }
 
-  if (user.role === 'buyer') {
+  if (user.role === 'buyer' || user.role === 'expert') {
     return <BuyerLayout />;
   }
 
@@ -138,6 +157,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<PublicHome />} />
             <Route path="/home" element={<DashboardRedirect />} />
+            <Route path="/dashboard" element={<DashboardRedirect />} />
+            <Route path="/novedades" element={<RequireAuth><News /></RequireAuth>} />
             <Route
               path="/buyer"
               element={
@@ -167,6 +188,8 @@ const App = () => (
               <Route path="dashboard" element={<SupplierDashboard />} />
               <Route path="directory" element={<BuyerDirectoryPage />} />
               <Route path="directory/:sector" element={<SectorBuyers />} />
+              <Route path="sale" element={<SalePage />} />
+              <Route path="sale/:id" element={<SaleDetailPage />} />
               <Route path="posts" element={<Navigate to="/publicaciones" replace />} />
             </Route>
             <Route
@@ -184,10 +207,13 @@ const App = () => (
               path="/community"
               element={
                 <ProtectedRoute role="buyer">
-                  <Community />
+                  <BuyerLayout />
                 </ProtectedRoute>
               }
-            />
+            >
+              <Route index element={<Community />} />
+              <Route path="post/:id" element={<CommunityPostDetail />} />
+            </Route>
             <Route
               path="/contenido-educativo"
               element={
@@ -197,6 +223,38 @@ const App = () => (
               }
             >
               <Route index element={<EducationalContent />} />
+            </Route>
+            <Route
+              path="/empleabilidad"
+              element={
+                <RequireAuth>
+                  <ProfileLayoutRedirect />
+                </RequireAuth>
+              }
+            >
+              <Route index element={<Employability />} />
+            </Route>
+            <Route
+              path="/nexu-experts"
+              element={
+                <ProtectedRoute role="buyer">
+                  <BuyerLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<NexuExperts />} />
+              <Route path=":id" element={<NexuExperts />} />
+            </Route>
+            <Route
+              path="/nexu-ia"
+              element={
+                <ProtectedRoute role="buyer">
+                  <BuyerLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<NexuIA />} />
+              <Route path=":id" element={<NexuIA />} />
             </Route>
             <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
             <Route path="/notificaciones" element={<RequireAuth><Notifications /></RequireAuth>} />
@@ -233,6 +291,7 @@ const App = () => (
               }
             >
               <Route index element={<UserProfilePage />} />
+              <Route path=":role/:id" element={<UserProfilePage />} />
               <Route path=":id" element={<UserProfilePage />} />
             </Route>
             <Route path="/post/:id" element={<RequireAuth><PostDetail /></RequireAuth>} />
@@ -240,6 +299,23 @@ const App = () => (
             <Route path="/admin/dashboard" element={<RequireAuth><Admin /></RequireAuth>} />
             <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
             <Route path="/register" element={<GuestOnly><Register /></GuestOnly>} />
+            <Route path="/become-expert" element={<GuestOnly><RegisterExpert /></GuestOnly>} />
+            <Route
+              path="/expert/calendar-setup"
+              element={
+                <ProtectedRoute role="expert">
+                  <ExpertCalendarSetup />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/calendar-setup"
+              element={
+                <ProtectedRoute role="buyer">
+                  <ExpertCalendarSetup />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/forgot-password" element={<GuestOnly><ForgotPassword /></GuestOnly>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

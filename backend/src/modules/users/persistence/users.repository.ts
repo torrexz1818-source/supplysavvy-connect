@@ -1,83 +1,60 @@
+import { Injectable } from '@nestjs/common';
+import { Collection, Filter, FindOptions, UpdateFilter, UpdateOptions } from 'mongodb';
+import { DatabaseService } from '../../database/database.service';
 import { User } from '../domain/user.model';
-import { UserRole } from '../domain/user-role.enum';
-import { UserStatus } from '../domain/user-status.enum';
 
+@Injectable()
 export class UsersRepository {
-  private readonly users: User[] = [
-    {
-      id: 'user-buyer-1',
-      email: 'maria@empresa.com',
-      passwordHash:
-        '$2b$10$iuQDIpUnCqJTr0Q8r4lvBu9kGx7Nw8YfV5J6Mcw1W0QvG0K3vZbyy',
-      fullName: 'Maria Garcia',
-      company: 'TechCorp',
-      position: 'Procurement Manager',
-      role: UserRole.BUYER,
-      status: UserStatus.ACTIVE,
-      points: 1250,
-      createdAt: new Date('2024-01-15T00:00:00.000Z'),
-      updatedAt: new Date('2024-01-15T00:00:00.000Z'),
-    },
-    {
-      id: 'user-admin-1',
-      email: 'carlos@supplyconnect.com',
-      passwordHash:
-        '$2b$10$iuQDIpUnCqJTr0Q8r4lvBu9kGx7Nw8YfV5J6Mcw1W0QvG0K3vZbyy',
-      fullName: 'Carlos Mendez',
-      company: 'SupplyConnect',
-      position: 'Head of Education',
-      role: UserRole.ADMIN,
-      status: UserStatus.ACTIVE,
-      points: 5400,
-      createdAt: new Date('2023-06-01T00:00:00.000Z'),
-      updatedAt: new Date('2023-06-01T00:00:00.000Z'),
-    },
-    {
-      id: 'user-buyer-2',
-      email: 'ana@globalinc.com',
-      passwordHash:
-        '$2b$10$iuQDIpUnCqJTr0Q8r4lvBu9kGx7Nw8YfV5J6Mcw1W0QvG0K3vZbyy',
-      fullName: 'Ana Rodriguez',
-      company: 'Global Inc.',
-      position: 'Senior Buyer',
-      role: UserRole.BUYER,
-      status: UserStatus.ACTIVE,
-      points: 890,
-      createdAt: new Date('2024-03-10T00:00:00.000Z'),
-      updatedAt: new Date('2024-03-10T00:00:00.000Z'),
-    },
-    {
-      id: 'user-buyer-3',
-      email: 'roberto@indmex.com',
-      passwordHash:
-        '$2b$10$iuQDIpUnCqJTr0Q8r4lvBu9kGx7Nw8YfV5J6Mcw1W0QvG0K3vZbyy',
-      fullName: 'Roberto Silva',
-      company: 'Industrial MX',
-      position: 'Procurement Director',
-      role: UserRole.BUYER,
-      status: UserStatus.ACTIVE,
-      points: 2100,
-      createdAt: new Date('2023-11-20T00:00:00.000Z'),
-      updatedAt: new Date('2023-11-20T00:00:00.000Z'),
-    },
-  ];
+  constructor(private readonly databaseService: DatabaseService) {}
 
-  create(user: User): User {
-    this.users.push(user);
+  collection(): Collection<User> {
+    return this.databaseService.collection<User>('users');
+  }
+
+  async create(user: User): Promise<User> {
+    await this.collection().insertOne(user);
     return user;
   }
 
-  findByEmail(email: string): User | undefined {
-    return this.users.find(
-      (user) => user.email.toLowerCase() === email.toLowerCase(),
-    );
+  findByEmail(email: string): Promise<User | null> {
+    return this.collection().findOne({
+      email: email.trim().toLowerCase(),
+    });
   }
 
-  findById(id: string): User | undefined {
-    return this.users.find((user) => user.id === id);
+  findById(id: string): Promise<User | null> {
+    return this.collection().findOne({ id });
   }
 
-  list(): User[] {
-    return [...this.users];
+  async findManyByIds(ids: string[]): Promise<User[]> {
+    const normalizedIds = Array.from(new Set(ids.filter(Boolean)));
+
+    if (!normalizedIds.length) {
+      return [];
+    }
+
+    return this.collection()
+      .find({ id: { $in: normalizedIds } })
+      .toArray();
+  }
+
+  list(): Promise<User[]> {
+    return this.collection().find().sort({ createdAt: -1 }).toArray();
+  }
+
+  findOne(filter: Filter<User>, options?: FindOptions): Promise<User | null> {
+    return this.collection().findOne(filter, options);
+  }
+
+  find(filter: Filter<User>, options?: FindOptions) {
+    return this.collection().find(filter, options);
+  }
+
+  updateOne(
+    filter: Filter<User>,
+    update: UpdateFilter<User> | Partial<User>,
+    options?: UpdateOptions,
+  ) {
+    return this.collection().updateOne(filter, update as UpdateFilter<User>, options);
   }
 }

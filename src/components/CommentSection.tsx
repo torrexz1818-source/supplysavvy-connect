@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Heart, MessageCircle } from 'lucide-react';
+import { ChevronDown, Heart, MessageCircle, Send, ThumbsUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { createComment } from '@/lib/api';
@@ -12,6 +12,9 @@ interface CommentSectionProps {
   postId: string;
   comments: Comment[];
   onCommentAdded?: () => void;
+  title?: string;
+  emptyMessage?: string;
+  composerPlaceholder?: string;
 }
 
 interface CommentItemProps {
@@ -21,11 +24,17 @@ interface CommentItemProps {
 }
 
 const CommentItem = ({ comment, onReply, isReply = false }: CommentItemProps) => {
+  const navigate = useNavigate();
   const [liked, setLiked] = useState(comment.isLiked);
   const [likeCount, setLikeCount] = useState(comment.likes);
   const [showReply, setShowReply] = useState(false);
+  const [showReplies, setShowReplies] = useState(true);
   const [replyText, setReplyText] = useState('');
   const initials = comment.user.fullName.split(' ').map((n) => n[0]).join('').slice(0, 2);
+  const commentDate = new Date(comment.createdAt).toLocaleString('es-PE', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
 
   const handleReply = async () => {
     if (!replyText.trim()) return;
@@ -35,20 +44,37 @@ const CommentItem = ({ comment, onReply, isReply = false }: CommentItemProps) =>
   };
 
   return (
-    <div className={`${isReply ? 'ml-10 mt-3' : 'mt-4'}`}>
-      <div className="flex gap-3">
-        <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-primary-foreground text-xs font-semibold flex-shrink-0">
+    <div className={`${isReply ? 'ml-5 mt-3 border-l border-border/70 pl-4' : 'mt-4'} min-w-0`}>
+      <div className="flex min-w-0 gap-3">
+        <button
+          type="button"
+          onClick={() => navigate(`/perfil/${comment.user.role}/${comment.user.id}`)}
+          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full gradient-primary text-xs font-semibold text-primary-foreground shadow-sm"
+          aria-label={`Ver perfil de ${comment.user.fullName}`}
+        >
           {initials}
-        </div>
-        <div className="flex-1">
-          <div className="bg-muted rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-semibold text-foreground">{comment.user.fullName}</span>
-              <span className="text-xs text-muted-foreground">{comment.user.company}</span>
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="min-w-0 rounded-[20px] bg-muted/80 px-4 py-3">
+            <div className="mb-1.5 min-w-0">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/perfil/${comment.user.role}/${comment.user.id}`)}
+                  className="break-words text-left text-sm font-semibold text-foreground transition-colors hover:text-primary"
+                >
+                  {comment.user.fullName}
+                </button>
+                <span className="text-xs text-muted-foreground">{commentDate}</span>
+              </div>
+              <span className="break-words text-xs text-muted-foreground">{comment.user.company}</span>
             </div>
-            <p className="text-sm text-foreground/80">{comment.content}</p>
+            <p className="overflow-hidden whitespace-pre-wrap break-words text-sm leading-6 text-foreground/90">
+              {comment.content}
+            </p>
           </div>
-          <div className="flex gap-3 mt-1.5 ml-1">
+
+          <div className="ml-1 mt-2 flex flex-wrap items-center gap-4">
             <button
               onClick={() => {
                 setLiked(!liked);
@@ -58,31 +84,48 @@ const CommentItem = ({ comment, onReply, isReply = false }: CommentItemProps) =>
                 liked ? 'text-primary' : 'text-muted-foreground hover:text-primary'
               }`}
             >
-              <Heart className={`w-3.5 h-3.5 ${liked ? 'fill-primary' : ''}`} />
-              {likeCount}
+              <ThumbsUp className={`h-3.5 w-3.5 ${liked ? 'fill-primary' : ''}`} />
+              Me gusta {likeCount > 0 ? `${likeCount}` : ''}
             </button>
             <button
               onClick={() => setShowReply(!showReply)}
-              className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+              className="flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-primary"
             >
-              <MessageCircle className="w-3.5 h-3.5" />
+              <MessageCircle className="h-3.5 w-3.5" />
               Responder
             </button>
+            {comment.replies.length > 0 && (
+              <button
+                onClick={() => setShowReplies((current) => !current)}
+                className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-primary"
+              >
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showReplies ? 'rotate-180' : ''}`} />
+                {showReplies ? 'Ocultar respuestas' : `Ver respuestas (${comment.replies.length})`}
+              </button>
+            )}
           </div>
+
           {showReply && (
-            <div className="mt-2 flex gap-2">
-              <Textarea
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                placeholder="Escribe tu respuesta..."
-                className="text-sm min-h-[60px]"
-              />
-              <Button size="sm" className="self-end" onClick={() => void handleReply()}>
-                Enviar
-              </Button>
+            <div className="mt-3 flex min-w-0 gap-3">
+              <div className="h-8 w-8 flex-shrink-0 rounded-full bg-slate-200" />
+              <div className="min-w-0 flex-1 rounded-2xl border border-border bg-background p-3">
+                <Textarea
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="Escribe una respuesta..."
+                  className="min-h-[72px] w-full resize-none border-0 bg-transparent px-0 py-0 text-sm leading-6 shadow-none focus-visible:ring-0"
+                />
+                <div className="mt-3 flex justify-end">
+                  <Button size="sm" className="h-9 min-w-[132px] rounded-full px-5" onClick={() => void handleReply()}>
+                    <Send className="mr-1 h-4 w-4" />
+                    Responder
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
-          {comment.replies.map((reply) => (
+
+          {showReplies && comment.replies.map((reply) => (
             <CommentItem key={reply.id} comment={reply} onReply={onReply} isReply />
           ))}
         </div>
@@ -91,11 +134,19 @@ const CommentItem = ({ comment, onReply, isReply = false }: CommentItemProps) =>
   );
 };
 
-const CommentSection = ({ postId, comments, onCommentAdded }: CommentSectionProps) => {
+const CommentSection = ({
+  postId,
+  comments,
+  onCommentAdded,
+  title = 'Comentarios',
+  emptyMessage = 'Aun no hay comentarios.',
+  composerPlaceholder = 'Escribe un comentario...',
+}: CommentSectionProps) => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const [sortBy, setSortBy] = useState<'voted' | 'newest'>('voted');
   const [newComment, setNewComment] = useState('');
+
   const commentMutation = useMutation({
     mutationFn: (payload: { content: string; parentId?: string }) => createComment(postId, payload),
     onSuccess: () => {
@@ -123,17 +174,22 @@ const CommentSection = ({ postId, comments, onCommentAdded }: CommentSectionProp
   };
 
   const initials = user?.fullName.split(' ').map((n) => n[0]).join('').slice(0, 2) ?? 'SC';
+  const totalComments = useMemo(() => {
+    const countReplies = (items: Comment[]): number =>
+      items.reduce((total, item) => total + 1 + countReplies(item.replies), 0);
+    return countReplies(comments);
+  }, [comments]);
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Discusion ({comments.length})</h3>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-lg font-semibold text-foreground">{title} ({totalComments})</h3>
         <div className="flex gap-1">
           {(['voted', 'newest'] as const).map((sortValue) => (
             <button
               key={sortValue}
               onClick={() => setSortBy(sortValue)}
-              className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                 sortBy === sortValue ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
               }`}
             >
@@ -143,35 +199,43 @@ const CommentSection = ({ postId, comments, onCommentAdded }: CommentSectionProp
         </div>
       </div>
 
-      <div className="flex gap-3 mb-6">
-        <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-primary-foreground text-xs font-semibold flex-shrink-0">
+      <div className="mb-6 flex min-w-0 gap-3">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full gradient-primary text-xs font-semibold text-primary-foreground shadow-sm">
           {initials}
         </div>
-        <div className="flex-1 flex gap-2">
+        <div className="min-w-0 flex-1 rounded-[24px] border border-border bg-background p-3 shadow-sm">
           <Textarea
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Hacer una pregunta o comentar..."
-            className="text-sm min-h-[60px]"
+            placeholder={composerPlaceholder}
+            className="min-h-[96px] w-full resize-none border-0 bg-transparent px-0 py-0 text-sm leading-6 shadow-none focus-visible:ring-0"
           />
-          <Button
-            size="sm"
-            className="self-end"
-            disabled={!newComment.trim() || commentMutation.isPending}
-            onClick={() => void submitComment({ content: newComment })}
-          >
-            Enviar
-          </Button>
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Heart className="h-4 w-4" />
+              <span>Comenta como en una publicacion social</span>
+            </div>
+            <Button
+              size="sm"
+              className="min-w-[132px] rounded-full px-5"
+              disabled={!newComment.trim() || commentMutation.isPending}
+              onClick={() => void submitComment({ content: newComment })}
+            >
+              <Send className="mr-1 h-4 w-4" />
+              Publicar
+            </Button>
+          </div>
         </div>
       </div>
 
       {commentMutation.error && (
-        <p className="text-xs text-destructive mb-4">
+        <p className="mb-4 text-xs text-destructive">
           {commentMutation.error instanceof Error ? commentMutation.error.message : 'No se pudo enviar el comentario'}
         </p>
       )}
 
       <div className="space-y-1">
+        {sortedComments.length === 0 && <p className="text-sm text-muted-foreground">{emptyMessage}</p>}
         {sortedComments.map((comment) => (
           <CommentItem key={comment.id} comment={comment} onReply={submitComment} />
         ))}

@@ -46,7 +46,7 @@ const Landing = () => {
     <div className="min-h-screen bg-background">
       <nav className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <span className="text-lg font-bold text-gradient">SUPPLYCONNECT</span>
+          <span className="text-lg font-bold text-gradient">SUPPLY NEXU</span>
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>
               Iniciar sesion
@@ -66,7 +66,7 @@ const Landing = () => {
           className="max-w-3xl mx-auto text-center"
         >
           <h1 className="text-4xl md:text-5xl font-extrabold text-primary-foreground mb-4 tracking-tight">
-            SUPPLYCONNECT
+            SUPPLY NEXU
           </h1>
           <p className="text-primary-foreground/85 text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed">
             La plataforma donde compradores y proveedores se conectan, aprenden
@@ -101,10 +101,10 @@ const Landing = () => {
             viewport={{ once: true }}
           >
             <h2 className="text-2xl font-bold text-foreground mb-4">
-              Que es SupplyConnect?
+              Que es Supply Nexu?
             </h2>
             <p className="text-muted-foreground text-base leading-relaxed">
-              SupplyConnect es una plataforma B2B donde los compradores
+              Supply Nexu es una plataforma B2B donde los compradores
               encuentran proveedores confiables, aprenden mejores practicas de
               compras y toman decisiones mas inteligentes.
             </p>
@@ -170,7 +170,7 @@ const Landing = () => {
         <div className="max-w-2xl mx-auto text-center">
           <CheckCircle2 className="w-10 h-10 text-primary-foreground/80 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-primary-foreground mb-3">
-            Unete a SupplyConnect hoy
+            Unete a Supply Nexu hoy
           </h2>
           <p className="text-primary-foreground/80 mb-6">
             Empieza a conectar con la comunidad B2B mas grande de la region.
@@ -189,10 +189,10 @@ const Landing = () => {
       <footer className="py-8 px-6 bg-card border-t border-border">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <span className="text-sm font-semibold text-gradient">
-            SUPPLYCONNECT
+            SUPPLY NEXU
           </span>
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} SupplyConnect. Todos los derechos
+            © {new Date().getFullYear()} Supply Nexu. Todos los derechos
             reservados.
           </p>
         </div>

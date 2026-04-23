@@ -5,18 +5,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { getSupplierPublicationById, updateSupplierPublication } from '@/lib/api';
+import { getSupplierPublicationById, updateSupplierPublication, uploadFile } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import BackButton from '@/components/BackButton';
-
-async function toDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ''));
-    reader.onerror = () => reject(new Error('No se pudo leer la imagen seleccionada.'));
-    reader.readAsDataURL(file);
-  });
-}
 
 const EditSupplierPublication = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +18,7 @@ const EditSupplierPublication = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [url, setUrl] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageValue, setImageValue] = useState<string | undefined>(undefined);
   const [preview, setPreview] = useState<string | undefined>(undefined);
   const [feedback, setFeedback] = useState('');
@@ -51,6 +43,7 @@ const EditSupplierPublication = () => {
     setTitle(publication.title);
     setContent(publication.content);
     setUrl(publication.url ?? '');
+    setImageFile(null);
     setImageValue(publication.image);
     setPreview(publication.image);
   }, [publicationQuery.data, navigate, user?.id]);
@@ -61,14 +54,25 @@ const EditSupplierPublication = () => {
     }
   }, [navigate, publicationQuery.isError]);
 
+  useEffect(() => {
+    return () => {
+      if (preview?.startsWith('blob:')) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [preview]);
+
   const updateMutation = useMutation({
-    mutationFn: async () =>
-      updateSupplierPublication(id ?? '', {
+    mutationFn: async () => {
+      const uploadedImage = imageFile ? await uploadFile(imageFile, 'posts') : null;
+
+      return updateSupplierPublication(id ?? '', {
         title: title.trim(),
         content: content.trim(),
-        image: imageValue,
+        image: uploadedImage?.url ?? imageValue,
         url: url.trim(),
-      }),
+      });
+    },
     onSuccess: async () => {
       setFeedback('Cambios guardados correctamente.');
       await queryClient.invalidateQueries({ queryKey: ['supplier-publications', user?.id] });
@@ -80,16 +84,20 @@ const EditSupplierPublication = () => {
     },
   });
 
-  const onSelectImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const onSelectImage = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
       return;
     }
 
     try {
-      const dataUrl = await toDataUrl(file);
-      setImageValue(dataUrl);
-      setPreview(dataUrl);
+      if (preview?.startsWith('blob:')) {
+        URL.revokeObjectURL(preview);
+      }
+
+      setImageFile(file);
+      setImageValue(undefined);
+      setPreview(URL.createObjectURL(file));
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : 'No se pudo cargar la imagen.');
     }
@@ -129,8 +137,8 @@ const EditSupplierPublication = () => {
         />
 
         {preview && (
-          <div className="mb-3 rounded-lg overflow-hidden border border-border">
-            <img src={preview} alt="Vista previa de la publicacion" className="w-full max-h-56 object-cover" />
+          <div className="mb-3 rounded-lg overflow-hidden border border-border bg-muted/30">
+            <img src={preview} alt="Vista previa de la publicacion" className="w-full max-h-72 object-contain mx-auto" />
           </div>
         )}
 

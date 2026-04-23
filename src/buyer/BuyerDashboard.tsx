@@ -2,18 +2,13 @@ import { ArrowRight, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import StatsCard from '@/components/StatsCard';
-import { getHomeFeed, getPlatformStats } from '@/lib/api';
+import { getPlatformStats } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const BuyerDashboard = () => {
   const navigate = useNavigate();
-  const { data } = useQuery({
-    queryKey: ['home-feed'],
-    queryFn: getHomeFeed,
-  });
   const { data: platformStats, isLoading: isStatsLoading, isError: isStatsError } = useQuery({
     queryKey: ['platform-stats'],
     queryFn: getPlatformStats,
@@ -27,31 +22,47 @@ const BuyerDashboard = () => {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="gradient-primary rounded-lg p-8 mb-8"
+        className="relative overflow-hidden rounded-[28px] p-8 mb-8 shadow-[0_20px_60px_rgba(33,63,145,0.22)]"
+        style={{
+          background:
+            'linear-gradient(135deg, #1b3474 0%, #2d4ea6 50%, #365dc1 100%)',
+        }}
       >
-        <h1 className="text-3xl font-bold text-primary-foreground mb-2">SUPPLYCONNECT</h1>
-        <p className="text-primary-foreground/80 text-base max-w-xl mb-6">
-          La plataforma donde compradores B2B aprenden, comparten experiencias y descubren los mejores proveedores.
-        </p>
-        <div className="flex gap-3">
-          <Button variant="secondary" onClick={() => navigate('/community')} className="font-medium">
-            Comunidad <ArrowRight className="w-4 h-4 ml-1" />
-          </Button>
-          <Button
-            variant="outline"
-            className="bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/20"
-            onClick={() => navigate('/contenido-educativo')}
-          >
-            <Play className="w-4 h-4 mr-1" /> Ir a contenido educativo
-          </Button>
+        <div className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute right-24 bottom-[-42px] h-32 w-32 rounded-full bg-cyan-300/10 blur-2xl" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.12),transparent_62%)]" />
+
+        <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <div className="mb-4 inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/85">
+              Panel de comprador
+            </div>
+            <h1 className="mb-3 text-3xl font-bold tracking-tight text-primary-foreground lg:text-4xl">
+              SUPPLY NEXU
+            </h1>
+            <p className="max-w-xl text-base leading-7 text-primary-foreground/85 lg:text-lg">
+              SupplyNexu es una plataforma digital B2B especializada para compradores donde aprenden, comparten experiencias y automatizan sus procesos.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:min-w-[240px]">
+            <Button
+              variant="secondary"
+              onClick={() => navigate('/community')}
+              className="h-11 rounded-xl bg-white text-[#18306b] font-semibold shadow-sm hover:bg-white/95"
+            >
+              Comunidad <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 rounded-xl border-white/20 bg-white/10 text-primary-foreground hover:bg-white/18"
+              onClick={() => navigate('/contenido-educativo')}
+            >
+              <Play className="w-4 h-4 mr-1" /> Ir a contenido educativo
+            </Button>
+          </div>
         </div>
       </motion.div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {(data?.stats ?? []).map((stat, i) => (
-          <StatsCard key={stat.label} {...stat} index={i} />
-        ))}
-      </div>
 
       {isStatsLoading && <p className="text-sm text-muted-foreground mb-6">Cargando estadisticas...</p>}
       {isStatsError && <p className="text-sm text-destructive mb-6">No se pudo cargar el dashboard.</p>}
@@ -132,10 +143,12 @@ const BuyerDashboard = () => {
                             className={
                               user.role === 'buyer'
                                 ? 'bg-blue-100 text-blue-700 hover:bg-blue-100'
+                                : user.role === 'expert'
+                                  ? 'bg-cyan-100 text-cyan-700 hover:bg-cyan-100'
                                 : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100'
                             }
                           >
-                            {user.role === 'buyer' ? 'Comprador' : 'Proveedor'}
+                            {user.role === 'buyer' ? 'Comprador' : user.role === 'expert' ? 'Experto Nexu' : 'Proveedor'}
                           </Badge>
                         </td>
                       </tr>

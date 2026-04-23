@@ -119,8 +119,8 @@ export class UsersController {
       throw new ForbiddenException('Authentication required');
     }
 
-    if (user.role !== UserRole.BUYER && user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException('Solo buyers o admin pueden acceder a /suppliers');
+    if (!this.usersService.isBuyerLikeRole(user.role) && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Solo buyers, expertos o admin pueden acceder a /suppliers');
     }
 
     if (!sector?.trim()) {
@@ -167,8 +167,8 @@ export class UsersController {
       throw new ForbiddenException('No autorizado para ver recomendaciones de otro usuario');
     }
 
-    if (user.role !== UserRole.BUYER && user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException('Solo compradores pueden ver recomendaciones');
+    if (!this.usersService.isBuyerLikeRole(user.role) && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Solo compradores, expertos o admin pueden ver recomendaciones');
     }
 
     return this.usersService.listRecommendedSuppliers(
@@ -186,7 +186,7 @@ export class UsersController {
       throw new ForbiddenException('Authentication required');
     }
 
-    if (user.role !== UserRole.BUYER && user.role !== UserRole.ADMIN && user.sub !== id) {
+    if (!this.usersService.isBuyerLikeRole(user.role) && user.role !== UserRole.ADMIN && user.sub !== id) {
       throw new ForbiddenException('No autorizado para ver este perfil');
     }
 
@@ -201,7 +201,7 @@ export class UsersController {
     const hasAccess = await this.usersService.hasSensitiveAccess(user.sub);
     const canSeeSensitive = user.role === UserRole.ADMIN || user.sub === id || hasAccess;
 
-    if (user?.sub && user.role === UserRole.BUYER) {
+    if (user?.sub && this.usersService.isBuyerLikeRole(user.role)) {
       await this.usersService.notifyProfileInteraction({
         viewerId: user.sub,
         viewerRole: UserRole.BUYER,
@@ -211,7 +211,7 @@ export class UsersController {
     }
 
     const hasContacted =
-      user?.role === UserRole.BUYER && user.sub
+      this.usersService.isBuyerLikeRole(user?.role) && user?.sub
         ? await this.usersService.hasBuyerContactedSupplier(user.sub, supplier.id)
         : false;
     const averageRating =
@@ -268,8 +268,8 @@ export class UsersController {
       throw new ForbiddenException('Authentication required');
     }
 
-    if (user.role !== UserRole.BUYER) {
-      throw new ForbiddenException('Solo compradores pueden comentar proveedores');
+    if (!this.usersService.isBuyerLikeRole(user.role)) {
+      throw new ForbiddenException('Solo compradores o expertos pueden comentar proveedores');
     }
 
     const rating = Number(body.rating);

@@ -1,0 +1,419 @@
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowRight, Heart, ImagePlus, MessageCircle, Send } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { createNewsComment, createNewsPost, getNewsPosts, toggleNewsLike } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { NewsComment, NewsPost } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+
+function formatRelativeTime(value: string) {
+  const now = Date.now();
+  const then = new Date(value).getTime();
+  const diffSeconds = Math.max(1, Math.floor((now - then) / 1000));
+
+  if (diffSeconds < 60) return 'hace unos segundos';
+  if (diffSeconds < 3600) {
+    const minutes = Math.floor(diffSeconds / 60);
+    return `hace ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`;
+  }
+  if (diffSeconds < 86400) {
+    const hours = Math.floor(diffSeconds / 3600);
+    return `hace ${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+  }
+  const days = Math.floor(diffSeconds / 86400);
+  return `hace ${days} ${days === 1 ? 'dia' : 'dias'}`;
+}
+
+function getDashboardPath(role?: string) {
+  if (role === 'supplier') return '/supplier/dashboard';
+  if (role === 'admin') return '/admin/dashboard';
+  return '/buyer/dashboard';
+}
+
+const CommentBranch = ({
+  comment,
+  isAdmin,
+  postId,
+  onReply,
+  autoExpandReply,
+}: {
+  comment: NewsComment;
+  isAdmin: boolean;
+  postId: string;
+  onReply: (postId: string, payload: { content: string; parentId?: string }) => Promise<void>;
+  autoExpandReply?: boolean;
+}) => {
+  const [replyOpen, setReplyOpen] = useState(Boolean(autoExpandReply));
+  const [replyText, setReplyText] = useState('');
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-900">{comment.user.fullName}</p>
+            <p className="text-xs text-slate-500">
+              {comment.user.company} · {formatRelativeTime(comment.createdAt)}
+            </p>
+          </div>
+          {isAdmin && !comment.replies.length && (
+            <button
+              type="button"
+              onClick={() => setReplyOpen((current) => !current)}
+              className="text-xs font-medium text-slate-600 transition-colors hover:text-slate-900"
+            >
+              Responder
+            </button>
+          )}
+        </div>
+        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{comment.content}</p>
+      </div>
+
+      {replyOpen && isAdmin && (
+        <div className="ml-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+          <Textarea
+            value={replyText}
+            onChange={(event) => setReplyText(event.target.value)}
+            placeholder="Responder comentario"
+            className="min-h-[96px] rounded-xl bg-white"
+          />
+          <div className="mt-3 flex justify-end">
+            <Button
+              type="button"
+              size="sm"
+              disabled={!replyText.trim()}
+              onClick={async () => {
+                await onReply(postId, { content: replyText, parentId: comment.id });
+                setReplyText('');
+                setReplyOpen(false);
+              }}
+            >
+              <Send className="mr-2 h-4 w-4" />
+              Responder
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {comment.replies.map((reply) => (
+        <div key={reply.id} className="ml-4 border-l border-slate-200 pl-4">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-sm font-semibold text-slate-900">{reply.user.fullName}</p>
+            <p className="text-xs text-slate-500">{formatRelativeTime(reply.createdAt)}</p>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{reply.content}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const NewsCard = ({
+  post,
+  isAdmin,
+  highlighted,
+  onToggleLike,
+  onComment,
+}: {
+  post: NewsPost;
+  isAdmin: boolean;
+  highlighted: boolean;
+  onToggleLike: (postId: string) => Promise<void>;
+  onComment: (postId: string, payload: { content: string; parentId?: string }) => Promise<void>;
+}) => {
+  const [commentsOpen, setCommentsOpen] = useState(highlighted);
+  const [commentText, setCommentText] = useState('');
+
+  useEffect(() => {
+    if (highlighted) {
+      setCommentsOpen(true);
+    }
+  }, [highlighted]);
+
+  return (
+    <motion.article
+      layout
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`overflow-hidden rounded-[28px] border bg-white/90 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ${
+        highlighted ? 'border-blue-400 ring-4 ring-blue-100' : 'border-white/70'
+      }`}
+    >
+      {post.imageUrl && (
+        <div className="aspect-[16/8] overflow-hidden bg-slate-100">
+          <img src={post.imageUrl} alt={post.title} className="h-full w-full object-cover" />
+        </div>
+      )}
+
+      <div className="space-y-5 p-6 md:p-8">
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Novedades</p>
+          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
+            <span>{formatRelativeTime(post.timestamp)}</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1">{post.commentsCount} comentarios</span>
+          </div>
+          <h2 className="text-2xl font-black tracking-tight text-slate-950 md:text-4xl">{post.title}</h2>
+          {post.body && <p className="max-w-3xl whitespace-pre-wrap text-base leading-7 text-slate-700">{post.body}</p>}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 border-t border-slate-200 pt-4">
+          <button
+            type="button"
+            onClick={() => void onToggleLike(post.id)}
+            className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+              post.isLiked
+                ? 'border-rose-200 bg-rose-50 text-rose-600'
+                : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <Heart className={`h-4 w-4 ${post.isLiked ? 'fill-current' : ''}`} />
+            {post.likes}
+          </button>
+          <button
+            type="button"
+            onClick={() => setCommentsOpen((current) => !current)}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Comentar
+          </button>
+        </div>
+
+        <AnimatePresence initial={false}>
+          {commentsOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="space-y-5 border-t border-slate-200 pt-5">
+                <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                  <Textarea
+                    value={commentText}
+                    onChange={(event) => setCommentText(event.target.value)}
+                    placeholder="Escribe tu comentario"
+                    className="min-h-[110px] rounded-2xl bg-white"
+                  />
+                  <div className="mt-3 flex justify-end">
+                    <Button
+                      type="button"
+                      disabled={!commentText.trim()}
+                      onClick={async () => {
+                        await onComment(post.id, { content: commentText });
+                        setCommentText('');
+                      }}
+                    >
+                      <Send className="mr-2 h-4 w-4" />
+                      Publicar comentario
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {post.comments.length === 0 && (
+                    <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                      Todavia no hay comentarios en esta publicacion.
+                    </p>
+                  )}
+                  {post.comments.map((comment) => (
+                    <CommentBranch
+                      key={comment.id}
+                      comment={comment}
+                      isAdmin={isAdmin}
+                      postId={post.id}
+                      onReply={onComment}
+                      autoExpandReply={highlighted}
+                    />
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.article>
+  );
+};
+
+const News = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const [form, setForm] = useState({ title: '', body: '' });
+  const [image, setImage] = useState<File | null>(null);
+  const [imageName, setImageName] = useState('');
+
+  const newsQuery = useQuery({
+    queryKey: ['news-posts'],
+    queryFn: getNewsPosts,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: createNewsPost,
+    onSuccess: () => {
+      setForm({ title: '', body: '' });
+      setImage(null);
+      setImageName('');
+      void queryClient.invalidateQueries({ queryKey: ['news-posts'] });
+    },
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: toggleNewsLike,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['news-posts'] });
+    },
+  });
+
+  const commentMutation = useMutation({
+    mutationFn: ({ postId, payload }: { postId: string; payload: { content: string; parentId?: string } }) =>
+      createNewsComment(postId, payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['news-posts'] });
+    },
+  });
+
+  const highlightedPostId = searchParams.get('post');
+  const dashboardPath = useMemo(() => getDashboardPath(user?.role), [user?.role]);
+  const isAdmin = user?.role === 'admin';
+
+  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    setImage(file);
+    setImageName(file?.name ?? '');
+  };
+
+  const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!form.title.trim()) return;
+    await createMutation.mutateAsync({
+      title: form.title,
+      body: form.body,
+      image,
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(191,219,254,0.7),_transparent_42%),linear-gradient(180deg,_#f8fbff_0%,_#eef4ff_48%,_#f8fafc_100%)]">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="rounded-[32px] border border-white/70 bg-white/65 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur md:p-8">
+          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-blue-700">Pantalla de bienvenida</p>
+              <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950 md:text-5xl">Novedades</h1>
+              <p className="mt-3 text-base leading-7 text-slate-600 md:text-lg">
+                Un espacio donde encontar las las novedades del mundo de compras, para mantenerte siempre informado.
+              </p>
+            </div>
+            <div className="rounded-2xl bg-slate-950 px-5 py-4 text-white shadow-lg">
+              <p className="text-xs uppercase tracking-[0.25em] text-white/70">Sesion activa</p>
+              <p className="mt-1 text-lg font-semibold">{user?.fullName ?? 'Usuario'}</p>
+            </div>
+          </div>
+        </div>
+
+        {isAdmin && (
+          <section className="mt-8 rounded-[28px] border border-slate-200 bg-white/90 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+            <div className="mb-5">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">Panel administrativo</p>
+              <h2 className="mt-2 text-2xl font-bold text-slate-950">Publicar novedad</h2>
+              <p className="mt-2 text-sm text-slate-600">Solo admins ven este formulario y tambien pueden responder comentarios de los usuarios.</p>
+            </div>
+
+            <form onSubmit={handleCreate} className="space-y-4">
+              <Input
+                value={form.title}
+                onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
+                placeholder="Titulo destacado"
+                className="h-12 rounded-2xl"
+              />
+              <Textarea
+                value={form.body}
+                onChange={(event) => setForm((current) => ({ ...current, body: event.target.value }))}
+                placeholder="Cuerpo de la publicacion"
+                className="min-h-[140px] rounded-2xl"
+              />
+              <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 transition-colors hover:bg-slate-100">
+                <div className="flex items-center gap-3 text-sm text-slate-600">
+                  <ImagePlus className="h-5 w-5" />
+                  <span>{imageName || 'Adjuntar imagen opcional'}</span>
+                </div>
+                <span className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">Seleccionar</span>
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+              </label>
+              {createMutation.error && (
+                <p className="text-sm text-red-600">
+                  {createMutation.error instanceof Error ? createMutation.error.message : 'No se pudo publicar la novedad.'}
+                </p>
+              )}
+              <div className="flex justify-end">
+                <Button type="submit" disabled={createMutation.isPending || !form.title.trim()} className="h-11 rounded-full px-6">
+                  {createMutation.isPending ? 'Publicando...' : 'Publicar novedad'}
+                </Button>
+              </div>
+            </form>
+          </section>
+        )}
+
+        <section className="mt-8 space-y-6">
+          {newsQuery.isLoading && (
+            <div className="rounded-[28px] border border-slate-200 bg-white/90 px-6 py-10 text-center text-slate-500">
+              Cargando novedades...
+            </div>
+          )}
+          {newsQuery.error && (
+            <div className="rounded-[28px] border border-red-200 bg-red-50 px-6 py-10 text-center text-red-600">
+              {newsQuery.error instanceof Error ? newsQuery.error.message : 'No se pudo cargar el modulo.'}
+            </div>
+          )}
+          {(newsQuery.data ?? []).map((post) => (
+            <NewsCard
+              key={post.id}
+              post={post}
+              isAdmin={isAdmin}
+              highlighted={highlightedPostId === post.id}
+              onToggleLike={async (postId) => {
+                await likeMutation.mutateAsync(postId);
+              }}
+              onComment={async (postId, payload) => {
+                await commentMutation.mutateAsync({ postId, payload });
+              }}
+            />
+          ))}
+          {!newsQuery.isLoading && !newsQuery.error && (newsQuery.data ?? []).length === 0 && (
+            <div className="rounded-[28px] border border-dashed border-slate-300 bg-white/75 px-6 py-12 text-center text-slate-500">
+              Aun no hay publicaciones en Novedades.
+            </div>
+          )}
+        </section>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => navigate(dashboardPath)}
+        aria-label="Ir al dashboard"
+        className="fixed right-4 top-1/2 z-20 inline-flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full bg-slate-950 text-white shadow-[0_20px_40px_rgba(15,23,42,0.25)] transition-transform hover:scale-105"
+      >
+        <span className="news-bounce-arrow inline-flex">
+          <ArrowRight className="h-6 w-6" />
+        </span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => navigate(dashboardPath)}
+        className="fixed bottom-4 right-4 rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-lg transition-colors hover:bg-slate-50 sm:hidden"
+      >
+        Ir al panel
+      </button>
+    </div>
+  );
+};
+
+export default News;

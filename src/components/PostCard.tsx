@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Share2, Play } from 'lucide-react';
+import { Heart, Image as ImageIcon, MessageCircle, Play } from 'lucide-react';
 import { Post } from '@/types';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -17,8 +17,12 @@ const PostCard = ({ post, index = 0 }: PostCardProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
+  const isEducational = post.type === 'educational';
+  const isCommunity = post.type === 'community';
+  const educationalBadgeLabel = post.mediaType === 'video' || post.videoUrl ? 'Video' : 'Articulo';
   const [liked, setLiked] = useState(post.isLiked);
   const [likeCount, setLikeCount] = useState(post.likes);
+
   const likeMutation = useMutation({
     mutationFn: () => togglePostLike(post.id),
     onSuccess: (result) => {
@@ -27,6 +31,7 @@ const PostCard = ({ post, index = 0 }: PostCardProps) => {
       void queryClient.invalidateQueries({ queryKey: ['home-feed'] });
       void queryClient.invalidateQueries({ queryKey: ['community-posts'] });
       void queryClient.invalidateQueries({ queryKey: ['post-detail', post.id] });
+      void queryClient.invalidateQueries({ queryKey: ['community-post-detail', post.id] });
     },
   });
 
@@ -48,69 +53,140 @@ const PostCard = ({ post, index = 0 }: PostCardProps) => {
 
   const initials = post.author.fullName.split(' ').map((n) => n[0]).join('').slice(0, 2);
   const timeAgo = getTimeAgo(post.createdAt);
+  const createdAtLabel = new Date(post.createdAt).toLocaleString('es-PE', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+
+  const openAuthorProfile = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/perfil/${post.author.role}/${post.author.id}`);
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08, duration: 0.4 }}
-      onClick={() => navigate(`/post/${post.id}`)}
-      className="bg-card p-6 rounded-lg shadow-smooth hover:shadow-smooth-hover transition-all cursor-pointer"
+      onClick={() => navigate(isCommunity ? `/buyer/community/post/${post.id}` : `/post/${post.id}`)}
+      className={`cursor-pointer overflow-hidden rounded-2xl border border-border/60 bg-card shadow-smooth transition-all hover:shadow-smooth-hover ${
+        isEducational ? 'hover:-translate-y-0.5' : ''
+      }`}
     >
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground text-sm font-semibold">
-          {initials}
+      {isEducational ? (
+        <div className="mb-1 flex items-start justify-between gap-3 p-6">
+          <div className="min-w-0">
+            <h3 className="line-clamp-2 text-2xl font-bold leading-tight text-foreground">{post.title}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{timeAgo}</p>
+          </div>
+          <Badge variant="default" className="shrink-0 rounded-full px-3 py-1 text-xs">
+            {educationalBadgeLabel}
+          </Badge>
         </div>
-        <div className="flex-1">
-          <h4 className="text-sm font-semibold text-foreground">{post.author.fullName}</h4>
-          <p className="text-xs text-muted-foreground">{post.author.company} - {timeAgo}</p>
-        </div>
-        <Badge variant={post.type === 'educational' ? 'default' : 'secondary'} className="text-xs">
-          {post.type === 'educational' ? 'Educativo' : post.category.name}
-        </Badge>
-      </div>
+      ) : (
+        <div className="relative p-5 pb-4">
+          <Badge className="absolute right-5 top-5 rounded-full bg-primary px-3 py-1 text-[11px] text-primary-foreground hover:bg-primary">
+            {post.category.name}
+          </Badge>
+          <div className="mb-4 flex items-start gap-3">
+            <button
+              type="button"
+              onClick={openAuthorProfile}
+              className="flex h-11 w-11 items-center justify-center rounded-full gradient-primary text-sm font-semibold text-primary-foreground shadow-sm"
+              aria-label={`Ver perfil de ${post.author.fullName}`}
+            >
+              {initials}
+            </button>
+            <button type="button" onClick={openAuthorProfile} className="min-w-0 flex-1 text-left">
+              <div className="flex flex-wrap items-center gap-2 pr-20">
+                <h4 className="text-sm font-semibold text-foreground transition-colors hover:text-primary">
+                  {post.author.fullName}
+                </h4>
+              </div>
+              <p className="truncate text-xs text-muted-foreground">{post.author.company}</p>
+              <p className="text-xs text-muted-foreground">{timeAgo} - {createdAtLabel}</p>
+            </button>
+          </div>
 
-      <h3 className="text-base font-semibold mb-2 text-foreground">{post.title}</h3>
-      <p className="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-2">{post.description}</p>
-
-      {post.videoUrl && (
-        <div className="bg-muted rounded-md h-44 flex items-center justify-center mb-4 relative overflow-hidden group">
-          <div className="w-12 h-12 rounded-full bg-card/90 flex items-center justify-center shadow-smooth group-hover:scale-110 transition-transform">
-            <Play className="w-5 h-5 text-primary ml-0.5" />
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold leading-snug text-foreground">{post.title}</h3>
+            <p className="whitespace-pre-wrap break-words text-sm leading-7 text-foreground/85">
+              {post.description}
+            </p>
           </div>
         </div>
       )}
 
-      <div className="flex gap-1 pt-3 border-t border-border">
-        <button
-          onClick={(e) => void handleLike(e)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-            liked ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-primary hover:bg-muted'
+      {isEducational && (
+        <div className="px-6">
+          <p className="mb-4 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{post.description}</p>
+        </div>
+      )}
+
+      {(post.videoUrl || post.thumbnailUrl) && (
+        <div
+          className={`group relative flex items-center justify-center overflow-hidden bg-muted ${
+            isEducational ? 'mx-6 mb-4 h-56 rounded-xl ring-1 ring-border/50' : 'h-72 border-y border-border/70 sm:h-80'
           }`}
         >
-          <Heart className={`w-4 h-4 ${liked ? 'fill-primary' : ''}`} />
-          {likeCount}
+          {post.thumbnailUrl ? (
+            <>
+              <img src={post.thumbnailUrl} alt={post.title} className="absolute inset-0 h-full w-full object-cover" />
+              {isEducational && <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />}
+            </>
+          ) : null}
+          <div
+            className={`relative z-10 flex items-center justify-center rounded-full bg-card/90 shadow-smooth transition-transform group-hover:scale-110 ${
+              isEducational ? 'h-14 w-14 backdrop-blur-sm' : 'h-12 w-12'
+            }`}
+          >
+            {post.mediaType === 'image' && !post.videoUrl ? (
+              <ImageIcon className="h-5 w-5 text-primary" />
+            ) : (
+              <Play className="ml-0.5 h-5 w-5 text-primary" />
+            )}
+          </div>
+          {isEducational && (
+            <div className="absolute bottom-4 left-4 right-4 z-10">
+              <p className="mb-1 text-xs uppercase tracking-[0.16em] text-white/90">Ver contenido</p>
+              <p className="line-clamp-1 text-base font-semibold text-white">{post.title}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {isCommunity && (
+        <div className="border-t border-border/70 px-5 py-3 text-xs text-muted-foreground">
+          <div className="flex items-center justify-between gap-3">
+            <span>{likeCount.toLocaleString()} Me gusta</span>
+            <span>{post.comments.toLocaleString()} comentarios</span>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-1 border-t border-border p-2">
+        <button
+          onClick={(e) => void handleLike(e)}
+          className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+            liked ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-primary'
+          }`}
+        >
+          <Heart className={`h-4 w-4 ${liked ? 'fill-primary' : ''}`} />
+          Me gusta
         </button>
         <button
           onClick={(e) => {
             e.stopPropagation();
-            if (post.type === 'community') {
+            if (isCommunity) {
               navigate(`/buyer/community/post/${post.id}`);
               return;
             }
             navigate(`/post/${post.id}`);
           }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
+          className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-primary"
         >
-          <MessageCircle className="w-4 h-4" />
-          {post.comments}
-        </button>
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
-        >
-          <Share2 className="w-4 h-4" />
-          {post.shares}
+          <MessageCircle className="h-4 w-4" />
+          Comentar
         </button>
       </div>
     </motion.div>

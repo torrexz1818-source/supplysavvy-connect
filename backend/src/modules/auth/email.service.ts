@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 import { Injectable, Logger } from '@nestjs/common';
-import nodemailer, { Transporter } from 'nodemailer';
+import * as nodemailer from 'nodemailer';
+import { Transporter } from 'nodemailer';
 
 type SendPasswordResetOtpData = {
   to: string;
@@ -7,32 +9,76 @@ type SendPasswordResetOtpData = {
   fullName: string;
 };
 
+type ExpertAppointmentEmailData = {
+  buyerEmail: string;
+  expertEmail: string;
+  buyerName: string;
+  expertName: string;
+  startsAt: string;
+  topic: string;
+  meetLink?: string;
+};
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private readonly from = 'torrexz1818@gmail.com';
+  private readonly from =
+    process.env.SMTP_FROM?.trim() ||
+    process.env.SMTP_USER?.trim() ||
+    'no-reply@supplynexu.com';
   private readonly transporter: Transporter;
 
   constructor() {
+    const smtpHost = process.env.SMTP_HOST?.trim();
+    const smtpPort = Number(process.env.SMTP_PORT?.trim() || '587');
+    const smtpSecure =
+      String(process.env.SMTP_SECURE ?? '')
+        .trim()
+        .toLowerCase() === 'true';
+    const smtpUser = process.env.SMTP_USER?.trim();
+    const smtpPass = process.env.SMTP_PASS?.trim();
+
     this.transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: 'torrexz1818@gmail.com',
-        pass: 'avqd megm xptk rhqa',
-      },
+      ...(smtpHost
+        ? {
+            host: smtpHost,
+            port: smtpPort,
+            secure: smtpSecure,
+          }
+        : {
+            service: 'gmail',
+          }),
+      ...(smtpUser && smtpPass
+        ? {
+            auth: {
+              user: smtpUser,
+              pass: smtpPass,
+            },
+          }
+        : {}),
     });
   }
 
+  isConfigured() {
+    const smtpHost = process.env.SMTP_HOST?.trim();
+    const smtpUser = process.env.SMTP_USER?.trim();
+    const smtpPass = process.env.SMTP_PASS?.trim();
+
+    return Boolean(smtpHost || (smtpUser && smtpPass));
+  }
+
   async sendPasswordResetOtp(data: SendPasswordResetOtpData): Promise<void> {
+    this.ensureConfigured();
+
     try {
       await this.transporter.sendMail({
-        from: `"Soporte SupplyConnect" <${this.from}>`,
+        from: `"Soporte Supply Nexu" <${this.from}>`,
         to: data.to,
         subject: 'Codigo de recuperacion',
         text: `Hola ${data.fullName}, tu codigo es ${data.code}`,
         html: `
           <div style="font-family: Arial, sans-serif;">
-            <h2>Recuperar contraseña</h2>
+            <h2>Recuperar contrasena</h2>
             <p>Hola <strong>${data.fullName}</strong>,</p>
             <p>Tu codigo es:</p>
             <h1 style="letter-spacing: 5px;">${data.code}</h1>
@@ -41,10 +87,81 @@ export class EmailService {
         `,
       });
 
-      console.log('✅ Correo enviado a:', data.to);
+      this.logger.log(`Correo de recuperacion enviado a ${data.to}`);
     } catch (error) {
-      console.error('❌ Error enviando correo:', error);
+      this.logger.error(
+        `Error enviando correo a ${data.to}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       throw new Error('No se pudo enviar el correo');
     }
+  }
+
+  async sendExpertAppointmentConfirmation(
+    data: ExpertAppointmentEmailData,
+  ): Promise<void> {
+    this.ensureConfigured();
+
+    const subject = `Confirmacion de reunion con ${data.expertName}`;
+    const formattedDate = this.formatDate(data.startsAt);
+    const meetLink = data.meetLink ?? 'Pendiente de sincronizacion';
+    const html = `
+      <div style="font-family: Arial, sans-serif; color: #0f172a;">
+        <h2 style="margin-bottom: 12px;">Reunion agendada en Nexu Experts</h2>
+        <p>Hola,</p>
+        <p>La reunion ha sido confirmada correctamente.</p>
+        <p><strong>Experto:</strong> ${data.expertName}</p>
+        <p><strong>Comprador:</strong> ${data.buyerName}</p>
+        <p><strong>Fecha y hora:</strong> ${formattedDate}</p>
+        <p><strong>Tema:</strong> ${data.topic}</p>
+        <p><strong>Google Meet:</strong> <a href="${meetLink}">${meetLink}</a></p>
+      </div>
+    `;
+
+    const text = [
+      'Reunion agendada en Nexu Experts',
+      `Experto: ${data.expertName}`,
+      `Comprador: ${data.buyerName}`,
+      `Fecha y hora: ${formattedDate}`,
+      `Tema: ${data.topic}`,
+      `Google Meet: ${meetLink}`,
+    ].join('\n');
+
+    try {
+      await this.transporter.sendMail({
+        from: `"Supply Nexu" <${this.from}>`,
+        to: data.buyerEmail,
+        cc: data.expertEmail,
+        subject,
+        text,
+        html,
+      });
+
+      this.logger.log(
+        `Correo de cita enviado a ${data.buyerEmail} y ${data.expertEmail}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error enviando confirmacion de cita a ${data.buyerEmail} / ${data.expertEmail}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw new Error('No se pudo enviar el correo de confirmacion');
+    }
+  }
+
+  private ensureConfigured() {
+    if (!this.isConfigured()) {
+      throw new Error(
+        'La cita se guardo correctamente, pero el correo de confirmacion no esta disponible por ahora.',
+      );
+    }
+  }
+
+  private formatDate(value: string) {
+    return new Intl.DateTimeFormat('es-PE', {
+      dateStyle: 'full',
+      timeStyle: 'short',
+      timeZone: process.env.APP_TIMEZONE?.trim() || 'America/Lima',
+    }).format(new Date(value));
   }
 }

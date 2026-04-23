@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import MainLayout from '@/layouts/MainLayout';
-import StatsCard from '@/components/StatsCard';
 import PostCard from '@/components/PostCard';
 import { getHomeFeed } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -36,9 +35,9 @@ const Index = () => {
           transition={{ duration: 0.5 }}
           className="gradient-primary rounded-lg p-8 mb-8"
         >
-          <h1 className="text-3xl font-bold text-primary-foreground mb-2">SUPPLYCONNECT</h1>
+          <h1 className="text-3xl font-bold text-primary-foreground mb-2">SUPPLY NEXU</h1>
           <p className="text-primary-foreground/80 text-base max-w-xl mb-6">
-            La plataforma donde compradores B2B aprenden, comparten experiencias y descubren los mejores proveedores.
+            La plataforma donde compradores y proveedores B2B aprenden, comparten experiencias y generan oportunidades.
           </p>
           <div className="flex gap-3">
             <Button variant="secondary" onClick={() => navigate('/community')} className="font-medium">
@@ -53,12 +52,6 @@ const Index = () => {
             </Button>
           </div>
         </motion.div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {(data?.stats ?? []).map((stat, i) => (
-            <StatsCard key={stat.label} {...stat} index={i} />
-          ))}
-        </div>
 
         <div className="relative mb-8">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

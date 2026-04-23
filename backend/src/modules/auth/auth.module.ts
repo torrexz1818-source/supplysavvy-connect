@@ -11,11 +11,11 @@ import { UsersModule } from '../users/users.module';
     UsersModule,
     NotificationsModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET ?? 'dev-supplyconnect-secret',
+      secret: process.env.JWT_SECRET ?? 'dev-supplynexu-secret',
     }),
   ],
   controllers: [AuthController],
   providers: [AuthService, EmailService],
-  exports: [JwtModule],
+  exports: [JwtModule, EmailService],
 })
 export class AuthModule {}

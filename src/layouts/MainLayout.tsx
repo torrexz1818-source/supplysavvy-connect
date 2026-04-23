@@ -1,6 +1,5 @@
 import { ReactNode } from 'react';
 import {
-  Bell,
   BookOpen,
   Building2,
   FileText,
@@ -15,6 +14,9 @@ import {
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import NotificationBell from '@/components/NotificationBell';
+import MessageBell from '@/components/MessageBell';
+import NewsAccessButton from '@/components/NewsAccessButton';
+import { isBuyerLikeRole } from '@/lib/roles';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -26,12 +28,34 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const navigate = useNavigate();
   const isSupplier = user?.role === 'supplier';
   const isAdmin = user?.role === 'admin';
+  const roleBadge = isAdmin
+    ? {
+        label: 'Administrador',
+        icon: Shield,
+        className: 'bg-amber-500/25 border border-amber-300/40 text-amber-100',
+      }
+    : isSupplier
+      ? {
+          label: 'Proveedor',
+          icon: Store,
+          className: 'bg-[#0F6E56]/25 border border-[#0F6E56]/50 text-emerald-100',
+        }
+      : user?.role === 'expert'
+        ? {
+            label: 'Experto Nexu',
+            icon: Users,
+            className: 'bg-cyan-500/25 border border-cyan-300/40 text-cyan-100',
+          }
+      : {
+          label: 'Comprador',
+          icon: Users,
+          className: 'bg-blue-500/25 border border-blue-300/40',
+        };
 
   const supplierItems = [
     { to: '/supplier/dashboard', label: 'Inicio', icon: LayoutDashboard },
     { to: '/supplier/directory', label: 'Directorio de compradores', icon: Building2 },
     { to: '/publicaciones', label: 'Publicaciones', icon: Newspaper },
-    { to: '/notifications', label: 'Notificaciones', icon: Bell },
   ];
 
   const buyerItems = [
@@ -40,19 +64,24 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     { to: '/buyer/sale', label: 'Liquidaciones', icon: FileText },
     { to: '/contenido-educativo', label: 'Contenido educativo', icon: BookOpen },
     { to: '/community', label: 'Comunidad', icon: MessageCircle },
-    { to: '/notifications', label: 'Notificaciones', icon: Bell },
   ];
 
   const navSections = isAdmin
     ? [
-        { title: 'Administrador', items: [{ to: '/admin/dashboard', label: 'Panel administrativo', icon: Shield }] },
+        {
+          title: 'Administrador',
+          items: [
+            { to: '/admin/dashboard', label: 'Panel administrativo', icon: Shield },
+            { to: '/novedades', label: 'Novedades', icon: Newspaper },
+          ],
+        },
         { title: 'Comprador', items: buyerItems },
         { title: 'Proveedor', items: supplierItems },
       ]
     : [
         {
           title: '',
-          items: isSupplier ? supplierItems : buyerItems,
+          items: isSupplier ? supplierItems : (isBuyerLikeRole(user?.role) ? buyerItems : buyerItems),
         },
       ];
 
@@ -99,16 +128,12 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     <div className="h-screen bg-background flex overflow-hidden">
       <aside className="w-72 h-screen bg-[#0f2a5e] text-white flex flex-col overflow-hidden">
         <div className="px-4 py-4 border-b border-white/15">
-          <p className="text-xl font-bold tracking-tight">SupplyConnect</p>
+          <p className="text-xl font-bold tracking-tight">Supply Nexu</p>
           <span
-            className={`inline-flex items-center gap-1 mt-3 px-2.5 py-1 rounded-full text-xs font-semibold ${
-              isSupplier
-                ? 'bg-[#0F6E56]/25 border border-[#0F6E56]/50 text-emerald-100'
-                : 'bg-blue-500/25 border border-blue-300/40'
-            }`}
+            className={`inline-flex items-center gap-1 mt-3 px-2.5 py-1 rounded-full text-xs font-semibold ${roleBadge.className}`}
           >
-            {isSupplier ? <Store className="w-3 h-3" /> : <Users className="w-3 h-3" />}
-            {isSupplier ? 'Proveedor' : 'Comprador'}
+            <roleBadge.icon className="w-3 h-3" />
+            {roleBadge.label}
           </span>
         </div>
 
@@ -158,7 +183,9 @@ const MainLayout = ({ children }: MainLayoutProps) => {
             <span className="text-sm font-medium text-foreground truncate max-w-[260px]">
               {user?.fullName ?? 'Usuario'}
             </span>
+            <MessageBell />
             <NotificationBell />
+            <NewsAccessButton />
           </div>
         </div>
         {children}

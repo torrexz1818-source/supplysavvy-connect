@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Play } from 'lucide-react';
+import { ArrowLeft, FileText, Image as ImageIcon, Link2, Play } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import MainLayout from '@/layouts/MainLayout';
@@ -9,6 +9,7 @@ import { getPostDetail, registerEducationalContentView } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/lib/auth';
+import { isBuyerLikeRole } from '@/lib/roles';
 
 const PostDetail = () => {
   const { id } = useParams();
@@ -25,7 +26,7 @@ const PostDetail = () => {
   const lesson = data?.lesson;
 
   useEffect(() => {
-    if (!id || !post || post.type !== 'educational' || user?.role !== 'buyer') {
+    if (!id || !post || post.type !== 'educational' || !isBuyerLikeRole(user?.role)) {
       return;
     }
 
@@ -56,21 +57,26 @@ const PostDetail = () => {
         </Button>
 
         {post && (
-          <div className="grid lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(500px,1fr)]">
+            <div className="min-w-0">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
-                {post.videoUrl && (
-                  <div className="bg-muted rounded-lg h-72 md:h-96 flex items-center justify-center mb-6 relative overflow-hidden">
-                    <div className="w-16 h-16 rounded-full bg-card/90 flex items-center justify-center shadow-smooth cursor-pointer hover:scale-110 transition-transform">
-                      <Play className="w-7 h-7 text-primary ml-1" />
-                    </div>
+                {(post.videoUrl || post.thumbnailUrl) && (
+                  <div className="bg-black rounded-lg h-72 md:h-96 flex items-center justify-center mb-6 relative overflow-hidden">
+                    {post.videoUrl ? (
+                      <video
+                        src={post.videoUrl}
+                        poster={post.thumbnailUrl}
+                        controls
+                        className="h-full w-full object-contain bg-black"
+                      />
+                    ) : post.thumbnailUrl ? (
+                      <img src={post.thumbnailUrl} alt={post.title} className="h-full w-full object-cover" />
+                    ) : null}
                   </div>
                 )}
 
                 <h1 className="text-2xl font-bold text-foreground mb-2">{post.title}</h1>
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="text-sm text-muted-foreground">{post.author.fullName}</span>
-                  <span className="text-muted-foreground">•</span>
                   <span className="text-sm text-muted-foreground">{post.author.company}</span>
                 </div>
 
@@ -85,6 +91,31 @@ const PostDetail = () => {
                 )}
 
                 <p className="text-foreground/80 leading-relaxed mb-8">{post.description}</p>
+
+                {!!post.resources?.length && (
+                  <div className="mb-8">
+                    <h3 className="text-base font-semibold text-foreground mb-3">Recursos complementarios</h3>
+                    <div className="space-y-3">
+                      {post.resources.map((resource) => (
+                        <a
+                          key={resource.id}
+                          href={resource.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3 hover:bg-muted transition-colors"
+                        >
+                          {resource.type === 'link' ? <Link2 className="w-4 h-4 text-primary" /> : null}
+                          {resource.type === 'image' ? <ImageIcon className="w-4 h-4 text-primary" /> : null}
+                          {resource.type === 'file' ? <FileText className="w-4 h-4 text-primary" /> : null}
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{resource.name}</p>
+                            <p className="text-xs text-muted-foreground">{resource.url}</p>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {post.type === 'educational' && (
                   <div className="mb-8">
@@ -111,7 +142,7 @@ const PostDetail = () => {
               </motion.div>
             </div>
 
-            <div className="lg:col-span-1">
+            <div className="min-w-0">
               <div className="bg-card rounded-lg shadow-smooth p-5 sticky top-20">
                 <CommentSection
                   postId={post.id}

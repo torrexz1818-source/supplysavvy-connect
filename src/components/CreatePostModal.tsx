@@ -90,6 +90,10 @@ const CreatePostModal = ({ isOpen, onClose, categories, onCreated }: CreatePostM
             </div>
 
             <div className="p-5 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Espacio exclusivo para compradores comparte, pregunta y aprende de tus pares.
+              </p>
+
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">Categoria</label>
                 <div className="flex flex-wrap gap-2">

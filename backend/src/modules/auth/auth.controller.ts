@@ -1,13 +1,15 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import { AuthenticatedGuard } from '../../common/auth/authenticated.guard';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { AuthService } from './auth.service';
+import { CreateSupplierOnboardingSessionDto } from './dto/create-supplier-onboarding-session.dto';
 import { ForgotPasswordRequestDto } from './dto/forgot-password-request.dto';
 import { ForgotPasswordResetDto } from './dto/forgot-password-reset.dto';
 import { ForgotPasswordVerifyDto } from './dto/forgot-password-verify.dto';
 import { LoginRequestDto } from './dto/login.request.dto';
 import { RegisterRequestDto } from './dto/register.request.dto';
+import { RegisterSupplierShareDto } from './dto/register-supplier-share.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -16,6 +18,24 @@ export class AuthController {
   @Post('register')
   register(@Body() data: RegisterRequestDto) {
     return this.authService.register(data);
+  }
+
+  @Post('supplier-onboarding/session')
+  createSupplierOnboardingSession(@Body() data: CreateSupplierOnboardingSessionDto) {
+    return this.authService.createSupplierOnboardingSession(data.sessionId);
+  }
+
+  @Get('supplier-onboarding/session/:sessionId')
+  getSupplierOnboardingSession(@Param('sessionId') sessionId: string) {
+    return this.authService.getSupplierOnboardingSession(sessionId);
+  }
+
+  @Post('supplier-onboarding/session/:sessionId/share')
+  registerSupplierShare(
+    @Param('sessionId') sessionId: string,
+    @Body() data: RegisterSupplierShareDto,
+  ) {
+    return this.authService.registerSupplierOnboardingShare(sessionId, data.method);
   }
 
   @Post('login')

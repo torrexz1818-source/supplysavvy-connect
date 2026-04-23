@@ -3,11 +3,12 @@ import { DatabaseService } from '../database/database.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { User } from '../users/domain/user.model';
 import { UserRole } from '../users/domain/user-role.enum';
+import { UsersService } from '../users/users.service';
 
 type PostRecord = {
   id: string;
   authorId: string;
-  type: 'educational' | 'community';
+  type: 'educational' | 'community' | 'liquidation';
   title: string;
   description: string;
   likedBy: string[];
@@ -54,6 +55,13 @@ type EducationalContentViewRecord = {
   month: string;
 };
 
+type ProfileViewNotificationRecord = {
+  id: string;
+  viewerId: string;
+  targetUserId: string;
+  notifiedAt: Date;
+};
+
 type SectorBreakdownItem = {
   sector: string;
   count: number;
@@ -72,6 +80,7 @@ export class StatsService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly notificationsService: NotificationsService,
+    private readonly usersService: UsersService,
   ) {}
 
   async getStats() {
@@ -149,13 +158,17 @@ export class StatsService {
     const [prevStart, prevEnd] = this.getMonthRange(previousMonth);
 
     if (role === UserRole.SUPPLIER) {
-      const [supplier, posts, comments, messages, reviews, topEducational] = await Promise.all([
+      const [supplier, posts, comments, messages, reviews, topEducational, profileViews] = await Promise.all([
         this.usersCollection().findOne({ id: userId }),
         this.postsCollection().find({ authorId: userId, createdAt: { $gte: start, $lt: end } }).toArray(),
         this.commentsCollection().find({ createdAt: { $gte: start, $lt: end } }).toArray(),
         this.messagesCollection().find({ supplierId: userId, createdAt: { $gte: start, $lt: end } }).toArray(),
         this.supplierReviewsCollection().find({ supplierId: userId, createdAt: { $gte: start, $lt: end } }).toArray(),
         this.topEducationalContent(monthValue, 3),
+        this.profileViewsCollection().countDocuments({
+          targetUserId: userId,
+          notifiedAt: { $gte: start, $lt: end },
+        }),
       ]);
 
       const previousMessagesCount = await this.messagesCollection().countDocuments({
@@ -206,7 +219,7 @@ export class StatsService {
         month: monthValue,
         role: UserRole.SUPPLIER,
         metrics: {
-          profileViews: 0,
+          profileViews,
           likes: posts.reduce((acc, post) => acc + post.likedBy.length, 0),
           messages: currentMessagesCount,
           newBuyers: new Set(messages.map((message) => message.buyerId).filter(Boolean)).size,
@@ -241,30 +254,23 @@ export class StatsService {
       return reportPayload;
     }
 
-    const [buyer, conversations, viewedContents, topEducational, suppliers] = await Promise.all([
+    const [buyer, conversations, viewedContents, topEducational, suppliers, profileViews, messagesSent, recommended] = await Promise.all([
       this.usersCollection().findOne({ id: userId }),
       this.conversationsCollection().find({ buyerId: userId, updatedAt: { $gte: start, $lt: end } }).toArray(),
       this.educationalViewsCollection().find({ userId, month: monthValue }).toArray(),
       this.topEducationalContent(monthValue, 3),
       this.usersCollection().find({ role: UserRole.SUPPLIER }).toArray(),
+      this.profileViewsCollection().find({ viewerId: userId, notifiedAt: { $gte: start, $lt: end } }).toArray(),
+      this.messagesCollection().countDocuments({ senderId: userId, createdAt: { $gte: start, $lt: end } }),
+      this.usersService.listRecommendedSuppliers(userId, 3),
     ]);
 
-    const visitedSupplierIds = Array.from(new Set(conversations.map((conversation) => conversation.supplierId)));
-    const recommended = suppliers
-      .filter((supplier) => !visitedSupplierIds.includes(supplier.id))
-      .slice(0, 3)
-      .map((supplier) => ({
-        id: supplier.id,
-        name: supplier.fullName,
-        company: supplier.company,
-        sector: supplier.sector ?? 'General',
-        stars: 4,
-        matchReasons: [
-          supplier.sector && buyer?.sector && supplier.sector === buyer.sector
-            ? `Mismo sector: ${supplier.sector}`
-            : 'Proveedor activo en la plataforma',
-        ],
-      }));
+    const visitedSupplierIds = Array.from(
+      new Set([
+        ...conversations.map((conversation) => conversation.supplierId),
+        ...profileViews.map((view) => view.targetUserId),
+      ]),
+    );
 
     const visitedSuppliers = suppliers
       .filter((supplier) => visitedSupplierIds.includes(supplier.id))
@@ -280,15 +286,24 @@ export class StatsService {
       role: UserRole.BUYER,
       metrics: {
         suppliersVisited: visitedSupplierIds.length,
-        messagesSent: conversations.length,
+        messagesSent,
         contentsViewed: viewedContents.length,
         newSuppliersInMyCategories: suppliers.filter(
           (supplier) =>
-            supplier.sector?.trim().toLowerCase() === buyer?.sector?.trim().toLowerCase(),
+            supplier.sector?.trim().toLowerCase() === buyer?.sector?.trim().toLowerCase() &&
+            supplier.createdAt >= start &&
+            supplier.createdAt < end,
         ).length,
       },
       topEducational,
-      recommendedSuppliers: recommended,
+      recommendedSuppliers: recommended.map((supplier) => ({
+        id: supplier.id,
+        name: supplier.name,
+        company: supplier.company,
+        sector: supplier.sector,
+        stars: supplier.averageRating,
+        matchReasons: supplier.matchReasons,
+      })),
       visitedSuppliers,
     };
 
@@ -388,6 +403,10 @@ export class StatsService {
     return this.databaseService.collection<EducationalContentViewRecord>('educationalContentViews');
   }
 
+  private profileViewsCollection() {
+    return this.databaseService.collection<ProfileViewNotificationRecord>('profileViewNotifications');
+  }
+
   private normalizeMonth(month?: string) {
     if (month && /^\d{4}-\d{2}$/.test(month)) {
       return month;
@@ -419,14 +438,14 @@ export class StatsService {
     return Number((((current - previous) / previous) * 100).toFixed(1));
   }
 
-  private createMonthlyReportNotification(data: {
+  private async createMonthlyReportNotification(data: {
     userId: string;
     role: UserRole.BUYER | UserRole.SUPPLIER;
     month: string;
     body: string;
   }) {
     if (
-      this.notificationsService.exists({
+      await this.notificationsService.exists({
         userId: data.userId,
         type: 'MONTHLY_REPORT',
         entityId: data.month,

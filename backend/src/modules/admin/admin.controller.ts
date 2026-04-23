@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -6,8 +7,16 @@ import {
   Param,
   Patch,
   Post,
+  UploadedFile,
+  UploadedFiles,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage, memoryStorage } from 'multer';
+import { randomUUID } from 'crypto';
+import { extname, join } from 'path';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { AdminGuard } from '../../common/auth/admin.guard';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { AuthenticatedGuard } from '../../common/auth/authenticated.guard';
@@ -20,9 +29,16 @@ type CreateManagedPostBody = {
   title: string;
   description: string;
   categoryId: string;
-  type: 'educational' | 'community';
+  type: 'educational' | 'community' | 'liquidation';
+  mediaType?: 'video' | 'image';
   videoUrl?: string;
   thumbnailUrl?: string;
+  resources?: Array<{
+    id: string;
+    type: 'image' | 'file' | 'link';
+    name: string;
+    url: string;
+  }>;
 };
 
 type UpdateUserStatusBody = {
@@ -35,6 +51,29 @@ type UpdateMembershipBody = {
   adminApproved?: boolean;
   expiresAt?: string;
 };
+
+type InitChunkUploadBody = {
+  originalName: string;
+  totalChunks: number | string;
+  totalSize: number | string;
+  mimeType?: string;
+};
+
+type UploadChunkBody = {
+  uploadId: string;
+  chunkIndex: number | string;
+};
+
+type CompleteChunkUploadBody = {
+  uploadId: string;
+  originalName: string;
+  totalChunks: number | string;
+};
+
+const adminUploadMaxFileSize =
+  Number.parseInt(process.env.ADMIN_UPLOAD_MAX_FILE_SIZE_BYTES?.trim() || '', 10) || 2 * 1024 * 1024 * 1024;
+const adminUploadChunkSize =
+  Number.parseInt(process.env.ADMIN_UPLOAD_CHUNK_SIZE_BYTES?.trim() || '', 10) || 8 * 1024 * 1024;
 
 @Controller('admin')
 @UseGuards(AuthenticatedGuard, AdminGuard)
@@ -49,18 +88,152 @@ export class AdminController {
     return this.postsService.getAdminDashboard();
   }
 
+  @Post('uploads/init')
+  initChunkUpload(@Body() body: InitChunkUploadBody) {
+    const totalChunks = Number(body.totalChunks);
+    const totalSize = Number(body.totalSize);
+
+    if (!body.originalName?.trim() || !Number.isFinite(totalChunks) || totalChunks < 1 || !Number.isFinite(totalSize) || totalSize < 1) {
+      throw new BadRequestException('Datos de carga incompletos');
+    }
+
+    if (totalSize > adminUploadMaxFileSize) {
+      throw new BadRequestException('El archivo excede el limite permitido para videos');
+    }
+
+    const uploadId = randomUUID();
+    const chunkDir = this.getChunkDir(uploadId);
+    this.ensureDir(chunkDir);
+
+    return {
+      uploadId,
+      chunkSize: adminUploadChunkSize,
+      totalChunks,
+    };
+  }
+
+  @Post('uploads/chunk')
+  @UseInterceptors(
+    FileInterceptor('chunk', {
+      storage: memoryStorage(),
+      limits: {
+        fileSize: adminUploadChunkSize,
+      },
+    }),
+  )
+  uploadChunk(
+    @Body() body: UploadChunkBody,
+    @UploadedFile() chunk?: { buffer: Buffer },
+  ) {
+    const uploadId = body.uploadId?.trim();
+    const chunkIndex = Number(body.chunkIndex);
+
+    if (!uploadId || !/^[a-zA-Z0-9-]+$/.test(uploadId) || !Number.isInteger(chunkIndex) || chunkIndex < 0 || !chunk) {
+      throw new BadRequestException('Chunk invalido');
+    }
+
+    const chunkDir = this.getChunkDir(uploadId);
+    this.ensureDir(chunkDir);
+
+    writeFileSync(join(chunkDir, `${chunkIndex}.part`), chunk.buffer);
+
+    return {
+      uploadId,
+      chunkIndex,
+      received: true,
+    };
+  }
+
+  @Post('uploads/complete')
+  completeChunkUpload(@Body() body: CompleteChunkUploadBody) {
+    const uploadId = body.uploadId?.trim();
+    const originalName = body.originalName?.trim();
+    const totalChunks = Number(body.totalChunks);
+
+    if (!uploadId || !originalName || !/^[a-zA-Z0-9-]+$/.test(uploadId) || !Number.isInteger(totalChunks) || totalChunks < 1) {
+      throw new BadRequestException('Carga incompleta');
+    }
+
+    const chunkDir = this.getChunkDir(uploadId);
+
+    if (!existsSync(chunkDir)) {
+      throw new BadRequestException('No se encontro la carga temporal');
+    }
+
+    const uploadDir = this.getUploadDir();
+    this.ensureDir(uploadDir);
+
+    const finalFilename = `${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(originalName || '')}`;
+    const finalPath = join(uploadDir, finalFilename);
+
+    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex += 1) {
+      const chunkPath = join(chunkDir, `${chunkIndex}.part`);
+
+      if (!existsSync(chunkPath)) {
+        throw new BadRequestException(`Falta la parte ${chunkIndex + 1} del video`);
+      }
+
+      appendFileSync(finalPath, readFileSync(chunkPath));
+    }
+
+    rmSync(chunkDir, { recursive: true, force: true });
+
+    return {
+      url: this.fileToPublicUrl(finalFilename),
+    };
+  }
+
   @Post('posts')
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'mainMedia', maxCount: 1 },
+      { name: 'thumbnail', maxCount: 1 },
+    ], {
+      storage: diskStorage({
+        destination: (_req, _file, callback) => {
+          const uploadDir = join(process.cwd(), 'uploads');
+          if (!existsSync(uploadDir)) {
+            mkdirSync(uploadDir, { recursive: true });
+          }
+          callback(null, uploadDir);
+        },
+        filename: (_req, file, callback) => {
+          const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(file.originalname || '')}`;
+          callback(null, uniqueName);
+        },
+      }),
+      limits: {
+        fileSize: adminUploadMaxFileSize,
+      },
+    }),
+  )
   createManagedPost(
     @Body() body: CreateManagedPostBody,
+    @UploadedFiles() files: {
+      mainMedia?: Array<{ filename: string }>;
+      thumbnail?: Array<{ filename: string }>;
+    },
     @CurrentUser() user: { sub: string },
   ) {
+    const mainMedia = files?.mainMedia?.[0];
+    const thumbnail = files?.thumbnail?.[0];
+    const parsedResources = this.parseResources(body.resources);
+    const bodyMediaType = body.mediaType;
+    const uploadedVideoUrl =
+      bodyMediaType === 'video' && mainMedia ? this.fileToPublicUrl(mainMedia.filename) : undefined;
+    const uploadedImageUrl =
+      bodyMediaType === 'image' && mainMedia ? this.fileToPublicUrl(mainMedia.filename) : undefined;
+    const uploadedThumbnailUrl = thumbnail ? this.fileToPublicUrl(thumbnail.filename) : undefined;
+
     return this.postsService.createPost({
       title: body.title,
       description: body.description,
       categoryId: body.categoryId,
       type: body.type,
-      videoUrl: body.videoUrl,
-      thumbnailUrl: body.thumbnailUrl,
+      mediaType: body.mediaType,
+      videoUrl: uploadedVideoUrl ?? body.videoUrl,
+      thumbnailUrl: uploadedThumbnailUrl ?? uploadedImageUrl ?? body.thumbnailUrl,
+      resources: parsedResources,
       authorId: user.sub,
       isAdmin: true,
     });
@@ -104,5 +277,41 @@ export class AdminController {
       expiresAt: body.expiresAt,
       approvedBy: user.sub,
     });
+  }
+
+  private parseResources(
+    value: CreateManagedPostBody['resources'] | string | undefined,
+  ): CreateManagedPostBody['resources'] {
+    if (!value) {
+      return [];
+    }
+
+    if (Array.isArray(value)) {
+      return value;
+    }
+
+    try {
+      return JSON.parse(value) as CreateManagedPostBody['resources'];
+    } catch {
+      return [];
+    }
+  }
+
+  private fileToPublicUrl(filename: string): string {
+    return `/api/uploads/${filename}`;
+  }
+
+  private getUploadDir() {
+    return join(process.cwd(), 'uploads');
+  }
+
+  private getChunkDir(uploadId: string) {
+    return join(this.getUploadDir(), 'tmp-chunks', uploadId);
+  }
+
+  private ensureDir(path: string) {
+    if (!existsSync(path)) {
+      mkdirSync(path, { recursive: true });
+    }
   }
 }

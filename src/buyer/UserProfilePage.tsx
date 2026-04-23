@@ -1,16 +1,22 @@
-import { useQuery } from '@tanstack/react-query';
-import { useParams } from 'react-router-dom';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useNavigate, useParams } from 'react-router-dom';
 import BackButton from '@/components/BackButton';
 import { Badge } from '@/components/ui/badge';
-import { getBuyerById, getSupplierById } from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { createConversation, getBuyerById, getConversationByPair, getSupplierById, sendConversationMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { useState } from 'react';
 
 const UserProfilePage = () => {
   const { user: sessionUser } = useAuth();
+  const navigate = useNavigate();
   const { role = '', id: idParam = '' } = useParams();
   const normalizedRole = role.toLowerCase();
   const targetId = idParam || sessionUser?.id || '';
   const isOwnProfile = !idParam || targetId === sessionUser?.id;
+  const [message, setMessage] = useState('');
+  const [feedback, setFeedback] = useState('');
 
   const userQuery = useQuery({
     queryKey: ['user-profile', normalizedRole || 'auto', targetId],
@@ -50,6 +56,33 @@ const UserProfilePage = () => {
     enabled: Boolean(targetId),
   });
 
+  const contactMutation = useMutation({
+    mutationFn: async () => {
+      if (!sessionUser?.id || !targetId) {
+        throw new Error('Usuario no disponible');
+      }
+
+      const buyerId = sessionUser.role === 'buyer' ? sessionUser.id : targetId;
+      const supplierId = sessionUser.role === 'supplier' ? sessionUser.id : targetId;
+      const existing = await getConversationByPair(buyerId, supplierId);
+      const conversation = existing ?? await createConversation({ toUserId: targetId, publicationId: null });
+
+      if (message.trim()) {
+        await sendConversationMessage(conversation.id, { message: message.trim() });
+      }
+
+      return conversation;
+    },
+    onSuccess: (conversation) => {
+      setFeedback('');
+      setMessage('');
+      navigate(`/mensajes?conversationId=${conversation.id}`);
+    },
+    onError: (error: Error) => {
+      setFeedback(error.message);
+    },
+  });
+
   if (userQuery.isLoading) {
     return <p className="text-sm text-muted-foreground">Cargando perfil...</p>;
   }
@@ -60,6 +93,11 @@ const UserProfilePage = () => {
 
   const profile = userQuery.data.data;
   const profileRole = userQuery.data.role;
+  const canContact =
+    !isOwnProfile &&
+    sessionUser?.role !== 'admin' &&
+    ((sessionUser?.role === 'supplier' && profileRole === 'buyer') ||
+      (sessionUser?.role === 'buyer' && profileRole === 'supplier'));
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-8">
@@ -89,6 +127,39 @@ const UserProfilePage = () => {
           <p className="text-sm font-medium mb-1">Descripcion</p>
           <p className="text-sm text-muted-foreground">{profile.description || 'Sin descripcion registrada.'}</p>
         </div>
+
+        {canContact && (
+          <div className="border-t border-border pt-4 space-y-3">
+            <div>
+              <p className="text-sm font-medium mb-1">
+                {profileRole === 'buyer' ? 'Contactar comprador' : 'Contactar proveedor'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Puedes abrir una conversacion y enviar un mensaje desde este perfil.
+              </p>
+            </div>
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Escribe tu mensaje inicial (opcional)..."
+              rows={3}
+              className="resize-none text-sm"
+            />
+            <Button
+              className="w-full"
+              onClick={() => contactMutation.mutate()}
+              disabled={contactMutation.isPending}
+            >
+              {contactMutation.isPending ? 'Abriendo...' : 'Enviar mensaje'}
+            </Button>
+          </div>
+        )}
+
+        {!!feedback && (
+          <p className="text-sm rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 px-3 py-2">
+            {feedback}
+          </p>
+        )}
       </div>
     </div>
   );

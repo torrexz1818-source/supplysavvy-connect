@@ -11,6 +11,12 @@ node_modules
 dist
 dist-ssr
 *.local
+*.zip
+.env
+.env.*
+!.env.example
+backend/uploads/
+temp_block.txt
 
 # Editor directories and files
 .vscode/*

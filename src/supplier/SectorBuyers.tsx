@@ -1,32 +1,16 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { getBuyerById, getBuyersBySector, sendSupplierMessage } from '@/lib/api';
+import { createConversation, getBuyerById, getBuyersBySector, getConversationByPair, sendConversationMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useHighlight } from '@/hooks/useHighlight';
 
-const FAVORITES_KEY = 'supplier_favorite_buyers';
-
-function readFavorites(): string[] {
-  try {
-    const raw = localStorage.getItem(FAVORITES_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === 'string') : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeFavorites(ids: string[]) {
-  localStorage.setItem(FAVORITES_KEY, JSON.stringify(Array.from(new Set(ids))));
-}
+import { Card, CardContent } from '@/components/ui/card';
 
 const SectorBuyers = () => {
+  const navigate = useNavigate();
   const { sector: sectorParam = '' } = useParams();
   const [searchParams] = useSearchParams();
   const sector = decodeURIComponent(sectorParam);
@@ -39,7 +23,6 @@ const SectorBuyers = () => {
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [feedback, setFeedback] = useState<string>('');
-  const [favoriteIds, setFavoriteIds] = useState<string[]>(() => readFavorites());
 
   const buyersQuery = useQuery({
     queryKey: ['buyers-by-sector', sector],
@@ -58,16 +41,6 @@ const SectorBuyers = () => {
     [buyersQuery.data, selectedBuyerId],
   );
 
-  const toggleFavorite = (buyerId: string) => {
-    setFavoriteIds((current) => {
-      const next = current.includes(buyerId)
-        ? current.filter((id) => id !== buyerId)
-        : [...current, buyerId];
-      writeFavorites(next);
-      return next;
-    });
-  };
-
   const onSendMessage = async (event: FormEvent) => {
     event.preventDefault();
 
@@ -79,14 +52,16 @@ const SectorBuyers = () => {
     setFeedback('');
 
     try {
-      await sendSupplierMessage({
-        supplierId: user.id,
-        buyerId: selectedBuyerId,
-        message: message.trim(),
+      const existing = await getConversationByPair(selectedBuyerId, user.id);
+      const conversation = existing ?? await createConversation({
+        toUserId: selectedBuyerId,
       });
-      setFeedback('Mensaje enviado correctamente.');
+
+      await sendConversationMessage(conversation.id, { message: message.trim() });
       setMessage('');
       setContactOpen(false);
+      setSelectedBuyerId(null);
+      navigate(`/mensajes?conversationId=${conversation.id}`);
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : 'No se pudo enviar el mensaje.');
     } finally {
@@ -96,12 +71,32 @@ const SectorBuyers = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Compradores del sector {sector}</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Gestiona oportunidades, revisa perfiles y contacta compradores activos.
-        </p>
-      </div>
+      <section className="overflow-hidden rounded-3xl border border-sky-100 bg-[linear-gradient(135deg,#eef6ff_0%,#ffffff_48%,#f3f9ff_100%)] shadow-sm">
+        <div className="grid gap-4 px-6 py-8 md:grid-cols-[1.25fr_0.9fr] md:px-8">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-[#0f2a5e]">Compradores del sector {sector}</h1>
+            <p className="mt-3 text-sm text-[#4f6b95] md:text-base">
+              Revisa perfiles y conecta con compradores activos usando el mismo estilo visual del modulo.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-1">
+            <Card className="border-sky-100 bg-white/85 text-slate-900 shadow-none">
+              <CardContent className="p-5">
+                <p className="text-xs uppercase tracking-[0.2em] text-sky-600">Resultados</p>
+                <p className="mt-2 text-3xl font-bold">{buyersQuery.data?.length ?? 0}</p>
+                <p className="mt-1 text-sm text-slate-600">Compradores cargados para este sector.</p>
+              </CardContent>
+            </Card>
+            <Card className="border-sky-100 bg-white/85 text-slate-900 shadow-none">
+              <CardContent className="p-5">
+                <p className="text-xs uppercase tracking-[0.2em] text-sky-600">Sector</p>
+                <p className="mt-2 text-lg font-bold text-[#0f2a5e]">{sector}</p>
+                <p className="mt-1 text-sm text-slate-600">Vista agrupada para prospeccion comercial.</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
 
       {buyersQuery.isLoading && (
         <p className="text-sm text-muted-foreground">Cargando compradores...</p>
@@ -121,12 +116,11 @@ const SectorBuyers = () => {
 
       <div className="space-y-3">
         {(buyersQuery.data ?? []).map((buyer) => {
-          const isFavorite = favoriteIds.includes(buyer.id);
           return (
             <article
               id={`item-${buyer.id}`}
               key={buyer.id}
-              className="bg-card border border-border rounded-xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+              className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4"
             >
               <div>
                 <p className="text-base font-semibold text-foreground">
@@ -158,17 +152,6 @@ const SectorBuyers = () => {
                   className="rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-muted/60"
                 >
                   Ver perfil
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toggleFavorite(buyer.id)}
-                  className={`rounded-md px-3 py-2 text-sm font-medium ${
-                    isFavorite
-                      ? 'bg-emerald-700 text-white hover:bg-emerald-800'
-                      : 'border border-border hover:bg-muted/60'
-                  }`}
-                >
-                  {isFavorite ? 'Guardado' : 'Guardar'}
                 </button>
               </div>
             </article>

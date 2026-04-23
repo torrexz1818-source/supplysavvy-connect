@@ -34,10 +34,10 @@ const EducationalContent = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Contenido educativo</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Recursos y guias para optimizar tus compras y relaciones con proveedores
+      <div className="mb-8 rounded-3xl border border-sky-100 bg-[linear-gradient(135deg,#eef6ff_0%,#ffffff_52%,#f6fbff_100%)] px-6 py-6 shadow-sm">
+        <h1 className="text-2xl font-bold text-[#0f2a5e]">Contenido educativo</h1>
+        <p className="mt-1 text-sm text-[#4f6b95]">
+          Educación especializada en compras: tips, guías, casos reales y tecnología aplicada para una formación continua y estratégica.
         </p>
       </div>
 
@@ -52,7 +52,7 @@ const EducationalContent = () => {
       </div>
 
       <div className="mb-10">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Guias y articulos</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">Videos y articulos</h2>
         <div className="space-y-4">
           {isLoading && <p className="text-muted-foreground text-sm">Cargando contenido...</p>}
           {isError && <p className="text-destructive text-sm">No se pudo cargar el contenido.</p>}

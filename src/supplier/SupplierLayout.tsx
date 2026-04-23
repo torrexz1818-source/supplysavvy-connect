@@ -1,13 +1,16 @@
-import { Bell, BookOpen, Building2, FileText, LayoutDashboard, LogOut, MessageCircle, Newspaper, Shield, Store } from 'lucide-react';
+import { BookOpen, BriefcaseBusiness, Building2, FileText, LayoutDashboard, LogOut, MessageCircle, Newspaper, Shield, Store } from 'lucide-react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import NotificationBell from '@/components/NotificationBell';
+import MessageBell from '@/components/MessageBell';
+import NewsAccessButton from '@/components/NewsAccessButton';
 
 const supplierNavItems = [
   { to: '/supplier/dashboard', label: 'Inicio', icon: LayoutDashboard },
   { to: '/supplier/directory', label: 'Directorio de compradores', icon: Building2 },
+  { to: '/empleabilidad', label: 'Empleabilidad', icon: BriefcaseBusiness },
+  { to: '/supplier/sale', label: 'Liquidaciones', icon: FileText },
   { to: '/publicaciones', label: 'Publicaciones', icon: Newspaper },
-  { to: '/notifications', label: 'Notificaciones', icon: Bell },
 ];
 
 const buyerNavItems = [
@@ -23,10 +26,27 @@ const SupplierLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const isAdmin = user?.role === 'admin';
+  const roleBadge = isAdmin
+    ? {
+        label: 'Administrador',
+        icon: Shield,
+        className: 'bg-amber-500/25 border border-amber-300/40 text-amber-100',
+      }
+    : {
+        label: 'Proveedor',
+        icon: Store,
+        className: 'bg-[#0F6E56]/25 border border-[#0F6E56]/50 text-emerald-100',
+      };
 
   const navSections = isAdmin
     ? [
-        { title: 'Administrador', items: [{ to: '/admin/dashboard', label: 'Panel administrativo', icon: Shield }] },
+        {
+          title: 'Administrador',
+          items: [
+            { to: '/admin/dashboard', label: 'Panel administrativo', icon: Shield },
+            { to: '/novedades', label: 'Novedades', icon: Newspaper },
+          ],
+        },
         { title: 'Comprador', items: buyerNavItems },
         { title: 'Proveedor', items: supplierNavItems },
       ]
@@ -47,6 +67,14 @@ const SupplierLayout = () => {
       );
     }
 
+    if (path === '/supplier/sale') {
+      return location.pathname === '/supplier/sale' || location.pathname.startsWith('/supplier/sale/');
+    }
+
+    if (path === '/empleabilidad') {
+      return location.pathname === '/empleabilidad';
+    }
+
     return location.pathname === path;
   };
 
@@ -59,10 +87,10 @@ const SupplierLayout = () => {
     <div className="h-screen bg-background flex overflow-hidden">
       <aside className="w-72 h-screen bg-[#0f2a5e] text-white flex flex-col overflow-hidden">
         <div className="px-4 py-4 border-b border-white/15">
-          <p className="text-xl font-bold tracking-tight">SupplyConnect</p>
-          <span className="inline-flex items-center gap-1 mt-3 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#0F6E56]/25 border border-[#0F6E56]/50 text-emerald-100">
-            <Store className="w-3 h-3" />
-            Proveedor
+          <p className="text-xl font-bold tracking-tight">Supply Nexu</p>
+          <span className={`inline-flex items-center gap-1 mt-3 px-2.5 py-1 rounded-full text-xs font-semibold ${roleBadge.className}`}>
+            <roleBadge.icon className="w-3 h-3" />
+            {roleBadge.label}
           </span>
         </div>
 
@@ -114,7 +142,9 @@ const SupplierLayout = () => {
             <span className="text-sm font-medium text-foreground truncate max-w-[260px]">
               {user?.fullName ?? 'Proveedor'}
             </span>
+            <MessageBell />
             <NotificationBell />
+            <NewsAccessButton />
           </div>
           <Outlet />
         </div>

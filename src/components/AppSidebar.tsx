@@ -1,4 +1,4 @@
-import { Building2, FileText, Home, Newspaper, Shield, LogOut, Bell, Users } from 'lucide-react';
+import { BookOpen, Bot, BriefcaseBusiness, Building2, FileText, Home, LogOut, Newspaper, Shield, Users } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/lib/auth';
 import { useLocation } from 'react-router-dom';
@@ -16,10 +16,13 @@ import {
 
 const buyerNavItems = [
   { title: 'Inicio', url: '/buyer/dashboard', icon: Home },
-  { title: 'Directorio proveedores', url: '/buyer/directory', icon: Building2 },
-  { title: 'Liquidaciones', url: '/buyer/sale', icon: FileText },
   { title: 'Comunidad', url: '/community', icon: Users },
-  { title: 'Notificaciones', url: '/notifications', icon: Bell },
+  { title: 'Contenido Educativo', icon: BookOpen },
+  { title: 'Empleabilidad', url: '/empleabilidad', icon: BriefcaseBusiness, indent: true },
+  { title: 'Nexu Experts', url: '/nexu-experts', icon: Users, indent: true },
+  { title: 'Liquidaciones', url: '/buyer/sale', icon: FileText },
+  { title: 'Nexu IA', url: '/nexu-ia', icon: Bot },
+  { title: 'Directorio de proveedores', url: '/buyer/directory', icon: Building2 },
 ];
 
 const supplierNavItems = [
@@ -50,7 +53,7 @@ export function AppSidebar() {
       <SidebarContent className="bg-sidebar">
         <div className={`p-4 ${collapsed ? 'px-2' : 'px-5'}`}>
           <h1 className={`font-bold text-sidebar-foreground ${collapsed ? 'text-xs text-center' : 'text-lg'}`}>
-            {collapsed ? 'SC' : 'SUPPLYCONNECT'}
+            {collapsed ? 'SN' : 'SUPPLY NEXU'}
           </h1>
         </div>
 
@@ -66,21 +69,30 @@ export function AppSidebar() {
                   )}
                   {section.grouped.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
-                        <NavLink
-                          to={item.url}
-                          end={item.url === '/'}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                            isActive(item.url)
-                              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                              : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
-                          }`}
-                          activeClassName=""
-                        >
+                      {item.url ? (
+                        <SidebarMenuButton asChild>
+                          <NavLink
+                            to={item.url}
+                            end={item.url === '/'}
+                            className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                              item.indent && !collapsed ? 'ml-4' : ''
+                            } ${
+                              isActive(item.url)
+                                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                                : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
+                            }`}
+                            activeClassName=""
+                          >
+                            <item.icon className="w-5 h-5" />
+                            {!collapsed && <span>{item.title}</span>}
+                          </NavLink>
+                        </SidebarMenuButton>
+                      ) : (
+                        <div className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground/85">
                           <item.icon className="w-5 h-5" />
                           {!collapsed && <span>{item.title}</span>}
-                        </NavLink>
-                      </SidebarMenuButton>
+                        </div>
+                      )}
                     </SidebarMenuItem>
                   ))}
                 </div>

@@ -1,8 +1,9 @@
 import { ReactElement } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
+import { isBuyerLikeRole } from '@/lib/roles';
 
-type AllowedRole = 'buyer' | 'supplier';
+type AllowedRole = 'buyer' | 'supplier' | 'expert';
 
 interface ProtectedRouteProps {
   role: AllowedRole;
@@ -16,6 +17,10 @@ function getDashboardPath(role: string | undefined) {
 
   if (role === 'admin') {
     return '/admin/dashboard';
+  }
+
+  if (role === 'expert') {
+    return '/expert/calendar-setup';
   }
 
   return '/buyer/dashboard';
@@ -37,6 +42,10 @@ const ProtectedRoute = ({ role, children }: ProtectedRouteProps) => {
   }
 
   if (user.role === 'admin') {
+    return children;
+  }
+
+  if (role === 'buyer' && isBuyerLikeRole(user.role)) {
     return children;
   }
 
