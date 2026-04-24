@@ -317,7 +317,7 @@ const NexuIA = () => {
                 </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-4">
                 {filteredAgents.map((agent) => {
                   const Icon = getAgentIcon(agent.icon);
                   const isSelected = selectedAgentId === agent.id;
@@ -327,42 +327,49 @@ const NexuIA = () => {
                       key={agent.id}
                       type="button"
                       onClick={() => navigate(`/nexu-ia/${agent.id}`)}
-                      className={`rounded-[26px] border p-5 text-left transition-all ${
+                      className={`w-full rounded-[26px] border p-5 text-left transition-all ${
                         isSelected
                           ? 'border-slate-300 bg-[linear-gradient(145deg,#fafaf9_0%,#f3f4f6_100%)] shadow-md'
                           : 'border-slate-200 bg-white hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm'
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                         <div
-                          className="flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-sm"
+                          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm"
                           style={{ backgroundColor: '#111827' }}
                         >
-                          <Icon className="h-5 w-5" />
+                          <Icon className="h-6 w-6" />
                         </div>
-                        <Badge variant="outline" className="border-slate-200 text-slate-600">
-                          {agent.category}
-                        </Badge>
-                      </div>
 
-                      <h3 className="mt-4 text-lg font-semibold text-slate-900">{agent.name}</h3>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{agent.description}</p>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="outline" className="border-slate-200 text-slate-600">
+                              {agent.category}
+                            </Badge>
+                            <Badge className="bg-slate-900 text-white hover:bg-slate-900">
+                              {agent.automationType}
+                            </Badge>
+                          </div>
 
-                      <div className="mt-4 rounded-2xl bg-slate-50 p-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                          Caso de uso
-                        </p>
-                        <p className="mt-1 text-sm text-slate-700">{agent.useCase}</p>
-                      </div>
+                          <h3 className="mt-4 text-2xl font-semibold text-slate-900">{agent.name}</h3>
+                          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                            {agent.description}
+                          </p>
 
-                      <div className="mt-4 flex items-center justify-between">
-                        <Badge className="bg-slate-900 text-white hover:bg-slate-900">
-                          {agent.automationType}
-                        </Badge>
-                        <span className="inline-flex items-center gap-1 text-sm font-medium text-slate-700">
-                          {agent.isActive ? 'Usar agente' : 'Activar'}
-                          <ArrowRight className="h-4 w-4" />
-                        </span>
+                          <div className="mt-4 rounded-2xl bg-slate-50 p-4">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                              Caso de uso
+                            </p>
+                            <p className="mt-1 text-sm text-slate-700">{agent.useCase}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex shrink-0 items-center lg:min-h-full">
+                          <span className="inline-flex items-center gap-1 text-sm font-medium text-slate-700">
+                            {agent.isActive ? 'Usar agente' : 'Activar'}
+                            <ArrowRight className="h-4 w-4" />
+                          </span>
+                        </div>
                       </div>
                     </button>
                   );

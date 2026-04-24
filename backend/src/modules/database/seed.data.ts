@@ -177,19 +177,25 @@ export const seedUsers: SeedUser[] = [
     position: 'Directora de Procurement Strategico',
     sector: 'Retail',
     location: 'Lima, Peru',
-    description: 'Especialista en estrategia de abastecimiento, SRM y negociacion avanzada para categorias de alto impacto.',
+    description:
+      'Especialista en estrategia de abastecimiento, SRM y negociacion avanzada para categorias de alto impacto.',
     expertProfile: {
       currentProfessionalProfile: 'Directora de Procurement Strategico',
       industry: 'Retail y consumo masivo',
       specialty: 'Negociacion estrategica y desarrollo de proveedores',
-      experience: '12 anos liderando compras regionales y transformacion de procurement.',
+      experience:
+        '12 anos liderando compras regionales y transformacion de procurement.',
       skills: ['SRM', 'negociacion', 'sourcing', 'category management'],
-      biography: 'He liderado equipos regionales de compras, planes de ahorro y homologacion de proveedores para empresas de retail y consumo masivo en Latam.',
+      biography:
+        'He liderado equipos regionales de compras, planes de ahorro y homologacion de proveedores para empresas de retail y consumo masivo en Latam.',
       companies: 'Falabella, Cencosud, consultoria independiente',
       education: 'MBA, especializacion en supply chain y strategic sourcing',
-      achievements: 'Ahorros recurrentes de doble digito y redisenio de procesos de abastecimiento.',
-      photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=80',
-      service: 'Mentoria 1:1 para equipos de compras, diagnostico de categoria y acompanamiento en negociaciones criticas.',
+      achievements:
+        'Ahorros recurrentes de doble digito y redisenio de procesos de abastecimiento.',
+      photo:
+        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=80',
+      service:
+        'Mentoria 1:1 para equipos de compras, diagnostico de categoria y acompanamiento en negociaciones criticas.',
       availabilityDays: ['Lunes', 'Martes', 'Jueves'],
       googleCalendarConnected: true,
     },
@@ -208,19 +214,25 @@ export const seedUsers: SeedUser[] = [
     position: 'Consultor Senior de Supply Chain',
     sector: 'Manufactura',
     location: 'Bogota, Colombia',
-    description: 'Experto en planeamiento de demanda, S&OP y mitigacion de riesgo operativo para cadenas regionales.',
+    description:
+      'Experto en planeamiento de demanda, S&OP y mitigacion de riesgo operativo para cadenas regionales.',
     expertProfile: {
       currentProfessionalProfile: 'Consultor Senior de Supply Chain',
       industry: 'Manufactura y agroindustria',
       specialty: 'S&OP, planeamiento y riesgo de suministro',
-      experience: '10 anos implementando tableros, procesos S&OP y modelos de abastecimiento resiliente.',
+      experience:
+        '10 anos implementando tableros, procesos S&OP y modelos de abastecimiento resiliente.',
       skills: ['S&OP', 'planeamiento', 'forecasting', 'riesgo'],
-      biography: 'Acompano a companias que necesitan ordenar su planeamiento, reducir quiebres y tomar decisiones de abastecimiento con mejor visibilidad.',
+      biography:
+        'Acompano a companias que necesitan ordenar su planeamiento, reducir quiebres y tomar decisiones de abastecimiento con mejor visibilidad.',
       companies: 'Grupo Nutresa, Quala, advisory independiente',
       education: 'Ingenieria industrial, APICS CSCP',
-      achievements: 'Implementacion de procesos S&OP con reduccion de quiebres y sobrestock.',
-      photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=900&q=80',
-      service: 'Sesiones de diagnostico y hoja de ruta para supply planning, KPIs y gestion de riesgo.',
+      achievements:
+        'Implementacion de procesos S&OP con reduccion de quiebres y sobrestock.',
+      photo:
+        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=900&q=80',
+      service:
+        'Sesiones de diagnostico y hoja de ruta para supply planning, KPIs y gestion de riesgo.',
       availabilityDays: ['Miercoles', 'Viernes'],
       googleCalendarConnected: true,
     },
@@ -242,32 +254,6 @@ export const seedUsers: SeedUser[] = [
     points: 5400,
     createdAt: '2023-06-01T00:00:00.000Z',
     updatedAt: '2023-06-01T00:00:00.000Z',
-  },
-  {
-    id: 'user-admin-2',
-    email: 'adolfo.mesa@supplynexu.com',
-    password: 'AdolfoAdmin2026!',
-    fullName: 'Adolfo Mesa',
-    company: 'Supply Nexu',
-    position: 'Administrador de plataforma',
-    role: UserRole.ADMIN,
-    status: UserStatus.ACTIVE,
-    points: 5400,
-    createdAt: '2026-04-13T00:00:00.000Z',
-    updatedAt: '2026-04-13T00:00:00.000Z',
-  },
-  {
-    id: 'user-admin-3',
-    email: 'anna.torres@supplynexu.com',
-    password: 'AnnaAdmin2026!',
-    fullName: 'Anna Torres',
-    company: 'Supply Nexu',
-    position: 'Administrador de plataforma',
-    role: UserRole.ADMIN,
-    status: UserStatus.ACTIVE,
-    points: 5400,
-    createdAt: '2026-04-13T00:00:00.000Z',
-    updatedAt: '2026-04-13T00:00:00.000Z',
   },
   {
     id: 'user-buyer-2',
@@ -294,7 +280,8 @@ export const seedUsers: SeedUser[] = [
     position: 'Procurement Director',
     sector: 'Construccion',
     location: 'Arequipa, Peru',
-    description: 'Interesados en proveedores de maquinaria y seguridad industrial.',
+    description:
+      'Interesados en proveedores de maquinaria y seguridad industrial.',
     role: UserRole.BUYER,
     status: UserStatus.ACTIVE,
     points: 2100,
@@ -310,7 +297,8 @@ export const seedUsers: SeedUser[] = [
     position: 'Category Manager',
     sector: 'Retail',
     location: 'Lima, Peru',
-    description: 'Comparo proveedores por rotacion, margen y capacidad de reposicion rapida.',
+    description:
+      'Comparo proveedores por rotacion, margen y capacidad de reposicion rapida.',
     buyerProfile: {
       interestCategories: ['packaging', 'consumo masivo', 'liquidaciones'],
       purchaseVolume: '$20,000 - $100,000',
@@ -332,7 +320,8 @@ export const seedUsers: SeedUser[] = [
     position: 'Jefe de Abastecimiento',
     sector: 'Agroindustria',
     location: 'Piura, Peru',
-    description: 'Interesado en cadena de frio, empaques sostenibles y proveedores con respuesta rapida.',
+    description:
+      'Interesado en cadena de frio, empaques sostenibles y proveedores con respuesta rapida.',
     buyerProfile: {
       interestCategories: ['cadena de frio', 'empaques', 'empleos'],
       purchaseVolume: '+$100,000',
@@ -357,7 +346,8 @@ export const seedUsers: SeedUser[] = [
     ruc: '20604567891',
     sector: 'Manufactura',
     location: 'Lima, Peru',
-    description: 'Fabricamos empaques flexibles, stock de alta rotacion y series cortas para retail y alimentos.',
+    description:
+      'Fabricamos empaques flexibles, stock de alta rotacion y series cortas para retail y alimentos.',
     employeeCount: '25-50',
     digitalPresence: {
       linkedin: 'https://linkedin.com/company/empaques360',
@@ -366,7 +356,11 @@ export const seedUsers: SeedUser[] = [
     },
     supplierProfile: {
       supplierType: 'Fabricante',
-      productsOrServices: ['empaques flexibles', 'etiquetas', 'liquidaciones de stock'],
+      productsOrServices: [
+        'empaques flexibles',
+        'etiquetas',
+        'liquidaciones de stock',
+      ],
       hasDigitalCatalog: 'Si',
       isCompanyDigitalized: 'Si',
       usesGenerativeAI: 'Si',
@@ -389,7 +383,8 @@ export const seedUsers: SeedUser[] = [
     ruc: '20607890124',
     sector: 'Logistica',
     location: 'Arequipa, Peru',
-    description: 'Operamos transporte refrigerado y almacenaje temporal para agroindustria, pharma y retail.',
+    description:
+      'Operamos transporte refrigerado y almacenaje temporal para agroindustria, pharma y retail.',
     employeeCount: '51-100',
     digitalPresence: {
       website: 'https://friocadena.pe',
@@ -398,7 +393,11 @@ export const seedUsers: SeedUser[] = [
     },
     supplierProfile: {
       supplierType: 'Servicio logistico',
-      productsOrServices: ['transporte refrigerado', 'cross docking', 'tracking 24/7'],
+      productsOrServices: [
+        'transporte refrigerado',
+        'cross docking',
+        'tracking 24/7',
+      ],
       hasDigitalCatalog: 'Si',
       isCompanyDigitalized: 'Si',
       usesGenerativeAI: 'No',
@@ -421,7 +420,8 @@ export const seedUsers: SeedUser[] = [
     ruc: '20605433210',
     sector: 'Servicios',
     location: 'Bogota, Colombia',
-    description: 'Conectamos talento especializado en compras, planeamiento y desarrollo de proveedores.',
+    description:
+      'Conectamos talento especializado en compras, planeamiento y desarrollo de proveedores.',
     employeeCount: '10-25',
     digitalPresence: {
       linkedin: 'https://linkedin.com/company/talent-abasto',
@@ -429,7 +429,11 @@ export const seedUsers: SeedUser[] = [
     },
     supplierProfile: {
       supplierType: 'Servicios profesionales',
-      productsOrServices: ['reclutamiento', 'capacitacion', 'contenido educativo'],
+      productsOrServices: [
+        'reclutamiento',
+        'capacitacion',
+        'contenido educativo',
+      ],
       hasDigitalCatalog: 'No',
       isCompanyDigitalized: 'Si',
       usesGenerativeAI: 'Si',
@@ -447,12 +451,14 @@ export const seedAgents: SeedAgent[] = [
     id: 'agent-quote-comparator',
     slug: 'comparador-cotizaciones',
     name: 'Comparador de Cotizaciones',
-    description: 'Analiza multiples propuestas y destaca la mejor opcion por costo, plazo y condiciones.',
+    description:
+      'Analiza multiples propuestas y destaca la mejor opcion por costo, plazo y condiciones.',
     longDescription:
       'Centraliza cotizaciones de distintos proveedores, compara variables criticas y entrega un resumen listo para decision con recomendaciones claras para el comprador.',
     category: 'Analisis',
     automationType: 'Evaluacion',
-    useCase: 'Comparar cotizaciones de proveedores en procesos RFQ o compras recurrentes.',
+    useCase:
+      'Comparar cotizaciones de proveedores en procesos RFQ o compras recurrentes.',
     functionalities: [
       'Consolida ofertas en un solo tablero',
       'Ordena proveedores por precio, lead time y cumplimiento',
@@ -463,8 +469,16 @@ export const seedAgents: SeedAgent[] = [
       'Reduce sesgos al evaluar propuestas',
       'Mejora trazabilidad para auditoria interna',
     ],
-    inputs: ['Cotizaciones de proveedores', 'Criterios de evaluacion', 'Pesos de decision'],
-    outputs: ['Ranking recomendado', 'Resumen comparativo', 'Alertas por desviaciones'],
+    inputs: [
+      'Cotizaciones de proveedores',
+      'Criterios de evaluacion',
+      'Pesos de decision',
+    ],
+    outputs: [
+      'Ranking recomendado',
+      'Resumen comparativo',
+      'Alertas por desviaciones',
+    ],
     isActive: true,
     accentColor: '#0f766e',
     icon: 'Scale',
@@ -475,12 +489,14 @@ export const seedAgents: SeedAgent[] = [
     id: 'agent-order-generator',
     slug: 'generador-ordenes-compra',
     name: 'Generador de Ordenes de Compra',
-    description: 'Crea ordenes automaticamente a partir de requerimientos internos y reglas del area.',
+    description:
+      'Crea ordenes automaticamente a partir de requerimientos internos y reglas del area.',
     longDescription:
       'Transforma requisiciones, niveles minimos y acuerdos vigentes en borradores de orden de compra listos para revisar, reduciendo tiempo operativo y errores manuales.',
     category: 'Automatizacion',
     automationType: 'Ejecucion',
-    useCase: 'Generar ordenes de compra estandarizadas para reposicion o compras programadas.',
+    useCase:
+      'Generar ordenes de compra estandarizadas para reposicion o compras programadas.',
     functionalities: [
       'Construye borradores de orden con datos estructurados',
       'Sugiere proveedor y cantidades segun reglas base',
@@ -492,7 +508,11 @@ export const seedAgents: SeedAgent[] = [
       'Estandariza el proceso de emision',
     ],
     inputs: ['Solicitud interna', 'Proveedor sugerido', 'Items y cantidades'],
-    outputs: ['Orden de compra sugerida', 'Resumen de validaciones', 'Campos pendientes'],
+    outputs: [
+      'Orden de compra sugerida',
+      'Resumen de validaciones',
+      'Campos pendientes',
+    ],
     isActive: true,
     accentColor: '#1d4ed8',
     icon: 'FileCheck',
@@ -503,12 +523,14 @@ export const seedAgents: SeedAgent[] = [
     id: 'agent-supplier-scout',
     slug: 'analista-proveedores',
     name: 'Analista de Proveedores',
-    description: 'Evalua desempeño, riesgo y capacidad para recomendar los mejores proveedores.',
+    description:
+      'Evalua desempeño, riesgo y capacidad para recomendar los mejores proveedores.',
     longDescription:
       'Cruza informacion comercial, operativa y de cumplimiento para identificar proveedores mas confiables, detectar gaps y priorizar alternativas segun la estrategia de abastecimiento.',
     category: 'Sourcing',
     automationType: 'Recomendacion',
-    useCase: 'Homologar proveedores, renovar contratos o buscar mejores alternativas.',
+    useCase:
+      'Homologar proveedores, renovar contratos o buscar mejores alternativas.',
     functionalities: [
       'Calcula score de proveedores',
       'Identifica fortalezas, riesgos y brechas',
@@ -519,8 +541,16 @@ export const seedAgents: SeedAgent[] = [
       'Reduce riesgo de seleccion',
       'Facilita sustentacion ante stakeholders',
     ],
-    inputs: ['Base de proveedores', 'KPIs de desempeño', 'Criterios de negocio'],
-    outputs: ['Ranking de proveedores', 'Matriz de riesgo', 'Recomendacion final'],
+    inputs: [
+      'Base de proveedores',
+      'KPIs de desempeño',
+      'Criterios de negocio',
+    ],
+    outputs: [
+      'Ranking de proveedores',
+      'Matriz de riesgo',
+      'Recomendacion final',
+    ],
     isActive: true,
     accentColor: '#7c3aed',
     icon: 'ShieldCheck',
@@ -531,12 +561,14 @@ export const seedAgents: SeedAgent[] = [
     id: 'agent-demand-forecast',
     slug: 'predictor-demanda',
     name: 'Predictor de Demanda',
-    description: 'Proyecta demanda futura para anticipar compras y evitar quiebres o sobrestock.',
+    description:
+      'Proyecta demanda futura para anticipar compras y evitar quiebres o sobrestock.',
     longDescription:
       'Usa historicos, estacionalidad y supuestos comerciales para generar una proyeccion accionable que ayude a planificar abastecimiento y compras con mayor anticipacion.',
     category: 'Logistica',
     automationType: 'Prediccion',
-    useCase: 'Planificar compras por temporada, promociones o ciclos de reposicion.',
+    useCase:
+      'Planificar compras por temporada, promociones o ciclos de reposicion.',
     functionalities: [
       'Proyecta consumo esperado por periodo',
       'Resalta picos, caidas y variaciones',
@@ -547,8 +579,16 @@ export const seedAgents: SeedAgent[] = [
       'Evita compras sobredimensionadas',
       'Mejora coordinacion con supply planning',
     ],
-    inputs: ['Historico de demanda', 'Calendario comercial', 'Supuestos de crecimiento'],
-    outputs: ['Pronostico por periodo', 'Escenarios de demanda', 'Recomendacion de abastecimiento'],
+    inputs: [
+      'Historico de demanda',
+      'Calendario comercial',
+      'Supuestos de crecimiento',
+    ],
+    outputs: [
+      'Pronostico por periodo',
+      'Escenarios de demanda',
+      'Recomendacion de abastecimiento',
+    ],
     isActive: true,
     accentColor: '#ea580c',
     icon: 'TrendingUp',
@@ -559,12 +599,14 @@ export const seedAgents: SeedAgent[] = [
     id: 'agent-risk-watch',
     slug: 'detector-riesgos-compras',
     name: 'Detector de Riesgos en Compras',
-    description: 'Identifica alertas de abastecimiento, dependencia y cumplimiento antes de que escalen.',
+    description:
+      'Identifica alertas de abastecimiento, dependencia y cumplimiento antes de que escalen.',
     longDescription:
       'Monitorea variables criticas del proceso de compras para levantar alertas tempranas relacionadas con dependencia de proveedor, incumplimiento, precios y continuidad operativa.',
     category: 'Riesgo',
     automationType: 'Monitoreo',
-    useCase: 'Gestion preventiva del riesgo en categorias sensibles o proveedores criticos.',
+    useCase:
+      'Gestion preventiva del riesgo en categorias sensibles o proveedores criticos.',
     functionalities: [
       'Detecta alertas tempranas por proveedor o categoria',
       'Clasifica riesgos por impacto y urgencia',
@@ -575,8 +617,16 @@ export const seedAgents: SeedAgent[] = [
       'Ayuda a priorizar mitigaciones',
       'Fortalece continuidad operativa',
     ],
-    inputs: ['Indicadores de cumplimiento', 'Dependencia de proveedor', 'Alertas operativas'],
-    outputs: ['Mapa de riesgos', 'Alertas priorizadas', 'Plan de accion sugerido'],
+    inputs: [
+      'Indicadores de cumplimiento',
+      'Dependencia de proveedor',
+      'Alertas operativas',
+    ],
+    outputs: [
+      'Mapa de riesgos',
+      'Alertas priorizadas',
+      'Plan de accion sugerido',
+    ],
     isActive: true,
     accentColor: '#dc2626',
     icon: 'TriangleAlert',
@@ -587,12 +637,14 @@ export const seedAgents: SeedAgent[] = [
     id: 'agent-negotiation-brief',
     slug: 'copiloto-negociacion',
     name: 'Copiloto de Negociacion',
-    description: 'Prepara argumentos, objeciones y estrategia para negociaciones con proveedores.',
+    description:
+      'Prepara argumentos, objeciones y estrategia para negociaciones con proveedores.',
     longDescription:
       'Resume contexto del proveedor, identifica palancas de negociacion y propone una hoja de ruta para reuniones comerciales o renovaciones contractuales.',
     category: 'Negociacion',
     automationType: 'Asistencia',
-    useCase: 'Preparar negociaciones de precio, servicio, SLA o renovacion contractual.',
+    useCase:
+      'Preparar negociaciones de precio, servicio, SLA o renovacion contractual.',
     functionalities: [
       'Resume historial y contexto del proveedor',
       'Propone argumentos y concesiones posibles',
@@ -603,8 +655,16 @@ export const seedAgents: SeedAgent[] = [
       'Aumenta claridad en concesiones y objetivos',
       'Mejora consistencia del equipo comprador',
     ],
-    inputs: ['Historial del proveedor', 'Objetivos de la negociacion', 'Condiciones actuales'],
-    outputs: ['Brief de negociacion', 'Guion sugerido', 'Palancas recomendadas'],
+    inputs: [
+      'Historial del proveedor',
+      'Objetivos de la negociacion',
+      'Condiciones actuales',
+    ],
+    outputs: [
+      'Brief de negociacion',
+      'Guion sugerido',
+      'Palancas recomendadas',
+    ],
     isActive: true,
     accentColor: '#be185d',
     icon: 'MessagesSquare',
@@ -755,7 +815,8 @@ export const seedPosts: SeedPost[] = [
     id: 'c5',
     authorId: 'user-buyer-4',
     categoryId: 'cat-3',
-    title: 'Experiencia trabajando con proveedores que responden en menos de 2 horas',
+    title:
+      'Experiencia trabajando con proveedores que responden en menos de 2 horas',
     description:
       'En categorias de alta rotacion nos funciono exigir tiempo de respuesta comercial y evidencia de reposicion semanal. Comparto lo que medimos y que senales nos ayudaron a reducir quiebres.',
     type: 'community',
@@ -921,11 +982,41 @@ export const seedComments: SeedComment[] = [
 ];
 
 export const seedLessonProgress: SeedLessonProgress[] = [
-  { id: 'l1', postId: 'e1', userId: 'user-buyer-1', progress: 65, duration: '45 min' },
-  { id: 'l2', postId: 'e2', userId: 'user-buyer-1', progress: 30, duration: '38 min' },
-  { id: 'l3', postId: 'e3', userId: 'user-buyer-1', progress: 0, duration: '32 min' },
-  { id: 'l4', postId: 'e4', userId: 'user-buyer-4', progress: 80, duration: '24 min' },
-  { id: 'l5', postId: 'e5', userId: 'user-buyer-5', progress: 55, duration: '19 min' },
+  {
+    id: 'l1',
+    postId: 'e1',
+    userId: 'user-buyer-1',
+    progress: 65,
+    duration: '45 min',
+  },
+  {
+    id: 'l2',
+    postId: 'e2',
+    userId: 'user-buyer-1',
+    progress: 30,
+    duration: '38 min',
+  },
+  {
+    id: 'l3',
+    postId: 'e3',
+    userId: 'user-buyer-1',
+    progress: 0,
+    duration: '32 min',
+  },
+  {
+    id: 'l4',
+    postId: 'e4',
+    userId: 'user-buyer-4',
+    progress: 80,
+    duration: '24 min',
+  },
+  {
+    id: 'l5',
+    postId: 'e5',
+    userId: 'user-buyer-5',
+    progress: 55,
+    duration: '19 min',
+  },
 ];
 
 export const seedEmployabilityJobs: SeedEmployabilityJob[] = [
@@ -947,7 +1038,12 @@ export const seedEmployabilityJobs: SeedEmployabilityJob[] = [
     title: 'Especialista en Logistica y Supply Chain',
     description:
       'Rol orientado a optimizar inventarios, coordinar operaciones y fortalecer el servicio con proveedores clave.',
-    skillsRequired: ['Logistica', 'Inventarios', 'Planificacion', 'Excel avanzado'],
+    skillsRequired: [
+      'Logistica',
+      'Inventarios',
+      'Planificacion',
+      'Excel avanzado',
+    ],
     experienceRequired: '2+ anos en operaciones o logistica',
     location: 'Arequipa, presencial',
     createdAt: '2026-04-11T14:30:00.000Z',
@@ -959,7 +1055,12 @@ export const seedEmployabilityJobs: SeedEmployabilityJob[] = [
     title: 'Comprador Tecnico de Categoria',
     description:
       'Se requiere experiencia liderando licitaciones, homologacion de proveedores y evaluacion de costo total.',
-    skillsRequired: ['Compras estrategicas', 'Licitaciones', 'Analisis de costos', 'Gestion de proveedores'],
+    skillsRequired: [
+      'Compras estrategicas',
+      'Licitaciones',
+      'Analisis de costos',
+      'Gestion de proveedores',
+    ],
     experienceRequired: '4+ anos en compras tecnicas',
     location: 'Remoto LATAM',
     createdAt: '2026-04-15T09:00:00.000Z',
@@ -967,29 +1068,30 @@ export const seedEmployabilityJobs: SeedEmployabilityJob[] = [
   },
 ];
 
-export const seedEmployabilityTalentProfiles: SeedEmployabilityTalentProfile[] = [
-  {
-    id: 'talent-employability-1',
-    userId: 'user-buyer-2',
-    description:
-      'Profesional con enfoque en abastecimiento estrategico, gestion contractual y relacion de largo plazo con proveedores.',
-    skills: ['Negociacion', 'Compras estrategicas', 'Gestion contractual'],
-    experience: '6 anos liderando categorias de alto impacto',
-    certifications: ['Diplomado en Supply Chain', 'Scrum Fundamentals'],
-    availability: 'Disponible de inmediato',
-    createdAt: '2026-04-09T11:00:00.000Z',
-    updatedAt: '2026-04-09T11:00:00.000Z',
-  },
-  {
-    id: 'talent-employability-2',
-    userId: 'user-supplier-1',
-    description:
-      'Perfil orientado a trazabilidad, indicadores operativos y mejora continua en centros de distribucion.',
-    skills: ['Logistica', 'Inventarios', 'Power BI', 'Mejora continua'],
-    experience: '4 anos en empresas de consumo masivo',
-    certifications: ['Lean Logistics', 'Excel Expert'],
-    availability: 'Disponible en 15 dias',
-    createdAt: '2026-04-12T08:00:00.000Z',
-    updatedAt: '2026-04-12T08:00:00.000Z',
-  },
-];
+export const seedEmployabilityTalentProfiles: SeedEmployabilityTalentProfile[] =
+  [
+    {
+      id: 'talent-employability-1',
+      userId: 'user-buyer-2',
+      description:
+        'Profesional con enfoque en abastecimiento estrategico, gestion contractual y relacion de largo plazo con proveedores.',
+      skills: ['Negociacion', 'Compras estrategicas', 'Gestion contractual'],
+      experience: '6 anos liderando categorias de alto impacto',
+      certifications: ['Diplomado en Supply Chain', 'Scrum Fundamentals'],
+      availability: 'Disponible de inmediato',
+      createdAt: '2026-04-09T11:00:00.000Z',
+      updatedAt: '2026-04-09T11:00:00.000Z',
+    },
+    {
+      id: 'talent-employability-2',
+      userId: 'user-supplier-1',
+      description:
+        'Perfil orientado a trazabilidad, indicadores operativos y mejora continua en centros de distribucion.',
+      skills: ['Logistica', 'Inventarios', 'Power BI', 'Mejora continua'],
+      experience: '4 anos en empresas de consumo masivo',
+      certifications: ['Lean Logistics', 'Excel Expert'],
+      availability: 'Disponible en 15 dias',
+      createdAt: '2026-04-12T08:00:00.000Z',
+      updatedAt: '2026-04-12T08:00:00.000Z',
+    },
+  ];

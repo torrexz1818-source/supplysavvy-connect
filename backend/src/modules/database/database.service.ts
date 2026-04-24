@@ -19,6 +19,13 @@ import {
 import { UserRole } from '../users/domain/user-role.enum';
 import { UserStatus } from '../users/domain/user-status.enum';
 
+const revokedAdminEmails = [
+  'adolfo.mesa@supplynexu.com',
+  'anna.torres@supplynexu.com',
+];
+
+const revokedAdminIds = ['user-admin-2', 'user-admin-3'];
+
 type UserDocument = {
   id: string;
   email: string;
@@ -425,9 +432,10 @@ function buildMongoUri(): string {
       ? `${encodeURIComponent(username)}:${encodeURIComponent(password)}@`
       : '';
 
-  const protocol = host.startsWith('mongodb://') || host.startsWith('mongodb+srv://')
-    ? ''
-    : 'mongodb+srv://';
+  const protocol =
+    host.startsWith('mongodb://') || host.startsWith('mongodb+srv://')
+      ? ''
+      : 'mongodb+srv://';
   const normalizedHost = host.replace(/^mongodb(\+srv)?:\/\//, '');
 
   return `${protocol}${credentials}${normalizedHost}/${encodeURIComponent(dbName)}?retryWrites=true&w=majority`;
@@ -445,7 +453,10 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     try {
       await this.client.connect();
     } catch (error) {
-      const maskedUri = this.mongoUri.replace(/\/\/([^:@]+):([^@]+)@/, '//$1:***@');
+      const maskedUri = this.mongoUri.replace(
+        /\/\/([^:@]+):([^@]+)@/,
+        '//$1:***@',
+      );
       this.logger.error(
         `MongoDB authentication failed. Verify Render env vars MONGODB_URI or MONGODB_USERNAME/MONGODB_PASSWORD/MONGODB_HOST. Current target: ${maskedUri}`,
       );
@@ -453,9 +464,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     }
 
     const configuredDbName = sanitizeEnv(process.env.MONGODB_DB_NAME);
-    this.db = configuredDbName
-      ? this.client.db(configuredDbName)
-      : undefined;
+    this.db = configuredDbName ? this.client.db(configuredDbName) : undefined;
     this.db ??= this.client.db();
     await this.ensureIndexes();
     await this.seedDefaults();
@@ -479,33 +488,55 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     const categories = this.collection<CategoryDocument>('categories');
     const posts = this.collection<PostDocument>('posts');
     const comments = this.collection<CommentDocument>('comments');
-    const lessonProgress = this.collection<LessonProgressDocument>('lessonProgress');
+    const lessonProgress =
+      this.collection<LessonProgressDocument>('lessonProgress');
     const passwordResetOtps =
       this.collection<PasswordResetOtpDocument>('passwordResetOtps');
-    const passwordResetRateLimits = this.collection<PasswordResetRateLimitDocument>(
-      'passwordResetRateLimits',
-    );
+    const passwordResetRateLimits =
+      this.collection<PasswordResetRateLimitDocument>(
+        'passwordResetRateLimits',
+      );
     const messages = this.collection<MessageDocument>('messages');
-    const conversations = this.collection<ConversationDocument>('conversations');
-    const supplierReviews = this.collection<SupplierReviewDocument>('supplierReviews');
+    const conversations =
+      this.collection<ConversationDocument>('conversations');
+    const supplierReviews =
+      this.collection<SupplierReviewDocument>('supplierReviews');
     const educationalContentViews =
-      this.collection<EducationalContentViewDocument>('educationalContentViews');
+      this.collection<EducationalContentViewDocument>(
+        'educationalContentViews',
+      );
     const profileViewNotifications =
-      this.collection<ProfileViewNotificationDocument>('profileViewNotifications');
+      this.collection<ProfileViewNotificationDocument>(
+        'profileViewNotifications',
+      );
     const memberships = this.collection<MembershipDocument>('memberships');
     const supplierOnboardingSessions =
-      this.collection<SupplierOnboardingSessionDocument>('supplierOnboardingSessions');
-    const notifications = this.collection<NotificationDocument>('notifications');
+      this.collection<SupplierOnboardingSessionDocument>(
+        'supplierOnboardingSessions',
+      );
+    const notifications =
+      this.collection<NotificationDocument>('notifications');
     const newsPosts = this.collection<NewsPostDocument>('newsPosts');
     const newsComments = this.collection<NewsCommentDocument>('newsComments');
-    const expertAppointments = this.collection<ExpertAppointmentDocument>('expertAppointments');
+    const expertAppointments =
+      this.collection<ExpertAppointmentDocument>('expertAppointments');
     const userCalendarConnections =
-      this.collection<UserCalendarConnectionDocument>('userCalendarConnections');
+      this.collection<UserCalendarConnectionDocument>(
+        'userCalendarConnections',
+      );
     const agents = this.collection<AgentDocument>('agents');
-    const agentExecutions = this.collection<AgentExecutionDocument>('agentExecutions');
-    const employabilityJobs = this.collection<EmployabilityJobDocument>('employabilityJobs');
-    const employabilityTalentProfiles = this.collection<EmployabilityTalentProfileDocument>('employabilityTalentProfiles');
-    const employabilityApplications = this.collection<EmployabilityApplicationDocument>('employabilityApplications');
+    const agentExecutions =
+      this.collection<AgentExecutionDocument>('agentExecutions');
+    const employabilityJobs =
+      this.collection<EmployabilityJobDocument>('employabilityJobs');
+    const employabilityTalentProfiles =
+      this.collection<EmployabilityTalentProfileDocument>(
+        'employabilityTalentProfiles',
+      );
+    const employabilityApplications =
+      this.collection<EmployabilityApplicationDocument>(
+        'employabilityApplications',
+      );
 
     await this.dropLegacySingleAdminIndex(users);
     await this.dropLegacyConversationPairIndex(conversations);
@@ -524,7 +555,10 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       lessonProgress.createIndex({ postId: 1, userId: 1 }, { unique: true }),
       passwordResetOtps.createIndex({ id: 1 }, { unique: true }),
       passwordResetOtps.createIndex({ email: 1, createdAt: -1 }),
-      passwordResetOtps.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+      passwordResetOtps.createIndex(
+        { expiresAt: 1 },
+        { expireAfterSeconds: 0 },
+      ),
       passwordResetRateLimits.createIndex({ key: 1 }, { unique: true }),
       passwordResetRateLimits.createIndex(
         { updatedAt: 1 },
@@ -540,20 +574,33 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       conversations.createIndex({ buyerId: 1, updatedAt: -1 }),
       conversations.createIndex({ supplierId: 1, updatedAt: -1 }),
       conversations.createIndex({ participantIds: 1, updatedAt: -1 }),
-      conversations.createIndex({ buyerId: 1, supplierId: 1, publicationId: 1 }, { unique: true }),
+      conversations.createIndex(
+        { buyerId: 1, supplierId: 1, publicationId: 1 },
+        { unique: true },
+      ),
       supplierReviews.createIndex({ id: 1 }, { unique: true }),
       supplierReviews.createIndex({ supplierId: 1, createdAt: -1 }),
-      supplierReviews.createIndex({ supplierId: 1, buyerId: 1 }, { unique: true }),
+      supplierReviews.createIndex(
+        { supplierId: 1, buyerId: 1 },
+        { unique: true },
+      ),
       educationalContentViews.createIndex({ id: 1 }, { unique: true }),
       educationalContentViews.createIndex({ month: 1, contentId: 1 }),
       educationalContentViews.createIndex({ userId: 1, viewedAt: -1 }),
       profileViewNotifications.createIndex({ id: 1 }, { unique: true }),
-      profileViewNotifications.createIndex({ viewerId: 1, targetUserId: 1, notifiedAt: -1 }),
+      profileViewNotifications.createIndex({
+        viewerId: 1,
+        targetUserId: 1,
+        notifiedAt: -1,
+      }),
       memberships.createIndex({ userId: 1 }, { unique: true }),
       memberships.createIndex({ status: 1, adminApproved: 1 }),
       supplierOnboardingSessions.createIndex({ id: 1 }, { unique: true }),
       supplierOnboardingSessions.createIndex({ status: 1, updatedAt: -1 }),
-      supplierOnboardingSessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+      supplierOnboardingSessions.createIndex(
+        { expiresAt: 1 },
+        { expireAfterSeconds: 0 },
+      ),
       notifications.createIndex({ id: 1 }, { unique: true }),
       notifications.createIndex({ userId: 1, createdAt: -1 }),
       notifications.createIndex({ userId: 1, isRead: 1, createdAt: -1 }),
@@ -583,7 +630,10 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       employabilityApplications.createIndex({ id: 1 }, { unique: true }),
       employabilityApplications.createIndex({ jobId: 1, createdAt: -1 }),
       employabilityApplications.createIndex({ applicantId: 1, createdAt: -1 }),
-      employabilityApplications.createIndex({ jobId: 1, applicantId: 1 }, { unique: true }),
+      employabilityApplications.createIndex(
+        { jobId: 1, applicantId: 1 },
+        { unique: true },
+      ),
       expertAppointments.createIndex(
         { expertId: 1, startsAt: 1, status: 1 },
         { unique: true, partialFilterExpression: { status: 'scheduled' } },
@@ -591,7 +641,9 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     ]);
   }
 
-  private async dropLegacySingleAdminIndex(users: Collection<UserDocument>): Promise<void> {
+  private async dropLegacySingleAdminIndex(
+    users: Collection<UserDocument>,
+  ): Promise<void> {
     const indexes = await users.indexes();
     const legacyAdminIndex = indexes.find(
       (index) =>
@@ -631,10 +683,15 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     const categories = this.collection<CategoryDocument>('categories');
     const posts = this.collection<PostDocument>('posts');
     const comments = this.collection<CommentDocument>('comments');
-    const lessonProgress = this.collection<LessonProgressDocument>('lessonProgress');
+    const lessonProgress =
+      this.collection<LessonProgressDocument>('lessonProgress');
     const agents = this.collection<AgentDocument>('agents');
-    const employabilityJobs = this.collection<EmployabilityJobDocument>('employabilityJobs');
-    const employabilityTalentProfiles = this.collection<EmployabilityTalentProfileDocument>('employabilityTalentProfiles');
+    const employabilityJobs =
+      this.collection<EmployabilityJobDocument>('employabilityJobs');
+    const employabilityTalentProfiles =
+      this.collection<EmployabilityTalentProfileDocument>(
+        'employabilityTalentProfiles',
+      );
 
     await Promise.all(
       seedUsers
@@ -774,6 +831,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     ]);
 
     await this.ensureAdminAccounts();
+    await this.disableRevokedAdminAccounts();
   }
 
   private async ensureAdminAccounts(): Promise<void> {
@@ -846,6 +904,26 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
           updatedAt: now,
         });
       }),
+    );
+  }
+
+  private async disableRevokedAdminAccounts(): Promise<void> {
+    const users = this.collection<UserDocument>('users');
+    const now = new Date();
+
+    await users.updateMany(
+      {
+        $or: [
+          { id: { $in: revokedAdminIds } },
+          { email: { $in: revokedAdminEmails } },
+        ],
+      },
+      {
+        $set: {
+          status: UserStatus.DISABLED,
+          updatedAt: now,
+        },
+      },
     );
   }
 }
