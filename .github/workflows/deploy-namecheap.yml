@@ -53,7 +53,7 @@ jobs:
           server: ${{ secrets.CPANEL_FTP_HOST }}
           username: ${{ secrets.CPANEL_FTP_USERNAME }}
           password: ${{ secrets.CPANEL_FTP_PASSWORD }}
-          protocol: ftps
+          protocol: ftp
           port: ${{ secrets.CPANEL_FTP_PORT || 21 }}
           local-dir: ./dist/
           server-dir: ${{ vars.CPANEL_FRONTEND_DIR || '/public_html/' }}
@@ -65,7 +65,7 @@ jobs:
           server: ${{ secrets.CPANEL_FTP_HOST }}
           username: ${{ secrets.CPANEL_FTP_USERNAME }}
           password: ${{ secrets.CPANEL_FTP_PASSWORD }}
-          protocol: ftps
+          protocol: ftp
           port: ${{ secrets.CPANEL_FTP_PORT || 21 }}
           local-dir: ./.deploy/backend/
           server-dir: ${{ vars.CPANEL_BACKEND_DIR || '/backend/' }}
@@ -82,7 +82,7 @@ jobs:
           server: ${{ secrets.CPANEL_FTP_HOST }}
           username: ${{ secrets.CPANEL_FTP_USERNAME }}
           password: ${{ secrets.CPANEL_FTP_PASSWORD }}
-          protocol: ftps
+          protocol: ftp
           port: ${{ secrets.CPANEL_FTP_PORT || 21 }}
           local-dir: ./.deploy/restart/
           server-dir: ${{ vars.CPANEL_PASSENGER_TMP_DIR || '/api.supplynexu.com/tmp/' }}
