@@ -158,6 +158,23 @@ function getFallbackBaseUrls() {
   );
 }
 
+function getConnectionErrorMessage() {
+  if (typeof window === 'undefined') {
+    return 'No se pudo conectar con el servidor.';
+  }
+
+  const isLocalEnvironment =
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    isPrivateIpv4Host(window.location.hostname);
+
+  if (isLocalEnvironment) {
+    return 'No se pudo conectar con el servidor. Verifica que el backend este encendido en http://127.0.0.1:10000.';
+  }
+
+  return `No se pudo conectar con el backend publicado. Verifica que ${DEFAULT_PRODUCTION_API_URL} este activo y accesible.`;
+}
+
 async function performFetch(url: string, options: RequestInit) {
   return fetch(url, options);
 }
@@ -206,9 +223,7 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}): Promis
     const fallbackResponse = await tryFallbackFetch(path, requestOptions);
     if (!fallbackResponse) {
       if (typeof window !== 'undefined') {
-        throw new Error(
-          'No se pudo conectar con el servidor. Verifica que el backend este encendido en http://127.0.0.1:10000.',
-        );
+        throw new Error(getConnectionErrorMessage());
       }
 
       throw primaryError;
