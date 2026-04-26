@@ -65,6 +65,7 @@ type WeeklyAvailabilitySlot = {
   startTime: string;
   endTime: string;
 };
+const MAX_GROUP_PARTICIPANTS = 3;
 
 const WEEKDAY_LABELS = [
   'Domingo',
@@ -211,11 +212,12 @@ export class ExpertsService {
       })
       .toArray();
 
-    const reserved = new Set(
-      existingAppointments.map((appointment) =>
-        appointment.startsAt.toISOString(),
-      ),
-    );
+    const bookingsBySlot = new Map<string, number>();
+    existingAppointments.forEach((appointment) => {
+      const key = appointment.startsAt.toISOString();
+      bookingsBySlot.set(key, (bookingsBySlot.get(key) ?? 0) + 1);
+    });
+    const reserved = new Set<string>();
     const calendarConnection = await this.calendarConnectionsCollection().findOne({
       userId: expertId,
     });
@@ -236,7 +238,8 @@ export class ExpertsService {
             const slotStart = new Date(slot.startsAt).getTime();
             const slotEnd = new Date(slot.endsAt).getTime();
 
-            if (slotStart < end && slotEnd > start) {
+            const bookingsCount = bookingsBySlot.get(slot.startsAt) ?? 0;
+            if (slotStart < end && slotEnd > start && bookingsCount === 0) {
               reserved.add(slot.startsAt);
             }
           });
@@ -254,7 +257,16 @@ export class ExpertsService {
       weeklyAvailability,
       slots: slots.map((slot) => ({
         ...slot,
-        available: slot.available && !reserved.has(slot.startsAt),
+        maxParticipants: MAX_GROUP_PARTICIPANTS,
+        bookedParticipants: bookingsBySlot.get(slot.startsAt) ?? 0,
+        remainingSpots: Math.max(
+          MAX_GROUP_PARTICIPANTS - (bookingsBySlot.get(slot.startsAt) ?? 0),
+          0,
+        ),
+        available:
+          slot.available &&
+          !reserved.has(slot.startsAt) &&
+          (bookingsBySlot.get(slot.startsAt) ?? 0) < MAX_GROUP_PARTICIPANTS,
       })),
     };
   }
@@ -307,22 +319,37 @@ export class ExpertsService {
     }
 
     const endsAt = new Date(startsAt.getTime() + 60 * 60 * 1000);
-    const existing = await this.collection().findOne({
+    const duplicateBooking = await this.collection().findOne({
+      buyerId: buyer.id,
       expertId: expert.id,
       startsAt,
       status: 'scheduled',
     });
 
-    if (existing) {
+    if (duplicateBooking) {
       throw new ConflictException(
-        'Ese horario ya fue reservado. Elige otro disponible.',
+        'Ya tienes una reserva en este mismo horario con este experto.',
+      );
+    }
+
+    const sameSlotAppointments = await this.collection()
+      .find({
+        expertId: expert.id,
+        startsAt,
+        status: 'scheduled',
+      })
+      .toArray();
+
+    if (sameSlotAppointments.length >= MAX_GROUP_PARTICIPANTS) {
+      throw new ConflictException(
+        'Este horario ya completo los 3 cupos disponibles. Elige otro horario.',
       );
     }
 
     const expertCalendarConnection = await this.calendarConnectionsCollection().findOne({
       userId: expert.id,
     });
-    if (expertCalendarConnection) {
+    if (expertCalendarConnection && sameSlotAppointments.length === 0) {
       const busyWindows = await this.calendarService.getBusyWindows({
         startDateTime: startsAt.toISOString(),
         endDateTime: endsAt.toISOString(),
@@ -336,16 +363,40 @@ export class ExpertsService {
       }
     }
 
-    const calendarMeeting = await this.calendarService.createMeeting({
-      title: 'Reunion con experto Nexu',
-      description: topic,
-      startDateTime: startsAt.toISOString(),
-      endDateTime: endsAt.toISOString(),
-      attendeeEmails: [buyer.email, expert.email],
-      organizer: expertCalendarConnection
-        ? this.toCalendarConfig(expertCalendarConnection)
-        : undefined,
-    });
+    const primaryAppointment = sameSlotAppointments[0];
+    const calendarMeeting = primaryAppointment
+      ? {
+          eventId: primaryAppointment.googleCalendarEventId ?? crypto.randomUUID(),
+          htmlLink: primaryAppointment.googleCalendarHtmlLink,
+          meetLink: primaryAppointment.googleMeetLink,
+          organizerCalendarId: expertCalendarConnection?.calendarId || 'primary',
+        }
+      : await this.calendarService.createMeeting({
+          title: 'Reunion grupal con experto Nexu',
+          description: topic,
+          startDateTime: startsAt.toISOString(),
+          endDateTime: endsAt.toISOString(),
+          attendeeEmails: [buyer.email, expert.email],
+          organizer: expertCalendarConnection
+            ? this.toCalendarConfig(expertCalendarConnection)
+            : undefined,
+        });
+
+    if (
+      primaryAppointment &&
+      expertCalendarConnection &&
+      primaryAppointment.googleCalendarEventId
+    ) {
+      try {
+        await this.calendarService.appendAttendeesToEvent({
+          eventId: primaryAppointment.googleCalendarEventId,
+          attendeeEmails: [buyer.email],
+          organizer: this.toCalendarConfig(expertCalendarConnection),
+        });
+      } catch {
+        // Keep the platform booking even if attendee sync in the shared event fails.
+      }
+    }
     const buyerCalendarConnection = await this.calendarConnectionsCollection().findOne({
       userId: buyer.id,
     });
@@ -374,8 +425,8 @@ export class ExpertsService {
     if (buyerCalendarConnection) {
       try {
         const buyerCalendarEvent = await this.calendarService.createEventCopy({
-          title: `Reunion con ${expert.fullName} - Nexu Experts`,
-          description: topic,
+      title: `Reunion grupal con ${expert.fullName} - Nexu Experts`,
+      description: topic,
           startDateTime: startsAt.toISOString(),
           endDateTime: endsAt.toISOString(),
           attendeeEmails: [expert.email, buyer.email],
@@ -717,6 +768,7 @@ export class ExpertsService {
       emailSent: appointment.emailSent,
       emailError: appointment.emailError,
       createdAt: appointment.createdAt.toISOString(),
+      maxParticipants: MAX_GROUP_PARTICIPANTS,
     };
   }
 

@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  ArrowLeft,
   CalendarDays,
   CheckCircle2,
   ChevronDown,
@@ -12,7 +13,7 @@ import {
   Trash2,
   Video,
 } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   createExpertAppointment,
   getExpertAvailability,
@@ -60,9 +61,11 @@ const EMPTY_WEEKLY_AVAILABILITY: ExpertWeeklyAvailabilityItem[] = [
 
 const NexuExperts = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id: routeExpertId } = useParams();
   const queryClient = useQueryClient();
   const { user, refreshMe } = useAuth();
+  const scheduleCardRef = useRef<HTMLDivElement | null>(null);
   const [selectedExpertId, setSelectedExpertId] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState(getTomorrowInputValue);
   const [selectedSlot, setSelectedSlot] = useState<string>('');
@@ -105,6 +108,25 @@ const NexuExperts = () => {
     queryFn: () => getExpertAvailability(selectedExpertId, selectedDate),
     enabled: Boolean(selectedExpertId && selectedDate),
   });
+  const selectedExpert = expertsQuery.data?.find((expert) => expert.id === selectedExpertId);
+  const dashboardItems = useMemo(() => appointmentsQuery.data?.items ?? [], [appointmentsQuery.data]);
+  const isBuyer = user?.role === 'buyer';
+  const isExpert = user?.role === 'expert';
+  const isDetailView = Boolean(routeExpertId);
+  const calendarConnected = Boolean(myCalendarConnectionQuery.data?.connected);
+  const orderedMeetings = useMemo(() => {
+    if (!dashboardItems.length) {
+      return [];
+    }
+
+    if (!lastCreatedId) {
+      return dashboardItems;
+    }
+
+    const latestCreated = dashboardItems.find((item) => item.id === lastCreatedId);
+    const remaining = dashboardItems.filter((item) => item.id !== lastCreatedId);
+    return latestCreated ? [latestCreated, ...remaining] : dashboardItems;
+  }, [dashboardItems, lastCreatedId]);
 
   useEffect(() => {
     if (routeExpertId) {
@@ -126,6 +148,21 @@ const NexuExperts = () => {
       setWeeklyAvailability(myAvailabilityQuery.data.weeklyAvailability);
     }
   }, [myAvailabilityQuery.data]);
+
+  useEffect(() => {
+    if (location.hash !== '#agendar' || !isDetailView || !isBuyer) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      scheduleCardRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 150);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [expertProfileQuery.data, isBuyer, isDetailView, location.hash]);
 
   const createAppointmentMutation = useMutation({
     mutationFn: createExpertAppointment,
@@ -177,25 +214,6 @@ const NexuExperts = () => {
     },
   });
 
-  const selectedExpert = expertsQuery.data?.find((expert) => expert.id === selectedExpertId);
-  const dashboardItems = useMemo(() => appointmentsQuery.data?.items ?? [], [appointmentsQuery.data]);
-  const isBuyer = user?.role === 'buyer';
-  const isExpert = user?.role === 'expert';
-  const isDetailView = Boolean(routeExpertId);
-  const calendarConnected = Boolean(myCalendarConnectionQuery.data?.connected);
-  const orderedMeetings = useMemo(() => {
-    if (!dashboardItems.length) {
-      return [];
-    }
-
-    if (!lastCreatedId) {
-      return dashboardItems;
-    }
-
-    const latestCreated = dashboardItems.find((item) => item.id === lastCreatedId);
-    const remaining = dashboardItems.filter((item) => item.id !== lastCreatedId);
-    return latestCreated ? [latestCreated, ...remaining] : dashboardItems;
-  }, [dashboardItems, lastCreatedId]);
   const handleAvailabilityChange = (
     day: string,
     key: 'enabled',
@@ -597,70 +615,80 @@ const NexuExperts = () => {
       ) : null}
 
       <section className="grid gap-6">
-        <Card className="border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-xl text-slate-900">Listado de expertos</CardTitle>
-            <CardDescription>
-              Cards modernas con experiencia, especialidad y acceso directo a agenda.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {expertsQuery.isLoading ? (
-              <p className="text-sm text-muted-foreground">Cargando expertos...</p>
-            ) : (
-              expertsQuery.data?.map((expert) => (
-                <button
-                  key={expert.id}
-                  type="button"
-                  onClick={() => setSelectedExpertId(expert.id)}
-                  className={`rounded-[24px] border p-4 text-left transition-all ${
-                    selectedExpertId === expert.id
-                      ? 'border-cyan-400 bg-cyan-50/70 shadow-md'
-                      : 'border-slate-200 bg-white hover:border-cyan-200 hover:shadow-sm'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={expert.photo || 'https://placehold.co/160x160?text=Nexu'}
-                      alt={expert.fullName}
-                      className="h-16 w-16 rounded-2xl object-cover"
-                    />
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">{expert.fullName}</p>
-                      <p className="text-xs text-slate-500">{expert.specialty}</p>
-                      <p className="mt-1 text-xs text-slate-500">{expert.industry}</p>
+        {!isDetailView ? (
+          <Card className="border-slate-200">
+            <CardHeader>
+              <CardTitle className="text-xl text-slate-900">Listado de expertos</CardTitle>
+              <CardDescription>
+                Cards modernas con experiencia, especialidad y acceso directo a agenda.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {expertsQuery.isLoading ? (
+                <p className="text-sm text-muted-foreground">Cargando expertos...</p>
+              ) : (
+                expertsQuery.data?.map((expert) => (
+                  <button
+                    key={expert.id}
+                    type="button"
+                    onClick={() => setSelectedExpertId(expert.id)}
+                    className={`rounded-[24px] border p-4 text-left transition-all ${
+                      selectedExpertId === expert.id
+                        ? 'border-cyan-400 bg-cyan-50/70 shadow-md'
+                        : 'border-slate-200 bg-white hover:border-cyan-200 hover:shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={expert.photo || 'https://placehold.co/160x160?text=Nexu'}
+                        alt={expert.fullName}
+                        className="h-16 w-16 rounded-2xl object-cover"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{expert.fullName}</p>
+                        <p className="text-xs text-slate-500">{expert.specialty}</p>
+                        <p className="mt-1 text-xs text-slate-500">{expert.industry}</p>
+                      </div>
                     </div>
-                  </div>
-                  <p className="mt-4 text-sm leading-6 text-slate-600">{expert.shortBio}</p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {expert.skills.slice(0, 3).map((skill) => (
-                      <Badge key={skill} variant="outline" className="border-slate-200 text-slate-600">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                  <div className="mt-4 flex items-center justify-between">
-                    <span className="text-xs text-slate-500">{expert.experience}</span>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        navigate(`/nexu-experts/${expert.id}`);
-                      }}
-                      className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white"
-                    >
-                      Agendar
-                    </button>
-                  </div>
-                </button>
-              ))
-            )}
-          </CardContent>
-        </Card>
+                    <p className="mt-4 text-sm leading-6 text-slate-600">{expert.shortBio}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {expert.skills.slice(0, 3).map((skill) => (
+                        <Badge key={skill} variant="outline" className="border-slate-200 text-slate-600">
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className="text-xs text-slate-500">{expert.experience}</span>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          navigate(`/nexu-experts/${expert.id}#agendar`);
+                        }}
+                        className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white"
+                      >
+                        Agendar
+                      </button>
+                    </div>
+                  </button>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        ) : null}
 
         {isDetailView ? (
         <div className="space-y-6">
-          <Card className="border-slate-200">
+          <button
+            type="button"
+            onClick={() => navigate('/nexu-experts')}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-sky-200 hover:text-sky-700"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Volver al listado
+          </button>
+          <Card ref={scheduleCardRef} className="border-slate-200">
             <CardHeader>
               <CardTitle className="text-xl text-slate-900">Perfil del experto</CardTitle>
               <CardDescription>Vista detallada con disponibilidad y propuesta de valor.</CardDescription>
@@ -760,110 +788,112 @@ const NexuExperts = () => {
                       {expertProfileQuery.data.service || 'Servicio de consultoria y acompanamiento.'}
                     </p>
                   </div>
+
+                  {isBuyer ? (
+                    <div className="space-y-4 rounded-[24px] border border-slate-200 bg-white p-5">
+                      <div>
+                        <p className="text-xl font-semibold text-slate-900">Agendar cita</p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          Fecha, hora y descripcion del tema a tratar. Confirmacion automatica con Meet.
+                        </p>
+                        <div className="mt-3 rounded-2xl border border-sky-100 bg-sky-50/80 px-4 py-3 text-sm text-sky-900">
+                          Las reuniones son grupales de hasta 3 personas por horario. Si deseas una sesion 1 a 1, esta disponible con membresia en la plataforma.
+                        </div>
+                      </div>
+
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <label className="mb-2 block text-sm font-medium text-slate-700">Fecha</label>
+                          <Input
+                            type="date"
+                            min={new Date().toISOString().slice(0, 10)}
+                            value={selectedDate}
+                            onChange={(event) => setSelectedDate(event.target.value)}
+                          />
+                        </div>
+                        <div className="rounded-2xl bg-slate-50 p-4">
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                            Experto seleccionado
+                          </p>
+                          <p className="mt-2 text-sm font-semibold text-slate-900">
+                            {selectedExpert?.fullName || 'Selecciona un experto'}
+                          </p>
+                          <p className="text-sm text-slate-500">
+                            {selectedExpert?.specialty || 'Sin especialidad'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="mb-2 text-sm font-medium text-slate-700">Horarios disponibles</p>
+                        {availabilityQuery.isLoading ? (
+                          <p className="text-sm text-muted-foreground">Consultando disponibilidad...</p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {availabilityQuery.data?.slots.map((slot) => (
+                              <button
+                                key={slot.startsAt}
+                                type="button"
+                                disabled={!slot.available}
+                                onClick={() => setSelectedSlot(slot.startsAt)}
+                                className={`rounded-full border px-3 py-2 text-sm transition-colors ${
+                                  selectedSlot === slot.startsAt
+                                    ? 'border-slate-900 bg-slate-900 text-white'
+                                    : slot.available
+                                      ? 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300'
+                                      : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
+                                }`}
+                              >
+                                {slot.label} · {slot.remainingSpots} cupos
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {availabilityQuery.data?.weekday ? (
+                          <p className="mt-2 text-xs text-slate-500">
+                            Disponibilidad consultada para {availabilityQuery.data.weekday}. Cada horario admite hasta 3 participantes.
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-slate-700">
+                          Descripcion del tema a tratar
+                        </label>
+                        <Textarea
+                          value={topic}
+                          onChange={(event) => setTopic(event.target.value)}
+                          rows={5}
+                          placeholder="Describe el objetivo de la reunion, el contexto y las preguntas clave."
+                        />
+                      </div>
+
+                      <Button
+                        className="w-full bg-slate-900 hover:bg-slate-800"
+                        disabled={
+                          !selectedExpertId ||
+                          !selectedSlot ||
+                          !topic.trim() ||
+                          createAppointmentMutation.isPending
+                        }
+                        onClick={() =>
+                          createAppointmentMutation.mutate({
+                            expertId: selectedExpertId,
+                            startsAt: selectedSlot,
+                            topic: topic.trim(),
+                          })
+                        }
+                      >
+                        {createAppointmentMutation.isPending ? 'Confirmando cita...' : 'Confirmar cita'}
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">Selecciona un experto para ver el detalle.</p>
               )}
             </CardContent>
           </Card>
-
-          {isBuyer ? (
-            <Card className="border-slate-200">
-              <CardHeader>
-                <CardTitle className="text-xl text-slate-900">Agendar cita</CardTitle>
-                <CardDescription>
-                  Fecha, hora y descripcion del tema a tratar. Confirmacion automatica con Meet.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">Fecha</label>
-                    <Input
-                      type="date"
-                      min={new Date().toISOString().slice(0, 10)}
-                      value={selectedDate}
-                      onChange={(event) => setSelectedDate(event.target.value)}
-                    />
-                  </div>
-                  <div className="rounded-2xl bg-slate-50 p-4">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                      Experto seleccionado
-                    </p>
-                    <p className="mt-2 text-sm font-semibold text-slate-900">
-                      {selectedExpert?.fullName || 'Selecciona un experto'}
-                    </p>
-                    <p className="text-sm text-slate-500">
-                      {selectedExpert?.specialty || 'Sin especialidad'}
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <p className="mb-2 text-sm font-medium text-slate-700">Horarios disponibles</p>
-                  {availabilityQuery.isLoading ? (
-                    <p className="text-sm text-muted-foreground">Consultando disponibilidad...</p>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {availabilityQuery.data?.slots.map((slot) => (
-                        <button
-                          key={slot.startsAt}
-                          type="button"
-                          disabled={!slot.available}
-                          onClick={() => setSelectedSlot(slot.startsAt)}
-                          className={`rounded-full border px-3 py-2 text-sm transition-colors ${
-                            selectedSlot === slot.startsAt
-                              ? 'border-slate-900 bg-slate-900 text-white'
-                              : slot.available
-                                ? 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300'
-                                : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
-                          }`}
-                        >
-                          {slot.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {availabilityQuery.data?.weekday ? (
-                    <p className="mt-2 text-xs text-slate-500">
-                      Disponibilidad consultada para {availabilityQuery.data.weekday}.
-                    </p>
-                  ) : null}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Descripcion del tema a tratar
-                  </label>
-                  <Textarea
-                    value={topic}
-                    onChange={(event) => setTopic(event.target.value)}
-                    rows={5}
-                    placeholder="Describe el objetivo de la reunion, el contexto y las preguntas clave."
-                  />
-                </div>
-
-                <Button
-                  className="w-full bg-slate-900 hover:bg-slate-800"
-                  disabled={
-                    !selectedExpertId ||
-                    !selectedSlot ||
-                    !topic.trim() ||
-                    createAppointmentMutation.isPending
-                  }
-                  onClick={() =>
-                    createAppointmentMutation.mutate({
-                      expertId: selectedExpertId,
-                      startsAt: selectedSlot,
-                      topic: topic.trim(),
-                    })
-                  }
-                >
-                  {createAppointmentMutation.isPending ? 'Confirmando cita...' : 'Confirmar cita'}
-                </Button>
-              </CardContent>
-            </Card>
-          ) : null}
         </div>
         ) : null}
       </section>

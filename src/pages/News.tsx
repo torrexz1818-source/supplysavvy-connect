@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, Heart, ImagePlus, MessageCircle, Send } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { createNewsComment, createNewsPost, getNewsPosts, toggleNewsLike } from '@/lib/api';
+import { createNewsComment, createNewsPost, getNewsPosts, resolveApiAssetUrl, toggleNewsLike } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { NewsComment, NewsPost } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -145,7 +145,7 @@ const NewsCard = ({
     >
       {post.imageUrl && (
         <div className="aspect-[16/8] overflow-hidden bg-slate-100">
-          <img src={post.imageUrl} alt={post.title} className="h-full w-full object-cover" />
+          <img src={resolveApiAssetUrl(post.imageUrl)} alt={post.title} className="h-full w-full object-cover" />
         </div>
       )}
 

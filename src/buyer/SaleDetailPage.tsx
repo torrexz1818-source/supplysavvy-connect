@@ -14,6 +14,7 @@ import {
   getPosts,
   getSupplierById,
   getSupplierReviews,
+  resolveApiAssetUrl,
   sendConversationMessage,
   togglePostLike,
 } from '@/lib/api';
@@ -177,7 +178,7 @@ const SaleDetailPage = () => {
         <div className="bg-card border border-border rounded-xl overflow-hidden min-h-[420px] flex items-center justify-center">
           {selectedPost.thumbnailUrl ? (
             <img
-              src={selectedPost.thumbnailUrl}
+              src={resolveApiAssetUrl(selectedPost.thumbnailUrl)}
               alt="Publicacion"
               className="w-full h-full object-cover"
             />

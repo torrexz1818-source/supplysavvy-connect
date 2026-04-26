@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthenticatedGuard } from '../../common/auth/authenticated.guard';
 import { UploadsController } from './uploads.controller';
+import { UploadsService } from './uploads.service';
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { UploadsController } from './uploads.controller';
     }),
   ],
   controllers: [UploadsController],
-  providers: [AuthenticatedGuard],
+  providers: [AuthenticatedGuard, UploadsService],
+  exports: [UploadsService],
 })
 export class UploadsModule {}

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { togglePostLike } from '@/lib/api';
+import { resolveApiAssetUrl, togglePostLike } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Badge } from '@/components/ui/badge';
 
@@ -131,7 +131,7 @@ const PostCard = ({ post, index = 0 }: PostCardProps) => {
         >
           {post.thumbnailUrl ? (
             <>
-              <img src={post.thumbnailUrl} alt={post.title} className="absolute inset-0 h-full w-full object-cover" />
+              <img src={resolveApiAssetUrl(post.thumbnailUrl)} alt={post.title} className="absolute inset-0 h-full w-full object-cover" />
               {isEducational && <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />}
             </>
           ) : null}

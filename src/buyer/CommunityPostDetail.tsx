@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { ArrowLeft, Heart, MessageCircle } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getPostDetail, togglePostLike } from '@/lib/api';
+import { getPostDetail, resolveApiAssetUrl, togglePostLike } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import CommentSection from '@/components/CommentSection';
 import { Badge } from '@/components/ui/badge';
@@ -103,7 +103,7 @@ const CommunityPostDetail = () => {
           <div className="border-y border-border/70 bg-muted">
             {post.thumbnailUrl ? (
               <img
-                src={post.thumbnailUrl}
+                src={resolveApiAssetUrl(post.thumbnailUrl)}
                 alt={post.title}
                 className="h-72 w-full object-cover sm:h-[26rem]"
               />

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BriefcaseBusiness, MapPin, Plus, Search, Sparkles, Users } from 'lucide-react';
 import {
@@ -7,6 +7,7 @@ import {
   createEmployabilityJob,
   getEmployabilityFeed,
   sendConversationMessage,
+  updateEmployabilityJob,
   upsertEmployabilityTalentProfile,
 } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -26,6 +27,10 @@ const Employability = () => {
   const [search, setSearch] = useState('');
   const [showJobForm, setShowJobForm] = useState(false);
   const [showTalentForm, setShowTalentForm] = useState(false);
+  const [editingJobId, setEditingJobId] = useState<string | null>(null);
+  const [isEditingTalent, setIsEditingTalent] = useState(false);
+  const jobFormRef = useRef<HTMLDivElement | null>(null);
+  const talentFormRef = useRef<HTMLDivElement | null>(null);
   const [jobForm, setJobForm] = useState({
     title: '',
     description: '',
@@ -100,11 +105,14 @@ const Employability = () => {
         certifications: '',
         availability: '',
       });
+      setIsEditingTalent(false);
       setShowTalentForm(false);
       queryClient.invalidateQueries({ queryKey: ['employability-feed'] });
       toast({
-        title: 'Perfil publicado',
-        description: 'Tu perfil ya se muestra en la seccion "Busco empleo".',
+        title: isEditingTalent ? 'Perfil actualizado' : 'Perfil publicado',
+        description: isEditingTalent
+          ? 'Los cambios de tu perfil profesional ya se guardaron.'
+          : 'Tu perfil ya se muestra en la seccion "Busco empleo".',
       });
     },
     onError: (error) => {
@@ -172,6 +180,42 @@ const Employability = () => {
     },
   });
 
+  const updateJobMutation = useMutation({
+    mutationFn: ({ jobId, payload }: {
+      jobId: string;
+      payload: {
+        title: string;
+        description: string;
+        skillsRequired: string[];
+        experienceRequired: string;
+        location?: string;
+      };
+    }) => updateEmployabilityJob(jobId, payload),
+    onSuccess: () => {
+      setJobForm({
+        title: '',
+        description: '',
+        skills: '',
+        experience: '',
+        location: '',
+      });
+      setEditingJobId(null);
+      setShowJobForm(false);
+      queryClient.invalidateQueries({ queryKey: ['employability-feed'] });
+      toast({
+        title: 'Vacante actualizada',
+        description: 'Los cambios de la publicacion laboral ya fueron guardados.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'No se pudo actualizar',
+        description: error instanceof Error ? error.message : 'Ocurrio un error inesperado.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const jobs = feedQuery.data?.jobs ?? [];
   const talentProfiles = feedQuery.data?.talentProfiles ?? [];
   const canPublishJob = Boolean(user);
@@ -193,13 +237,23 @@ const Employability = () => {
       return;
     }
 
-    createJobMutation.mutate({
+    const payload = {
       title: jobForm.title,
       description: jobForm.description,
       skillsRequired: jobForm.skills.split(',').map((skill) => skill.trim()).filter(Boolean),
       experienceRequired: jobForm.experience,
       location: jobForm.location.trim() || undefined,
-    });
+    };
+
+    if (editingJobId) {
+      updateJobMutation.mutate({
+        jobId: editingJobId,
+        payload,
+      });
+      return;
+    }
+
+    createJobMutation.mutate(payload);
   };
 
   const handleCreateTalentProfile = () => {
@@ -219,6 +273,56 @@ const Employability = () => {
       certifications: talentForm.certifications.split(',').map((item) => item.trim()).filter(Boolean),
       availability: talentForm.availability.trim() || undefined,
     });
+  };
+
+  const scrollToEditableCard = (section: 'jobs' | 'talent') => {
+    window.setTimeout(() => {
+      const targetRef = section === 'jobs' ? jobFormRef : talentFormRef;
+      targetRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 50);
+  };
+
+  const handleEditJob = (jobId: string) => {
+    const job = jobs.find((item) => item.id === jobId && item.isOwner);
+    if (!job) {
+      return;
+    }
+
+    setActiveSection('jobs');
+    setEditingJobId(job.id);
+    setShowTalentForm(false);
+    setJobForm({
+      title: job.title,
+      description: job.description,
+      skills: job.skillsRequired.join(', '),
+      experience: job.experienceRequired,
+      location: job.location,
+    });
+    setShowJobForm(true);
+    scrollToEditableCard('jobs');
+  };
+
+  const handleEditTalentProfile = () => {
+    const profile = talentProfiles.find((item) => item.isOwner);
+    if (!profile) {
+      return;
+    }
+
+    setActiveSection('talent');
+    setIsEditingTalent(true);
+    setShowJobForm(false);
+    setTalentForm({
+      description: profile.description,
+      skills: profile.skills.join(', '),
+      experience: profile.experience,
+      certifications: profile.certifications.join(', '),
+      availability: profile.availability,
+    });
+    setShowTalentForm(true);
+    scrollToEditableCard('talent');
   };
 
   return (
@@ -248,6 +352,7 @@ const Employability = () => {
                 onClick={() => {
                   setActiveSection('jobs');
                   setShowTalentForm(false);
+                  setIsEditingTalent(false);
                 }}
               >
                 Publicaciones laborales
@@ -263,6 +368,7 @@ const Employability = () => {
                 onClick={() => {
                   setActiveSection('talent');
                   setShowJobForm(false);
+                  setEditingJobId(null);
                 }}
               >
                 Busco empleo
@@ -310,11 +416,14 @@ const Employability = () => {
       </Card>
 
       {showJobForm && canPublishJob && activeSection === 'jobs' && (
+        <div ref={jobFormRef}>
         <Card className="rounded-[28px] border-slate-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-xl">Publicar empleo</CardTitle>
+            <CardTitle className="text-xl">{editingJobId ? 'Editar empleo' : 'Publicar empleo'}</CardTitle>
             <CardDescription>
-              Crea una oferta laboral real y persistida en backend para atraer mejores postulaciones.
+              {editingJobId
+                ? 'Actualiza tu vacante y manten la informacion al dia para nuevos candidatos.'
+                : 'Crea una oferta laboral real y persistida en backend para atraer mejores postulaciones.'}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
@@ -356,15 +465,42 @@ const Employability = () => {
               />
             </div>
             <div className="md:col-span-2 flex flex-wrap gap-3">
-              <Button type="button" onClick={handleCreateJob} disabled={createJobMutation.isPending} className="rounded-2xl px-5">
-                {createJobMutation.isPending ? 'Publicando...' : 'Publicar oferta'}
+              <Button
+                type="button"
+                onClick={handleCreateJob}
+                disabled={createJobMutation.isPending || updateJobMutation.isPending}
+                className="rounded-2xl px-5"
+              >
+                {createJobMutation.isPending || updateJobMutation.isPending
+                  ? editingJobId
+                    ? 'Guardando...'
+                    : 'Publicando...'
+                  : editingJobId
+                    ? 'Guardar cambios'
+                    : 'Publicar oferta'}
               </Button>
-              <Button type="button" variant="ghost" onClick={() => setShowJobForm(false)} className="rounded-2xl">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setShowJobForm(false);
+                  setEditingJobId(null);
+                  setJobForm({
+                    title: '',
+                    description: '',
+                    skills: '',
+                    experience: '',
+                    location: '',
+                  });
+                }}
+                className="rounded-2xl"
+              >
                 Cancelar
               </Button>
             </div>
           </CardContent>
         </Card>
+        </div>
       )}
 
       {activeSection === 'jobs' && (
@@ -385,7 +521,17 @@ const Employability = () => {
               <Button
                 type="button"
                 className="rounded-2xl px-5"
-                onClick={() => setShowJobForm((current) => !current)}
+                onClick={() => {
+                  setEditingJobId(null);
+                  setJobForm({
+                    title: '',
+                    description: '',
+                    skills: '',
+                    experience: '',
+                    location: '',
+                  });
+                  setShowJobForm((current) => !current);
+                }}
               >
                 <Plus className="h-4 w-4" />
                 Publicar empleo
@@ -451,6 +597,16 @@ const Employability = () => {
                     </div>
 
                     <div className="flex shrink-0 flex-col gap-3 lg:w-48">
+                      {job.isOwner && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="rounded-2xl"
+                          onClick={() => handleEditJob(job.id)}
+                        >
+                          Editar
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         onClick={() => applyMutation.mutate(job.id)}
@@ -498,7 +654,17 @@ const Employability = () => {
               type="button"
               variant="outline"
               className="rounded-2xl border-sky-200 bg-white px-5 text-[#0f2a5e] hover:bg-sky-50"
-              onClick={() => setShowTalentForm((current) => !current)}
+              onClick={() => {
+                setIsEditingTalent(false);
+                setTalentForm({
+                  description: '',
+                  skills: '',
+                  experience: '',
+                  certifications: '',
+                  availability: '',
+                });
+                setShowTalentForm((current) => !current);
+              }}
             >
               <Users className="h-4 w-4" />
               Publicarme como talento
@@ -506,11 +672,16 @@ const Employability = () => {
           </div>
 
           {showTalentForm && (
+            <div ref={talentFormRef}>
             <Card className="rounded-[28px] border-slate-200 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-xl">Publicarme como profesional</CardTitle>
+                <CardTitle className="text-xl">
+                  {isEditingTalent ? 'Editar perfil profesional' : 'Publicarme como profesional'}
+                </CardTitle>
                 <CardDescription>
-                  Comparte tu propuesta de valor y guardala de forma persistente en el backend.
+                  {isEditingTalent
+                    ? 'Ajusta tu propuesta de valor y manten visible tu perfil profesional.'
+                    : 'Comparte tu propuesta de valor y guardala de forma persistente en el backend.'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4">
@@ -547,14 +718,36 @@ const Employability = () => {
                 />
                 <div className="flex flex-wrap gap-3">
                   <Button type="button" onClick={handleCreateTalentProfile} disabled={talentMutation.isPending} className="rounded-2xl px-5">
-                    {talentMutation.isPending ? 'Publicando...' : 'Publicar perfil'}
+                    {talentMutation.isPending
+                      ? isEditingTalent
+                        ? 'Guardando...'
+                        : 'Publicando...'
+                      : isEditingTalent
+                        ? 'Guardar cambios'
+                        : 'Publicar perfil'}
                   </Button>
-                  <Button type="button" variant="ghost" onClick={() => setShowTalentForm(false)} className="rounded-2xl">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setShowTalentForm(false);
+                      setIsEditingTalent(false);
+                      setTalentForm({
+                        description: '',
+                        skills: '',
+                        experience: '',
+                        certifications: '',
+                        availability: '',
+                      });
+                    }}
+                    className="rounded-2xl"
+                  >
                     Cancelar
                   </Button>
                 </div>
               </CardContent>
             </Card>
+            </div>
           )}
 
           <div className="grid gap-4 xl:grid-cols-2">
@@ -617,7 +810,17 @@ const Employability = () => {
                       </div>
                     </div>
 
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-3">
+                      {profile.isOwner && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="rounded-xl"
+                          onClick={handleEditTalentProfile}
+                        >
+                          Editar
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         variant="outline"

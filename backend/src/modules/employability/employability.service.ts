@@ -61,6 +61,7 @@ type EmployabilityJobResponse = {
   applicants: number;
   hasApplied: boolean;
   createdAt: string;
+  isOwner?: boolean;
 };
 
 type EmployabilityTalentProfileResponse = {
@@ -144,6 +145,7 @@ export class EmployabilityService {
             applicants: jobApplications.length,
             hasApplied: jobApplications.some((application) => application.applicantId === viewerId),
             createdAt: job.createdAt.toISOString(),
+            isOwner: job.authorId === viewerId,
           } satisfies EmployabilityJobResponse,
         ];
       }),
@@ -205,6 +207,12 @@ export class EmployabilityService {
     }
 
     await this.jobsCollection().insertOne(job);
+    await this.notifyAudience({
+      actorId: author.id,
+      title: `${author.fullName} publico una nueva vacante: ${job.title}`,
+      body: `${author.company} · ${job.location}`,
+      entityId: job.id,
+    });
 
     return {
       job: {
@@ -219,6 +227,73 @@ export class EmployabilityService {
         applicants: 0,
         hasApplied: false,
         createdAt: job.createdAt.toISOString(),
+        isOwner: true,
+      } satisfies EmployabilityJobResponse,
+    };
+  }
+
+  async updateJob(
+    jobId: string,
+    authorId: string,
+    data: {
+      title: string;
+      description: string;
+      skillsRequired: string[];
+      experienceRequired: string;
+      location?: string;
+    },
+  ) {
+    const author = await this.usersService.requireActiveUser(authorId);
+    const existing = await this.jobsCollection().findOne({ id: jobId });
+
+    if (!existing) {
+      throw new NotFoundException('Vacante no encontrada.');
+    }
+
+    if (existing.authorId !== author.id) {
+      throw new ForbiddenException('Solo puedes editar tus propias vacantes.');
+    }
+
+    const title = data.title.trim();
+    const description = data.description.trim();
+    const skillsRequired = this.normalizeList(data.skillsRequired);
+    const experienceRequired = data.experienceRequired.trim();
+    const location = data.location?.trim() || existing.location || author.location || 'Publicacion interna';
+
+    if (!title || !description || !skillsRequired.length || !experienceRequired) {
+      throw new ForbiddenException('Completa titulo, descripcion, skills y experiencia requerida.');
+    }
+
+    await this.jobsCollection().updateOne(
+      { id: jobId },
+      {
+        $set: {
+          title,
+          description,
+          skillsRequired,
+          experienceRequired,
+          location,
+          updatedAt: new Date(),
+        },
+      },
+    );
+
+    const applicants = await this.applicationsCollection().countDocuments({ jobId });
+
+    return {
+      job: {
+        id: existing.id,
+        title,
+        company: author.company,
+        author: this.mapPublicUser(author),
+        description,
+        skillsRequired,
+        experienceRequired,
+        location,
+        applicants,
+        hasApplied: false,
+        createdAt: existing.createdAt.toISOString(),
+        isOwner: true,
       } satisfies EmployabilityJobResponse,
     };
   }
@@ -250,26 +325,12 @@ export class EmployabilityService {
     };
 
     await this.applicationsCollection().insertOne(application);
-
-    const jobAuthor = await this.usersService.findById(job.authorId);
-    if (
-      jobAuthor &&
-      (jobAuthor.role === UserRole.BUYER || jobAuthor.role === UserRole.SUPPLIER)
-    ) {
-      await this.notificationsService.create({
-        icon: 'FileText',
-        type: 'SYSTEM',
-        title: `${applicant.fullName} postulo a tu vacante "${job.title}"`,
-        body: `${applicant.company} · ${applicant.position}`,
-        entityType: 'publication',
-        entityId: job.id,
-        fromUserId: applicant.id,
-        role: jobAuthor.role,
-        userId: jobAuthor.id,
-        url: '/empleabilidad',
-        time: 'Ahora',
-      });
-    }
+    await this.notifyAudience({
+      actorId: applicant.id,
+      title: `${applicant.fullName} esta postulando a la vacante "${job.title}"`,
+      body: `${applicant.company} · ${applicant.position}`,
+      entityId: job.id,
+    });
 
     return {
       success: true,
@@ -373,6 +434,42 @@ export class EmployabilityService {
       position: user.position,
       role: user.role,
     };
+  }
+
+  private async notifyAudience(data: {
+    actorId: string;
+    title: string;
+    body: string;
+    entityId: string;
+  }) {
+    const userIds = await this.usersService.listActiveUserIdsByRoles(
+      [UserRole.BUYER, UserRole.EXPERT, UserRole.SUPPLIER],
+      data.actorId,
+    );
+
+    if (!userIds.length) {
+      return;
+    }
+
+    const users = await this.usersService.findManyByIds(userIds);
+
+    await Promise.all(
+      users.map((user) =>
+        this.notificationsService.create({
+          icon: 'FileText',
+          type: 'SYSTEM',
+          title: data.title,
+          body: data.body,
+          entityType: 'publication',
+          entityId: data.entityId,
+          fromUserId: data.actorId,
+          role: user.role === UserRole.SUPPLIER ? UserRole.SUPPLIER : UserRole.BUYER,
+          userId: user.id,
+          url: '/empleabilidad',
+          time: 'Ahora',
+        }),
+      ),
+    );
   }
 
   private jobsCollection() {

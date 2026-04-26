@@ -13,6 +13,21 @@ import { toast } from '@/hooks/use-toast';
 
 const DEFAULT_TIMEZONE = 'America/Lima';
 
+function getCalendarConnectErrorMessage(error: unknown) {
+  const message =
+    error instanceof Error ? error.message : 'No se pudo conectar Google Calendar.';
+
+  if (
+    message.includes('Google OAuth no configurado') ||
+    message.includes('GOOGLE_CLIENT_ID') ||
+    message.includes('GOOGLE_OAUTH_REDIRECT_URI')
+  ) {
+    return 'Google Calendar aun no esta configurado en el servidor. Intenta nuevamente cuando el administrador active la conexion.';
+  }
+
+  return message;
+}
+
 const ExpertCalendarSetup = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -94,11 +109,7 @@ const ExpertCalendarSetup = () => {
       const oauth = await getMyCalendarOauthUrl(frontendPath);
       window.location.href = oauth.url;
     } catch (connectError) {
-      setError(
-        connectError instanceof Error
-          ? connectError.message
-          : 'No se pudo conectar Google Calendar.',
-      );
+      setError(getCalendarConnectErrorMessage(connectError));
     } finally {
       setIsSaving(false);
     }

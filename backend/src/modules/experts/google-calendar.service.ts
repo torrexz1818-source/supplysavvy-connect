@@ -250,6 +250,64 @@ export class GoogleCalendarService {
     };
   }
 
+  async appendAttendeesToEvent(input: {
+    eventId: string;
+    attendeeEmails: string[];
+    organizer?: UserCalendarConfig | null;
+  }): Promise<void> {
+    if (!input.attendeeEmails.length) {
+      return;
+    }
+
+    const config = this.resolveCalendarConfig(input.organizer);
+    const accessToken = await this.getAccessToken(config.refreshToken);
+    const calendarId = config.calendarId || 'primary';
+    const eventUrl = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(input.eventId)}?sendUpdates=all`;
+
+    const eventResponse = await fetch(eventUrl, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!eventResponse.ok) {
+      const message = await eventResponse.text();
+      throw new Error(
+        `No se pudo leer el evento grupal en Google Calendar: ${message || eventResponse.statusText}`,
+      );
+    }
+
+    const eventPayload = (await eventResponse.json()) as {
+      attendees?: Array<{ email?: string }>;
+    };
+
+    const currentEmails = new Set(
+      (eventPayload.attendees || [])
+        .map((attendee) => attendee.email?.trim().toLowerCase())
+        .filter((email): email is string => Boolean(email)),
+    );
+
+    input.attendeeEmails.forEach((email) => currentEmails.add(email.trim().toLowerCase()));
+
+    const patchResponse = await fetch(eventUrl, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        attendees: Array.from(currentEmails).map((email) => ({ email })),
+      }),
+    });
+
+    if (!patchResponse.ok) {
+      const message = await patchResponse.text();
+      throw new Error(
+        `No se pudo actualizar asistentes en Google Calendar: ${message || patchResponse.statusText}`,
+      );
+    }
+  }
+
   async exchangeAuthorizationCode(code: string): Promise<OAuthTokenExchangeResult> {
     const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();

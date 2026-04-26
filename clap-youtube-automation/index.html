@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Clap YouTube Automation</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel">
+        <div class="status-row">
+          <span id="statusDot" class="dot idle"></span>
+          <span id="statusText">Listo para activar el microfono</span>
+        </div>
+
+        <h1>Dos aplausos abren YouTube</h1>
+        <p class="subtext">
+          Deja esta ventana abierta. Cuando detecte dos aplausos seguidos, abrira la cancion configurada.
+        </p>
+
+        <button id="startButton" type="button">Activar escucha</button>
+
+        <div class="meter" aria-hidden="true">
+          <div id="meterBar" class="meter-bar"></div>
+        </div>
+
+        <dl class="readout">
+          <div>
+            <dt>Aplausos</dt>
+            <dd id="clapCount">0</dd>
+          </div>
+          <div>
+            <dt>Sensibilidad</dt>
+            <dd id="thresholdValue">0.42</dd>
+          </div>
+        </dl>
+      </section>
+    </main>
+
+    <script src="./config.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

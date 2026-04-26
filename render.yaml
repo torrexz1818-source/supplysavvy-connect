@@ -5,3 +5,16 @@ services:
     rootDir: backend
     buildCommand: npm install && npm run build
     startCommand: npm run start:prod
+    envVars:
+      - key: FRONTEND_URL
+        value: https://supplynexu.com
+      - key: GOOGLE_OAUTH_REDIRECT_URI
+        value: https://api.supplynexu.com/experts/calendar/oauth/callback
+      - key: GOOGLE_CALENDAR_TIMEZONE
+        value: America/Lima
+      - key: APP_TIMEZONE
+        value: America/Lima
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false

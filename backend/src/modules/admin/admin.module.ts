@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { AdminGuard } from '../../common/auth/admin.guard';
 import { AuthenticatedGuard } from '../../common/auth/authenticated.guard';
 import { PostsModule } from '../posts/posts.module';
+import { UploadsModule } from '../uploads/uploads.module';
 import { UsersModule } from '../users/users.module';
 import { AdminController } from './admin.controller';
 
@@ -10,6 +11,7 @@ import { AdminController } from './admin.controller';
   imports: [
     UsersModule,
     PostsModule,
+    UploadsModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET ?? 'dev-supplynexu-secret',
     }),

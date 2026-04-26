@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { AdminGuard } from '../../common/auth/admin.guard';
 import { AuthenticatedGuard } from '../../common/auth/authenticated.guard';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { UploadsModule } from '../uploads/uploads.module';
 import { UsersModule } from '../users/users.module';
 import { NewsController } from './news.controller';
 import { NewsService } from './news.service';
@@ -11,6 +12,7 @@ import { NewsService } from './news.service';
   imports: [
     UsersModule,
     NotificationsModule,
+    UploadsModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET ?? 'dev-supplynexu-secret',
     }),

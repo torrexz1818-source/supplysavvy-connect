@@ -558,6 +558,9 @@ export interface ExpertAvailabilitySlot {
   endsAt: string;
   label: string;
   available: boolean;
+  maxParticipants: number;
+  bookedParticipants: number;
+  remainingSpots: number;
 }
 
 export interface ExpertAvailability {
@@ -589,6 +592,7 @@ export interface ExpertAppointment {
   emailSent: boolean;
   emailError?: string;
   createdAt: string;
+  maxParticipants?: number;
 }
 
 export interface ExpertCalendarConnectionStatus {
@@ -626,6 +630,7 @@ export interface EmployabilityJob {
   applicants: number;
   hasApplied: boolean;
   createdAt: string;
+  isOwner?: boolean;
 }
 
 export interface EmployabilityTalentProfile {

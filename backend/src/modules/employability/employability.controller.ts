@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { AuthenticatedGuard } from '../../common/auth/authenticated.guard';
 import { EmployabilityService } from './employability.service';
@@ -38,6 +38,15 @@ export class EmployabilityController {
     @CurrentUser() user: { sub: string },
   ): Promise<unknown> {
     return this.employabilityService.createJob(user.sub, body);
+  }
+
+  @Patch('jobs/:id')
+  updateJob(
+    @Param('id') jobId: string,
+    @Body() body: CreateJobBody,
+    @CurrentUser() user: { sub: string },
+  ): Promise<unknown> {
+    return this.employabilityService.updateJob(jobId, user.sub, body);
   }
 
   @Post('jobs/:id/apply')

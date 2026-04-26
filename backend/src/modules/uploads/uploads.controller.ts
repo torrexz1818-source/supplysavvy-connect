@@ -1,18 +1,22 @@
 import {
   BadRequestException,
   Controller,
+  Get,
+  Param,
   Post,
   Query,
+  Req,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { existsSync, mkdirSync } from 'fs';
-import type { Request } from 'express';
+import { memoryStorage } from 'multer';
+import { extname } from 'path';
+import type { Request, Response } from 'express';
 import { AuthenticatedGuard } from '../../common/auth/authenticated.guard';
+import { UploadsService } from './uploads.service';
 
 const uploadMaxFileSize =
   Number.parseInt(process.env.UPLOAD_MAX_FILE_SIZE_BYTES?.trim() || '', 10) || 50 * 1024 * 1024;
@@ -20,36 +24,43 @@ const uploadMaxFileSize =
 type UploadPurpose = 'general' | 'messages' | 'posts' | 'resources';
 
 @Controller('uploads')
-@UseGuards(AuthenticatedGuard)
 export class UploadsController {
+  constructor(private readonly uploadsService: UploadsService) {}
+
+  @Get(':filename')
+  serveRootUpload(
+    @Param('filename') filename: string,
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    return this.serveUpload(filename, request, response);
+  }
+
+  @Get(':purpose/:filename')
+  servePurposeUpload(
+    @Param('purpose') purpose: string,
+    @Param('filename') filename: string,
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
+    return this.serveUpload(`${purpose}/${filename}`, request, response);
+  }
+
   @Post('file')
+  @UseGuards(AuthenticatedGuard)
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: (request: Request, _file, callback) => {
-          const purpose = UploadsController.normalizePurpose(
-            typeof request.query.purpose === 'string' ? request.query.purpose : undefined,
-          );
-          const uploadDir = join(process.cwd(), 'uploads', purpose);
-
-          UploadsController.ensureDir(uploadDir);
-          callback(null, uploadDir);
-        },
-        filename: (_request, file, callback) => {
-          const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(file.originalname || '')}`;
-          callback(null, uniqueName);
-        },
-      }),
+      storage: memoryStorage(),
       limits: {
         fileSize: uploadMaxFileSize,
       },
     }),
   )
-  uploadFile(
+  async uploadFile(
     @UploadedFile()
     file?: {
       originalname: string;
-      filename: string;
+      buffer: Buffer;
       mimetype: string;
       size: number;
     },
@@ -60,10 +71,18 @@ export class UploadsController {
     }
 
     const normalizedPurpose = UploadsController.normalizePurpose(purpose);
+    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(file.originalname || '')}`;
+    const relativePath = `${normalizedPurpose}/${uniqueName}`;
 
     return {
       file: {
-        url: this.fileToPublicUrl(`${normalizedPurpose}/${file.filename}`),
+        url: await this.uploadsService.saveBuffer({
+          buffer: file.buffer,
+          relativePath,
+          originalName: file.originalname,
+          mimeType: file.mimetype,
+          size: file.size,
+        }),
         name: file.originalname,
         mimeType: file.mimetype,
         size: file.size,
@@ -71,8 +90,56 @@ export class UploadsController {
     };
   }
 
-  private fileToPublicUrl(relativePath: string): string {
-    return `/api/uploads/${relativePath.replace(/\\/g, '/')}`;
+  private async serveUpload(relativePath: string, request: Request, response: Response) {
+    const file = await this.uploadsService.findFile(relativePath);
+    const contentType =
+      (file.metadata as { mimeType?: string } | undefined)?.mimeType || 'application/octet-stream';
+    const rangeHeader = request.headers.range;
+
+    response.setHeader('Accept-Ranges', 'bytes');
+    response.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    response.setHeader('Content-Type', contentType);
+
+    if (rangeHeader) {
+      const range = this.parseRange(rangeHeader, file.length);
+
+      if (!range) {
+        response.status(416).setHeader('Content-Range', `bytes */${file.length}`);
+        response.end();
+        return;
+      }
+
+      response.status(206);
+      response.setHeader('Content-Length', range.end - range.start + 1);
+      response.setHeader('Content-Range', `bytes ${range.start}-${range.end}/${file.length}`);
+      this.uploadsService
+        .openDownloadStream(file, { start: range.start, endExclusive: range.end + 1 })
+        .pipe(response);
+      return;
+    }
+
+    response.setHeader('Content-Length', file.length);
+    this.uploadsService.openDownloadStream(file).pipe(response);
+  }
+
+  private parseRange(rangeHeader: string, fileSize: number) {
+    const match = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader);
+
+    if (!match) {
+      return null;
+    }
+
+    const start = match[1] ? Number(match[1]) : 0;
+    const end = match[2] ? Number(match[2]) : fileSize - 1;
+
+    if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end < start || start >= fileSize) {
+      return null;
+    }
+
+    return {
+      start,
+      end: Math.min(end, fileSize - 1),
+    };
   }
 
   private static normalizePurpose(value?: string): UploadPurpose {
@@ -81,11 +148,5 @@ export class UploadsController {
     }
 
     return 'general';
-  }
-
-  private static ensureDir(path: string) {
-    if (!existsSync(path)) {
-      mkdirSync(path, { recursive: true });
-    }
   }
 }

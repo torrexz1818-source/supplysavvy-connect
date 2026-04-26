@@ -21,6 +21,7 @@ import { AdminGuard } from '../../common/auth/admin.guard';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { AuthenticatedGuard } from '../../common/auth/authenticated.guard';
 import { PostsService } from '../posts/posts.service';
+import { UploadsService } from '../uploads/uploads.service';
 import { UserStatus } from '../users/domain/user-status.enum';
 import { MembershipStatus } from '../users/users.service';
 import { UsersService } from '../users/users.service';
@@ -68,6 +69,7 @@ type CompleteChunkUploadBody = {
   uploadId: string;
   originalName: string;
   totalChunks: number | string;
+  mimeType?: string;
 };
 
 const adminUploadMaxFileSize =
@@ -81,6 +83,7 @@ export class AdminController {
   constructor(
     private readonly postsService: PostsService,
     private readonly usersService: UsersService,
+    private readonly uploadsService: UploadsService,
   ) {}
 
   @Get('dashboard')
@@ -145,7 +148,7 @@ export class AdminController {
   }
 
   @Post('uploads/complete')
-  completeChunkUpload(@Body() body: CompleteChunkUploadBody) {
+  async completeChunkUpload(@Body() body: CompleteChunkUploadBody) {
     const uploadId = body.uploadId?.trim();
     const originalName = body.originalName?.trim();
     const totalChunks = Number(body.totalChunks);
@@ -176,10 +179,18 @@ export class AdminController {
       appendFileSync(finalPath, readFileSync(chunkPath));
     }
 
+    const uploadedUrl = await this.uploadsService.saveFile({
+      filePath: finalPath,
+      relativePath: finalFilename,
+      originalName,
+      mimeType: body.mimeType,
+    });
+
+    rmSync(finalPath, { force: true });
     rmSync(chunkDir, { recursive: true, force: true });
 
     return {
-      url: this.fileToPublicUrl(finalFilename),
+      url: uploadedUrl,
     };
   }
 
@@ -207,11 +218,11 @@ export class AdminController {
       },
     }),
   )
-  createManagedPost(
+  async createManagedPost(
     @Body() body: CreateManagedPostBody,
     @UploadedFiles() files: {
-      mainMedia?: Array<{ filename: string }>;
-      thumbnail?: Array<{ filename: string }>;
+      mainMedia?: Array<{ filename: string; path: string; originalname: string; mimetype: string }>;
+      thumbnail?: Array<{ filename: string; path: string; originalname: string; mimetype: string }>;
     },
     @CurrentUser() user: { sub: string },
   ) {
@@ -220,10 +231,39 @@ export class AdminController {
     const parsedResources = this.parseResources(body.resources);
     const bodyMediaType = body.mediaType;
     const uploadedVideoUrl =
-      bodyMediaType === 'video' && mainMedia ? this.fileToPublicUrl(mainMedia.filename) : undefined;
+      bodyMediaType === 'video' && mainMedia
+        ? await this.uploadsService.saveFile({
+            filePath: mainMedia.path,
+            relativePath: mainMedia.filename,
+            originalName: mainMedia.originalname,
+            mimeType: mainMedia.mimetype,
+          })
+        : undefined;
     const uploadedImageUrl =
-      bodyMediaType === 'image' && mainMedia ? this.fileToPublicUrl(mainMedia.filename) : undefined;
-    const uploadedThumbnailUrl = thumbnail ? this.fileToPublicUrl(thumbnail.filename) : undefined;
+      bodyMediaType === 'image' && mainMedia
+        ? await this.uploadsService.saveFile({
+            filePath: mainMedia.path,
+            relativePath: mainMedia.filename,
+            originalName: mainMedia.originalname,
+            mimeType: mainMedia.mimetype,
+          })
+        : undefined;
+    const uploadedThumbnailUrl = thumbnail
+      ? await this.uploadsService.saveFile({
+          filePath: thumbnail.path,
+          relativePath: thumbnail.filename,
+          originalName: thumbnail.originalname,
+          mimeType: thumbnail.mimetype,
+        })
+      : undefined;
+
+    if (mainMedia) {
+      rmSync(mainMedia.path, { force: true });
+    }
+
+    if (thumbnail) {
+      rmSync(thumbnail.path, { force: true });
+    }
 
     return this.postsService.createPost({
       title: body.title,
@@ -295,10 +335,6 @@ export class AdminController {
     } catch {
       return [];
     }
-  }
-
-  private fileToPublicUrl(filename: string): string {
-    return `/api/uploads/${filename}`;
   }
 
   private getUploadDir() {

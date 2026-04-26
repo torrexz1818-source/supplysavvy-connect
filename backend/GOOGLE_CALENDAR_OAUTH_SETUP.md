@@ -11,8 +11,8 @@
 ### Produccion actual
 
 - Frontend: `https://supplynexu.com`
-- Backend: `https://supplynexu-backend.onrender.com`
-- Callback OAuth: `https://supplynexu-backend.onrender.com/experts/calendar/oauth/callback`
+- Backend: `https://api.supplynexu.com`
+- Callback OAuth: `https://api.supplynexu.com/experts/calendar/oauth/callback`
 
 ## Configuracion en Google Cloud Console
 
@@ -25,7 +25,7 @@
 4. Elige `Web application`.
 5. Agrega estos `Authorized redirect URIs`:
    - `http://127.0.0.1:10000/experts/calendar/oauth/callback`
-   - `https://supplynexu-backend.onrender.com/experts/calendar/oauth/callback`
+   - `https://api.supplynexu.com/experts/calendar/oauth/callback`
 6. Agrega estos `Authorized JavaScript origins`:
    - `http://127.0.0.1:5173`
    - `https://supplynexu.com`
@@ -50,7 +50,7 @@ APP_TIMEZONE=America/Lima
 ```env
 GOOGLE_CLIENT_ID=tu-client-id-google
 GOOGLE_CLIENT_SECRET=tu-client-secret-google
-GOOGLE_OAUTH_REDIRECT_URI=https://supplynexu-backend.onrender.com/experts/calendar/oauth/callback
+GOOGLE_OAUTH_REDIRECT_URI=https://api.supplynexu.com/experts/calendar/oauth/callback
 FRONTEND_URL=https://supplynexu.com
 GOOGLE_CALENDAR_TIMEZONE=America/Lima
 APP_TIMEZONE=America/Lima

@@ -476,6 +476,14 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     return this.db.collection<T>(name);
   }
 
+  getDb(): Db {
+    if (!this.db) {
+      throw new Error('Database connection is not initialized');
+    }
+
+    return this.db;
+  }
+
   private async ensureIndexes(): Promise<void> {
     const users = this.collection<UserDocument>('users');
     const categories = this.collection<CategoryDocument>('categories');
@@ -533,6 +541,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
     await this.dropLegacySingleAdminIndex(users);
     await this.dropLegacyConversationPairIndex(conversations);
+    await this.dropLegacySingleSlotExpertAppointmentIndex(expertAppointments);
 
     await Promise.all([
       users.createIndex({ id: 1 }, { unique: true }),
@@ -627,8 +636,9 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         { jobId: 1, applicantId: 1 },
         { unique: true },
       ),
+      expertAppointments.createIndex({ expertId: 1, startsAt: 1, status: 1 }),
       expertAppointments.createIndex(
-        { expertId: 1, startsAt: 1, status: 1 },
+        { expertId: 1, buyerId: 1, startsAt: 1, status: 1 },
         { unique: true, partialFilterExpression: { status: 'scheduled' } },
       ),
     ]);
@@ -669,6 +679,27 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     }
 
     await conversations.dropIndex(legacyPairIndex.name);
+  }
+
+  private async dropLegacySingleSlotExpertAppointmentIndex(
+    expertAppointments: Collection<ExpertAppointmentDocument>,
+  ): Promise<void> {
+    const indexes = await expertAppointments.indexes();
+    const legacySlotIndex = indexes.find(
+      (index) =>
+        index.unique === true &&
+        index.partialFilterExpression?.status === 'scheduled' &&
+        index.key?.expertId === 1 &&
+        index.key?.startsAt === 1 &&
+        index.key?.status === 1 &&
+        index.key?.buyerId !== 1,
+    );
+
+    if (!legacySlotIndex?.name) {
+      return;
+    }
+
+    await expertAppointments.dropIndex(legacySlotIndex.name);
   }
 
   private async seedDefaults(): Promise<void> {

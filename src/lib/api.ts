@@ -14,6 +14,7 @@ import {
   ConversationSummary,
   MessageAttachment,
   HomeFeed,
+  Lesson,
   NotificationItem,
   NewsComment,
   NewsPost,
@@ -39,8 +40,8 @@ import {
   UserStatus,
 } from '@/types';
 
-const RAW_API_BASE_URL = import.meta.env.VITE_API_URL?.trim() || '/api';
 const DEFAULT_PRODUCTION_API_URL = 'https://api.supplynexu.com';
+const RAW_API_BASE_URL = import.meta.env.VITE_API_URL?.trim() || DEFAULT_PRODUCTION_API_URL;
 
 const API_BASE_URL = RAW_API_BASE_URL.endsWith('/')
   ? RAW_API_BASE_URL.slice(0, -1)
@@ -114,9 +115,87 @@ export function setStoredToken(token: string | null) {
   localStorage.removeItem(TOKEN_KEY);
 }
 
+function isBrowserLocalHost(hostname: string) {
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    isPrivateIpv4Host(hostname)
+  );
+}
+
+function getRuntimeApiBaseUrl() {
+  if (
+    API_BASE_URL !== '/api' ||
+    typeof window === 'undefined' ||
+    isBrowserLocalHost(window.location.hostname)
+  ) {
+    return API_BASE_URL;
+  }
+
+  return DEFAULT_PRODUCTION_API_URL;
+}
+
 function buildUrl(path: string) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  return `${API_BASE_URL}${normalizedPath}`;
+  return `${getRuntimeApiBaseUrl()}${normalizedPath}`;
+}
+
+function getApiOrigin() {
+  try {
+    return new URL(getRuntimeApiBaseUrl()).origin;
+  } catch {
+    return '';
+  }
+}
+
+export function resolveApiAssetUrl(url?: string | null) {
+  if (!url) {
+    return '';
+  }
+
+  if (/^(blob:|data:|https?:\/\/)/i.test(url)) {
+    return url;
+  }
+
+  const apiOrigin = getApiOrigin();
+
+  if (url.startsWith('/api/uploads/')) {
+    const uploadsPath = url.replace(/^\/api\/uploads/, '/uploads');
+    return apiOrigin ? `${apiOrigin}${uploadsPath}` : url;
+  }
+
+  if (url.startsWith('/uploads/')) {
+    return apiOrigin ? `${apiOrigin}${url}` : `/api${url}`;
+  }
+
+  return url;
+}
+
+function normalizePostAssetUrls<T extends Post>(post: T): T {
+  return {
+    ...post,
+    videoUrl: resolveApiAssetUrl(post.videoUrl),
+    thumbnailUrl: resolveApiAssetUrl(post.thumbnailUrl),
+    resources: post.resources?.map((resource) => ({
+      ...resource,
+      url: resolveApiAssetUrl(resource.url),
+    })),
+  };
+}
+
+function normalizeNewsPostAssetUrls<T extends NewsPost>(post: T): T {
+  return {
+    ...post,
+    imageUrl: resolveApiAssetUrl(post.imageUrl),
+  };
+}
+
+function normalizeLessonAssetUrls<T extends Lesson>(lesson: T): T {
+  return {
+    ...lesson,
+    videoUrl: resolveApiAssetUrl(lesson.videoUrl),
+    thumbnailUrl: resolveApiAssetUrl(lesson.thumbnailUrl),
+  };
 }
 
 function isPrivateIpv4Host(hostname: string) {
@@ -402,7 +481,13 @@ export async function getMe() {
 }
 
 export async function getHomeFeed() {
-  return apiRequest<HomeFeed>('/posts/home', { auth: true });
+  const data = await apiRequest<HomeFeed>('/posts/home', { auth: true });
+
+  return {
+    ...data,
+    educationalPosts: data.educationalPosts.map(normalizePostAssetUrls),
+    continueWatching: data.continueWatching.map(normalizeLessonAssetUrls),
+  };
 }
 
 export async function getCategories() {
@@ -424,11 +509,18 @@ export async function getPosts(params: {
     { auth: true },
   );
 
-  return data.items;
+  return data.items.map(normalizePostAssetUrls);
 }
 
 export async function getPostDetail(id: string) {
-  return apiRequest<PostDetailData>(`/posts/${id}`, { auth: true });
+  const data = await apiRequest<PostDetailData>(`/posts/${id}`, { auth: true });
+
+  return {
+    ...data,
+    post: normalizePostAssetUrls(data.post),
+    relatedPosts: data.relatedPosts?.map(normalizePostAssetUrls),
+    lesson: data.lesson ? normalizeLessonAssetUrls(data.lesson) : data.lesson,
+  };
 }
 
 export async function createPost(payload: {
@@ -489,7 +581,12 @@ export async function togglePostLike(postId: string) {
 }
 
 export async function getAdminDashboard() {
-  return apiRequest<AdminDashboardData>('/admin/dashboard', { auth: true });
+  const data = await apiRequest<AdminDashboardData>('/admin/dashboard', { auth: true });
+
+  return {
+    ...data,
+    posts: data.posts.map(normalizePostAssetUrls),
+  };
 }
 
 export async function adminCreatePost(payload: {
@@ -556,6 +653,7 @@ export async function uploadAdminVideoInChunks(
       uploadId: initResponse.uploadId,
       originalName: file.name,
       totalChunks,
+      mimeType: file.type,
     }),
   });
 
@@ -623,7 +721,7 @@ export async function getNotifications(role: 'buyer' | 'supplier') {
 
 export async function getNewsPosts() {
   const data = await apiRequest<NewsListResponse>('/news', { auth: true });
-  return data.items;
+  return data.items.map(normalizeNewsPostAssetUrls);
 }
 
 export async function createNewsPost(payload: {
@@ -908,6 +1006,23 @@ export async function createEmployabilityJob(payload: {
 }) {
   return apiRequest<{ job: EmployabilityJob }>('/employability/jobs', {
     method: 'POST',
+    auth: true,
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateEmployabilityJob(
+  jobId: string,
+  payload: {
+    title: string;
+    description: string;
+    skillsRequired: string[];
+    experienceRequired: string;
+    location?: string;
+  },
+) {
+  return apiRequest<{ job: EmployabilityJob }>(`/employability/jobs/${jobId}`, {
+    method: 'PATCH',
     auth: true,
     body: JSON.stringify(payload),
   });

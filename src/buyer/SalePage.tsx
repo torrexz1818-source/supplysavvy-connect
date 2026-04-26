@@ -3,7 +3,7 @@ import { Search, Heart, Share2, Building2, Info, ImagePlus, CheckCircle2 } from 
 import { motion } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { createPost, getPosts, togglePostLike, uploadFile } from '@/lib/api';
+import { createPost, getPosts, resolveApiAssetUrl, togglePostLike, uploadFile } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -312,7 +312,7 @@ const SalePage = () => {
                 className="w-full max-h-[220px] border-y border-border overflow-hidden bg-[#f8f8f7] flex items-center justify-center"
               >
                 <img
-                  src={post.thumbnailUrl}
+                  src={resolveApiAssetUrl(post.thumbnailUrl)}
                   alt={`Imagen de ${post.title}`}
                   loading="lazy"
                   className="w-full max-h-[220px] object-contain"

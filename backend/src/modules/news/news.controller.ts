@@ -13,11 +13,12 @@ import { JwtService } from '@nestjs/jwt';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import type { Request } from 'express';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, rmSync } from 'fs';
 import { extname, join } from 'path';
 import { AdminGuard } from '../../common/auth/admin.guard';
 import { AuthenticatedGuard } from '../../common/auth/authenticated.guard';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
+import { UploadsService } from '../uploads/uploads.service';
 import { NewsService } from './news.service';
 
 type CreateNewsBody = {
@@ -36,6 +37,7 @@ export class NewsController {
   constructor(
     private readonly newsService: NewsService,
     private readonly jwtService: JwtService,
+    private readonly uploadsService: UploadsService,
   ) {}
 
   @Get()
@@ -64,15 +66,28 @@ export class NewsController {
       }),
     }),
   )
-  create(
+  async create(
     @Body() body: CreateNewsBody,
-    @UploadedFile() image: { filename: string } | undefined,
+    @UploadedFile() image: { filename: string; path: string; originalname: string; mimetype: string } | undefined,
     @CurrentUser() user: { sub: string },
   ): Promise<unknown> {
+    const imageUrl = image
+      ? await this.uploadsService.saveFile({
+          filePath: image.path,
+          relativePath: image.filename,
+          originalName: image.originalname,
+          mimeType: image.mimetype,
+        })
+      : undefined;
+
+    if (image) {
+      rmSync(image.path, { force: true });
+    }
+
     return this.newsService.createPost({
       title: body.title,
       body: body.body,
-      imageUrl: image ? `/api/uploads/${image.filename}` : undefined,
+      imageUrl,
       authorId: user.sub,
     });
   }
