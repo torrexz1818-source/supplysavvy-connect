@@ -121,7 +121,7 @@ const ForgotPassword = () => {
           Recuperar contrasena
         </h1>
         <p className="text-sm text-muted-foreground mb-5">
-          {step === 'email' && 'Ingresa tu correo para recibir un codigo OTP.'}
+          {step === 'email' && 'Ingresa tu correo para recibir un codigo de verificacion.'}
           {step === 'code' &&
             'Revisa tu correo y escribe el codigo de 6 digitos.'}
           {step === 'password' && 'Define una nueva contrasena segura.'}

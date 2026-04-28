@@ -123,16 +123,38 @@ function isBrowserLocalHost(hostname: string) {
   );
 }
 
+function getApiBaseFromCurrentDomain() {
+  if (typeof window === 'undefined') {
+    return DEFAULT_PRODUCTION_API_URL;
+  }
+
+  const { protocol, hostname } = window.location;
+
+  if (isBrowserLocalHost(hostname)) {
+    return '/api';
+  }
+
+  if (hostname.startsWith('api.')) {
+    return `${protocol}//${hostname}`;
+  }
+
+  const rootHost = hostname.replace(/^www\./, '');
+  return `${protocol}//api.${rootHost}`;
+}
+
 function getRuntimeApiBaseUrl() {
   if (
-    API_BASE_URL !== '/api' ||
     typeof window === 'undefined' ||
     isBrowserLocalHost(window.location.hostname)
   ) {
     return API_BASE_URL;
   }
 
-  return DEFAULT_PRODUCTION_API_URL;
+  if (API_BASE_URL === '/api' || API_BASE_URL === DEFAULT_PRODUCTION_API_URL) {
+    return getApiBaseFromCurrentDomain();
+  }
+
+  return API_BASE_URL;
 }
 
 function buildUrl(path: string) {
@@ -153,11 +175,25 @@ export function resolveApiAssetUrl(url?: string | null) {
     return '';
   }
 
-  if (/^(blob:|data:|https?:\/\/)/i.test(url)) {
+  if (/^(blob:|data:)/i.test(url)) {
     return url;
   }
 
   const apiOrigin = getApiOrigin();
+
+  if (/^https?:\/\//i.test(url)) {
+    try {
+      const parsedUrl = new URL(url);
+
+      if (parsedUrl.pathname.startsWith('/uploads/')) {
+        return apiOrigin ? `${apiOrigin}${parsedUrl.pathname}${parsedUrl.search}` : url;
+      }
+    } catch {
+      return url;
+    }
+
+    return url;
+  }
 
   if (url.startsWith('/api/uploads/')) {
     const uploadsPath = url.replace(/^\/api\/uploads/, '/uploads');

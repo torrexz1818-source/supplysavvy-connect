@@ -29,11 +29,10 @@ export function getPublicUploadUrl(relativePath: string): string {
   const configuredBaseUrl =
     process.env.PUBLIC_API_URL?.trim() ||
     process.env.API_PUBLIC_URL?.trim() ||
-    process.env.BACKEND_PUBLIC_URL?.trim() ||
-    (process.env.NODE_ENV === 'production' ? 'https://api.buyernodus.com' : '');
-  const baseUrl = configuredBaseUrl.replace(/\/$/, '');
+    process.env.BACKEND_PUBLIC_URL?.trim();
+  const baseUrl = configuredBaseUrl?.replace(/\/$/, '');
 
-  return baseUrl ? `${baseUrl}/uploads/${normalizedPath}` : `/api/uploads/${normalizedPath}`;
+  return baseUrl ? `${baseUrl}/uploads/${normalizedPath}` : `/uploads/${normalizedPath}`;
 }
 
 @Injectable()

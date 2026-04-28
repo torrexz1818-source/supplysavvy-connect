@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
 
@@ -64,7 +64,7 @@ export class EmailService {
     const smtpUser = process.env.SMTP_USER?.trim();
     const smtpPass = process.env.SMTP_PASS?.trim();
 
-    return Boolean(smtpHost || (smtpUser && smtpPass));
+    return Boolean(smtpHost && smtpUser && smtpPass);
   }
 
   async sendPasswordResetOtp(data: SendPasswordResetOtpData): Promise<void> {
@@ -151,8 +151,8 @@ export class EmailService {
 
   private ensureConfigured() {
     if (!this.isConfigured()) {
-      throw new Error(
-        'La cita se guardo correctamente, pero el correo de confirmacion no esta disponible por ahora.',
+      throw new ServiceUnavailableException(
+        'El envio de correos no esta configurado por ahora. Configura SMTP_HOST, SMTP_USER y SMTP_PASS en el servidor.',
       );
     }
   }

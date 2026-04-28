@@ -3,9 +3,11 @@
   RewriteBase /
 
   RewriteCond %{REQUEST_METHOD} GET [NC]
-  RewriteRule ^api/uploads/(.*)$ https://api.buyernodus.com/uploads/$1 [R=302,L,NE]
+  RewriteCond %{HTTP_HOST} ^(?:www\.)?(.+)$ [NC]
+  RewriteRule ^api/uploads/(.*)$ https://api.%1/uploads/$1 [R=302,L,NE]
   RewriteCond %{REQUEST_METHOD} GET [NC]
-  RewriteRule ^uploads/(.*)$ https://api.buyernodus.com/uploads/$1 [R=302,L,NE]
+  RewriteCond %{HTTP_HOST} ^(?:www\.)?(.+)$ [NC]
+  RewriteRule ^uploads/(.*)$ https://api.%1/uploads/$1 [R=302,L,NE]
 
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
