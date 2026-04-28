@@ -3,9 +3,9 @@
   RewriteBase /
 
   RewriteCond %{REQUEST_METHOD} GET [NC]
-  RewriteRule ^api/uploads/(.*)$ https://api.supplynexu.com/uploads/$1 [R=302,L,NE]
+  RewriteRule ^api/uploads/(.*)$ https://api.buyernodus.com/uploads/$1 [R=302,L,NE]
   RewriteCond %{REQUEST_METHOD} GET [NC]
-  RewriteRule ^uploads/(.*)$ https://api.supplynexu.com/uploads/$1 [R=302,L,NE]
+  RewriteRule ^uploads/(.*)$ https://api.buyernodus.com/uploads/$1 [R=302,L,NE]
 
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f

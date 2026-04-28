@@ -152,6 +152,28 @@ const ProfileLayoutRedirect = () => {
   );
 };
 
+const BuyerOnlySharedLayout = () => {
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <FullScreenMessage message="Cargando..." />;
+  }
+
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user.role === 'buyer' || user.role === 'expert') {
+    return <BuyerLayout />;
+  }
+
+  if (user.role === 'supplier') {
+    return <Navigate to="/supplier/dashboard" replace />;
+  }
+
+  return <Navigate to="/admin/dashboard" replace />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -233,7 +255,7 @@ const App = () => (
               path="/empleabilidad"
               element={
                 <RequireAuth>
-                  <ProfileLayoutRedirect />
+                  <BuyerOnlySharedLayout />
                 </RequireAuth>
               }
             >

@@ -9,8 +9,8 @@ dotenv.config();
 
 function parseCorsOrigins() {
   const defaults = [
-    'https://supplynexu.com',
-    'https://www.supplynexu.com',
+    'https://buyernodus.com',
+    'https://www.buyernodus.com',
   ];
 
   const configuredOrigins = process.env.CORS_ORIGINS?.split(',')

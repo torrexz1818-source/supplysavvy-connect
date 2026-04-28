@@ -1,21 +1,21 @@
 services:
   - type: web
-    name: supplynexu-backend
+    name: buyernodus-backend
     runtime: node
     rootDir: backend
     buildCommand: npm install && npm run build
     startCommand: npm run start:prod
     envVars:
       - key: FRONTEND_URL
-        value: https://supplynexu.com
+        value: https://buyernodus.com
       - key: GOOGLE_OAUTH_REDIRECT_URI
-        value: https://api.supplynexu.com/experts/calendar/oauth/callback
+        value: https://api.buyernodus.com/experts/calendar/oauth/callback
       - key: GOOGLE_CALENDAR_TIMEZONE
         value: America/Lima
       - key: APP_TIMEZONE
         value: America/Lima
       - key: CORS_ORIGINS
-        value: https://supplynexu.com,https://www.supplynexu.com
+        value: https://buyernodus.com,https://www.buyernodus.com
       - key: MONGODB_URI
         sync: false
       - key: MONGODB_DB_NAME

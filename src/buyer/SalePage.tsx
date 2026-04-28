@@ -53,6 +53,7 @@ const SalePage = () => {
   const [url, setUrl] = useState('');
   const [imagen, setImagen] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const canPublishLiquidation = isBuyerLikeRole(user?.role) || user?.role === 'supplier';
 
   const { data: posts = [], isLoading, isError } = useQuery({
     queryKey: ['sale-feed-posts'],
@@ -183,10 +184,10 @@ const SalePage = () => {
               <CardContent className="p-5">
                 <p className="text-xs uppercase tracking-[0.2em] text-sky-600">Accion rapida</p>
                 <p className="mt-2 text-lg font-bold text-[#0f2a5e]">
-                  {isBuyerLikeRole(user?.role) ? 'Puedes publicar' : 'Explora oportunidades'}
+                  {canPublishLiquidation ? 'Puedes publicar' : 'Explora oportunidades'}
                 </p>
                 <p className="mt-1 text-sm text-slate-600">
-                  {isBuyerLikeRole(user?.role)
+                  {canPublishLiquidation
                     ? 'Comparte una liquidacion con titulo, descripcion e imagen.'
                     : 'Revisa el inventario disponible y solicita mas informacion.'}
                 </p>
@@ -206,7 +207,7 @@ const SalePage = () => {
         />
       </div>
 
-      {isBuyerLikeRole(user?.role) && (
+      {canPublishLiquidation && (
         <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-4">
             <h2 className="mb-1 text-lg font-semibold text-foreground">Publicar liquidacion</h2>

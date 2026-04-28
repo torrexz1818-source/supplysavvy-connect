@@ -8,9 +8,7 @@ import NewsAccessButton from '@/components/NewsAccessButton';
 const supplierNavItems = [
   { to: '/supplier/dashboard', label: 'Inicio', icon: LayoutDashboard },
   { to: '/supplier/directory', label: 'Directorio de compradores', icon: Building2 },
-  { to: '/empleabilidad', label: 'Empleabilidad', icon: BriefcaseBusiness },
   { to: '/supplier/sale', label: 'Liquidaciones', icon: FileText },
-  { to: '/publicaciones', label: 'Publicaciones', icon: Newspaper },
 ];
 
 const buyerNavItems = [

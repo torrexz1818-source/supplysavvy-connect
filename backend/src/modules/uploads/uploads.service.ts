@@ -30,7 +30,7 @@ export function getPublicUploadUrl(relativePath: string): string {
     process.env.PUBLIC_API_URL?.trim() ||
     process.env.API_PUBLIC_URL?.trim() ||
     process.env.BACKEND_PUBLIC_URL?.trim() ||
-    (process.env.NODE_ENV === 'production' ? 'https://api.supplynexu.com' : '');
+    (process.env.NODE_ENV === 'production' ? 'https://api.buyernodus.com' : '');
   const baseUrl = configuredBaseUrl.replace(/\/$/, '');
 
   return baseUrl ? `${baseUrl}/uploads/${normalizedPath}` : `/api/uploads/${normalizedPath}`;

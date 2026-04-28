@@ -29,7 +29,6 @@ import {
   getMyAgentExecutions,
   runAgent,
   runN8nComparativeWebhook,
-  uploadFile,
 } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -161,14 +160,10 @@ const NexuIA = () => {
         throw new Error('Sube al menos un PDF, Excel, CSV o documento para enviar a n8n.');
       }
 
-      const uploadedFiles = await Promise.all(
-        uploadedComparisonFiles.map((file) => uploadFile(file, 'resources')),
-      );
-
       return runN8nComparativeWebhook({
         agentId: selectedAgent.id,
         agentName: selectedAgent.name,
-        uploadedFiles,
+        files: uploadedComparisonFiles,
       });
     },
     onSuccess: (result) => {

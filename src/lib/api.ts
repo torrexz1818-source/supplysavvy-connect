@@ -40,7 +40,7 @@ import {
   UserStatus,
 } from '@/types';
 
-const DEFAULT_PRODUCTION_API_URL = 'https://api.supplynexu.com';
+const DEFAULT_PRODUCTION_API_URL = 'https://api.buyernodus.com';
 const RAW_API_BASE_URL = import.meta.env.VITE_API_URL?.trim() || DEFAULT_PRODUCTION_API_URL;
 
 const API_BASE_URL = RAW_API_BASE_URL.endsWith('/')
@@ -1191,12 +1191,7 @@ export async function getMyAgentExecutions() {
 export async function runN8nComparativeWebhook(payload: {
   agentId: string;
   agentName: string;
-  uploadedFiles: Array<{
-    url: string;
-    name: string;
-    mimeType?: string;
-    size?: number;
-  }>;
+  files: File[];
 }) {
   const webhookUrl = import.meta.env.VITE_N8N_COMPARATIVE_WEBHOOK?.trim();
   const webhookToken = import.meta.env.VITE_N8N_COMPARATIVE_TOKEN?.trim();
@@ -1207,13 +1202,21 @@ export async function runN8nComparativeWebhook(payload: {
     );
   }
 
+  const formData = new FormData();
+  formData.append('agentId', payload.agentId);
+  formData.append('agentName', payload.agentName);
+
+  payload.files.forEach((file, index) => {
+    formData.append(`file_${index + 1}`, file, file.name);
+    formData.append('files', file, file.name);
+  });
+
   const response = await fetch(webhookUrl, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
       ...(webhookToken ? { 'x-n8n-token': webhookToken } : {}),
     },
-    body: JSON.stringify(payload),
+    body: formData,
   });
 
   if (!response.ok) {
