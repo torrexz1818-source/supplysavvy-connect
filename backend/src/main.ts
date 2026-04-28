@@ -123,4 +123,15 @@ async function bootstrap() {
   console.log(`Server running on http://${host}:${port}`);
 }
 
-bootstrap();
+bootstrap().catch((error: unknown) => {
+  console.error('Fatal startup error while booting Supply Nexu backend.');
+
+  if (error instanceof Error) {
+    console.error(`${error.name}: ${error.message}`);
+    console.error(error.stack);
+  } else {
+    console.error(error);
+  }
+
+  process.exit(1);
+});
