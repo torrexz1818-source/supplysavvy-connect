@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,7 +47,15 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="relative min-h-screen flex items-center justify-center bg-background p-4">
+      <Link
+        to="/"
+        aria-label="Regresar a la pagina principal"
+        className="absolute left-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10 hover:text-primary"
+      >
+        <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+      </Link>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
