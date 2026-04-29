@@ -105,6 +105,10 @@ const DashboardRedirect = () => {
     return <Navigate to="/login" replace />;
   }
 
+  if (user.role === 'supplier') {
+    return <Navigate to="/supplier/dashboard" replace />;
+  }
+
   if (user.role === 'expert') {
     return (
       <Navigate
@@ -169,6 +173,50 @@ const BuyerOnlySharedLayout = () => {
   return <Navigate to="/admin/dashboard" replace />;
 };
 
+const NewsAccessLayout = () => {
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <FullScreenMessage message="Cargando..." />;
+  }
+
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user.role === 'supplier') {
+    return <Navigate to="/supplier/dashboard" replace />;
+  }
+
+  if (user.role === 'buyer' || user.role === 'expert') {
+    return <BuyerLayout />;
+  }
+
+  return (
+    <MainLayout>
+      <Outlet />
+    </MainLayout>
+  );
+};
+
+const HomeAccessLayout = () => {
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <FullScreenMessage message="Cargando..." />;
+  }
+
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user.role === 'supplier') {
+    return <Navigate to="/supplier/dashboard" replace />;
+  }
+
+  return <NewsLayout />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -184,7 +232,7 @@ const App = () => (
               path="/inicio"
               element={
                 <RequireAuth>
-                  <NewsLayout />
+                  <HomeAccessLayout />
                 </RequireAuth>
               }
             >
@@ -194,7 +242,7 @@ const App = () => (
               path="/novedades"
               element={
                 <RequireAuth>
-                  <ProfileLayoutRedirect />
+                  <NewsAccessLayout />
                 </RequireAuth>
               }
             >
