@@ -2,7 +2,19 @@ import { useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { ArrowRight, FileText, Image as ImageIcon, Link2, Upload, Video, X } from 'lucide-react';
+import {
+  ArrowRight,
+  Building2,
+  FileText,
+  Image as ImageIcon,
+  Link2,
+  MessageCircle,
+  Upload,
+  UserRound,
+  Users,
+  Video,
+  X,
+} from 'lucide-react';
 import MainLayout from '@/layouts/MainLayout';
 import {
   adminCreatePost,
@@ -25,6 +37,32 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { PostResource, UserStatus } from '@/types';
+
+const sectorColors = [
+  'bg-primary',
+  'bg-secondary',
+  'bg-primary/80',
+  'bg-success',
+  'bg-secondary/80',
+  'bg-primary/70',
+  'bg-success/90',
+  'bg-secondary/70',
+];
+
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
+}
+
+function getAvatarClass(role: string) {
+  if (role === 'supplier') return 'bg-success text-success-foreground';
+  return 'bg-destructive text-white';
+}
 
 const Admin = () => {
   const queryClient = useQueryClient();
@@ -142,14 +180,33 @@ const Admin = () => {
     () =>
       data
         ? [
-            { label: 'Usuarios', value: data.overview.totalUsers },
-            { label: 'Usuarios activos', value: data.overview.activeUsers },
-            { label: 'Posts', value: data.overview.totalPosts },
-            { label: 'Videos', value: data.overview.educationalPosts },
-            { label: 'Comentarios', value: data.overview.totalComments },
+            {
+              label: 'Total usuarios',
+              value: platformStatsQuery.data?.totalUsers ?? data.overview.totalUsers,
+              description: 'Usuarios registrados en la plataforma',
+              icon: Users,
+              iconClassName: 'bg-primary/10 text-primary',
+              dividerClassName: 'bg-primary',
+            },
+            {
+              label: 'Compradores',
+              value: platformStatsQuery.data?.buyers ?? data.users.filter((item) => item.role === 'buyer').length,
+              description: 'Empresas compradoras activas',
+              icon: UserRound,
+              iconClassName: 'bg-destructive/10 text-destructive',
+              dividerClassName: 'bg-destructive',
+            },
+            {
+              label: 'Proveedores',
+              value: platformStatsQuery.data?.suppliers ?? data.users.filter((item) => item.role === 'supplier').length,
+              description: 'Proveedores registrados',
+              icon: Building2,
+              iconClassName: 'bg-success/20 text-success-foreground',
+              dividerClassName: 'bg-success',
+            },
           ]
         : [],
-    [data],
+    [data, platformStatsQuery.data?.buyers, platformStatsQuery.data?.suppliers, platformStatsQuery.data?.totalUsers],
   );
   const membershipsByUserId = useMemo(
     () => new Map((membershipsQuery.data ?? []).map((membership) => [membership.userId, membership])),
@@ -157,10 +214,7 @@ const Admin = () => {
   );
   const sectorBreakdown = platformStatsQuery.data?.sectorBreakdown ?? [];
   const latestUsers = (platformStatsQuery.data?.latestUsers ?? []).slice(0, 8);
-  const maxSectorCount = useMemo(
-    () => Math.max(...sectorBreakdown.map((item) => item.count), 1),
-    [sectorBreakdown],
-  );
+  const totalSectorUsers = sectorBreakdown.reduce((acc, item) => acc + item.count, 0);
 
   if (!isAuthLoading && !user) {
     return <Navigate to="/login" replace />;
@@ -169,7 +223,7 @@ const Admin = () => {
   if (!isAuthLoading && user?.role !== 'admin') {
     return (
       <MainLayout>
-        <div className="max-w-3xl mx-auto px-6 py-10">
+        <div className="mx-auto w-full max-w-3xl px-3 py-8 sm:px-6 sm:py-10">
           <h1 className="text-2xl font-bold text-foreground mb-2">Panel de administracion</h1>
           <p className="text-muted-foreground">
             Solo el administrador superior de la plataforma puede acceder a esta seccion.
@@ -299,7 +353,7 @@ const Admin = () => {
 
           return (
             <div key={managedUser.id} className="rounded-lg border border-border p-4">
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <button
                     type="button"
@@ -317,7 +371,7 @@ const Admin = () => {
                     Membresia: {membership ? `${membership.status}${membership.adminApproved ? ' (autorizada)' : ''}` : 'No activa'}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <Button
                     variant={managedUser.status === 'active' ? 'outline' : 'default'}
                     size="sm"
@@ -459,89 +513,157 @@ const Admin = () => {
 
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+      <div className="mx-auto w-full max-w-5xl min-w-0 px-3 py-5 space-y-8 overflow-x-hidden sm:px-6 sm:py-8">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-2xl font-bold text-foreground mb-2">Panel de administracion</h1>
-          <p className="text-muted-foreground">
-            Gestiona el unico administrador global, los videos educativos, publicaciones, comentarios y usuarios.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Panel administrativo</h1>
+          <p className="mt-1 text-muted-foreground">Resumen general de la plataforma</p>
         </motion.div>
 
-        <div className="grid md:grid-cols-5 gap-4">
-          {summaryCards.map((card) => (
-            <Card key={card.label}>
-              <CardContent className="pt-6">
-                <p className="text-sm text-muted-foreground">{card.label}</p>
-                <p className="text-3xl font-bold mt-1 text-foreground">{card.value}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <section className="grid gap-4 md:grid-cols-3">
+          {summaryCards.map((card) => {
+            const Icon = card.icon;
 
-        <section className="grid lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Usuarios por sector</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-            {platformStatsQuery.isLoading && (
-              <p className="text-sm text-muted-foreground">Cargando sectores...</p>
-            )}
-            <div className="space-y-4">
-              {sectorBreakdown.map((item) => (
-                <div key={item.sector} className="grid grid-cols-[130px_1fr_42px] items-center gap-3">
-                  <span className="text-sm text-foreground">{item.sector}</span>
-                  <div className="h-3 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{ width: `${Math.max((item.count / maxSectorCount) * 100, 8)}%` }}
-                    />
+            return (
+              <Card key={card.label} className="rounded-xl shadow-[var(--shadow-card)]">
+                <CardContent className="flex items-center gap-4 p-5">
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${card.iconClassName}`}>
+                    <Icon className="h-7 w-7" />
                   </div>
-                  <span className="text-sm text-foreground text-right">{item.count}</span>
-                </div>
-              ))}
-            </div>
+                  <div className={`h-16 w-1 rounded-full ${card.dividerClassName}`} />
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">{card.label}</p>
+                    <p className="mt-1 text-3xl font-bold leading-none text-foreground">{card.value}</p>
+                    <p className="mt-2 text-xs text-muted-foreground">{card.description}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </section>
+
+        <section className="grid gap-3 sm:grid-cols-3">
+          <Card className="rounded-xl border-0 bg-white/90 shadow-[var(--shadow-card)]">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Posts</p>
+                <p className="text-2xl font-bold leading-none text-foreground">{data?.overview.totalPosts ?? 0}</p>
+              </div>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Ultimos registros</CardTitle>
-            </CardHeader>
-            <CardContent className="overflow-x-auto">
-            {platformStatsQuery.isLoading && (
-              <p className="text-sm text-muted-foreground">Cargando usuarios...</p>
-            )}
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="py-2 pr-4 text-left font-medium text-foreground">Nombre</th>
-                    <th className="py-2 pr-4 text-left font-medium text-foreground">Empresa</th>
-                    <th className="py-2 pr-4 text-left font-medium text-foreground">Sector</th>
-                    <th className="py-2 text-left font-medium text-foreground">Rol</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {latestUsers.map((item) => (
-                    <tr key={item.id} className="border-b border-border/70">
-                      <td className="py-3 pr-4 text-foreground">{item.name}</td>
-                      <td className="py-3 pr-4 text-foreground">{item.company}</td>
-                      <td className="py-3 pr-4 text-foreground">{item.sector || 'General'}</td>
-                      <td className="py-4">
-                        <Badge className={`px-3 py-1 ${getRoleBadgeClass(item.role)}`}>
-                          {getRoleLabel(item.role)}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <Card className="rounded-xl border-0 bg-white/90 shadow-[var(--shadow-card)]">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/15 text-secondary">
+                <Video className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Videos</p>
+                <p className="text-2xl font-bold leading-none text-foreground">{data?.overview.educationalPosts ?? 0}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="rounded-xl border-0 bg-white/90 shadow-[var(--shadow-card)]">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+                <MessageCircle className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Comentarios</p>
+                <p className="text-2xl font-bold leading-none text-foreground">{data?.overview.totalComments ?? 0}</p>
+              </div>
             </CardContent>
           </Card>
         </section>
 
-        <section className="grid lg:grid-cols-[1.2fr,0.8fr] gap-6">
-          <div className="bg-card rounded-lg border border-border p-5 space-y-4">
+        <section className="grid gap-4 xl:grid-cols-2">
+          <Card className="rounded-xl shadow-[var(--shadow-card)]">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Usuarios por sector</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {platformStatsQuery.isLoading && (
+                <p className="text-sm text-muted-foreground">Cargando sectores...</p>
+              )}
+              {sectorBreakdown.map((item, index) => {
+                const rawPercent = totalSectorUsers > 0 ? (item.count / totalSectorUsers) * 100 : 0;
+                const widthPercent = rawPercent > 0 ? Math.max(rawPercent, 4) : 0;
+                const roundedPercent = Math.round(rawPercent);
+
+                return (
+                  <div key={item.sector} className="grid grid-cols-[120px_1fr_70px] items-center gap-3">
+                    <span className="truncate text-sm text-foreground">{item.sector}</span>
+                    <div className="h-2.5 overflow-hidden rounded-full bg-primary/10">
+                      <div
+                        className={`h-full rounded-full ${sectorColors[index % sectorColors.length]}`}
+                        style={{ width: `${widthPercent}%` }}
+                      />
+                    </div>
+                    <span className="text-right text-sm text-muted-foreground">
+                      {item.count} ({roundedPercent}%)
+                    </span>
+                  </div>
+                );
+              })}
+              {!platformStatsQuery.isLoading && sectorBreakdown.length === 0 && (
+                <p className="text-sm text-muted-foreground">No hay sectores registrados.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-xl shadow-[var(--shadow-card)]">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Ultimos registros</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {platformStatsQuery.isLoading && (
+                <p className="text-sm text-muted-foreground">Cargando usuarios...</p>
+              )}
+              <div className="w-full overflow-x-auto">
+                <table className="min-w-[560px] w-full table-fixed text-sm">
+                  <thead>
+                    <tr className="border-b border-border/50 text-left text-xs text-foreground">
+                      <th className="w-[34%] py-2 pr-3 font-semibold">Nombre</th>
+                      <th className="w-[28%] py-2 pr-3 font-semibold">Empresa</th>
+                      <th className="w-[20%] py-2 pr-3 font-semibold">Sector</th>
+                      <th className="w-[18%] py-2 pr-0 font-semibold">Rol</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {latestUsers.map((item) => (
+                      <tr key={item.id} className="border-b border-border/60">
+                        <td className="py-3 pr-3 align-middle">
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${getAvatarClass(item.role)}`}
+                            >
+                              {getInitials(item.name)}
+                            </span>
+                            <span className="min-w-0 break-words leading-tight">{item.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 pr-3 align-middle break-words leading-tight">{item.company}</td>
+                        <td className="py-3 pr-3 align-middle break-words leading-tight">{item.sector || 'General'}</td>
+                        <td className="py-3 pr-0 align-middle">
+                          <Badge className={getRoleBadgeClass(item.role)}>
+                            {getRoleLabel(item.role)}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {!platformStatsQuery.isLoading && latestUsers.length === 0 && (
+                  <p className="py-6 text-sm text-muted-foreground">No hay registros recientes.</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(260px,0.8fr)]">
+          <div className="min-w-0 overflow-hidden bg-card rounded-lg border border-border p-5 space-y-4">
             <div>
               <h2 className="text-lg font-medium text-foreground">Crear contenido</h2>
               <p className="text-sm text-muted-foreground">
@@ -602,7 +724,7 @@ const Admin = () => {
               />
             </div>
 
-            <div className="rounded-2xl border border-border bg-white p-4 sm:p-5 space-y-4 text-foreground">
+            <div className="min-w-0 overflow-hidden rounded-2xl border border-border bg-white p-4 sm:p-5 space-y-4 text-foreground">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <div className="flex items-center gap-2">
@@ -647,20 +769,20 @@ const Admin = () => {
                 </div>
               </div>
 
-              <div className="rounded-2xl bg-background border border-border overflow-hidden min-h-[280px] flex items-center justify-center">
+              <div className="flex h-[260px] min-w-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-background sm:h-[320px] lg:h-[360px]">
                 {form.mediaType === 'video' && videoPreview ? (
                   <video
                     src={videoPreview}
                     controls
                     poster={thumbnailPreview || undefined}
-                    className="h-full max-h-[420px] w-full object-contain bg-background"
+                    className="h-full w-full max-w-full object-contain bg-background"
                   />
                 ) : null}
                 {form.mediaType === 'image' && thumbnailPreview ? (
                   <img
                     src={thumbnailPreview}
                     alt="Vista previa"
-                    className="h-full max-h-[420px] w-full object-contain bg-background"
+                    className="h-full w-full max-w-full object-contain bg-background"
                   />
                 ) : null}
                 {((form.mediaType === 'video' && !videoPreview) || (form.mediaType === 'image' && !thumbnailPreview)) && (
@@ -690,8 +812,8 @@ const Admin = () => {
               </div>
             </div>
 
-            <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-4">
-              <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-muted/20 p-4 space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h3 className="text-sm font-medium text-foreground">Recursos complementarios</h3>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -703,8 +825,8 @@ const Admin = () => {
                 </Badge>
               </div>
 
-              <div className="rounded-xl border border-border bg-background/80 p-3 space-y-3">
-                <div className="grid gap-3 md:grid-cols-[150px_1fr_1fr_auto]">
+              <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-background/80 p-3 space-y-3">
+                <div className="grid min-w-0 gap-3 lg:grid-cols-[150px_minmax(0,1fr)_minmax(0,1fr)_auto]">
                   <select
                     value={resourceDraft.type}
                     onChange={(event) => {
@@ -744,12 +866,12 @@ const Admin = () => {
                       className="h-10"
                     />
                   )}
-                  <Button type="button" variant="outline" onClick={() => void addResource()} disabled={isUploadingResource}>
+                  <Button type="button" variant="outline" className="shrink-0" onClick={() => void addResource()} disabled={isUploadingResource}>
                     {isUploadingResource ? 'Subiendo...' : 'Agregar'}
                   </Button>
                 </div>
                 {resourceDraft.type !== 'link' && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="truncate text-xs text-muted-foreground">
                     {resourceFile ? `Archivo listo: ${resourceFile.name}` : 'Selecciona un archivo local para adjuntarlo como recurso.'}
                   </p>
                 )}
@@ -758,17 +880,17 @@ const Admin = () => {
                 )}
               </div>
 
-              <div className="rounded-xl border border-border bg-background p-2">
+              <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-background p-2">
                 <div className="max-h-52 overflow-y-auto pr-1 space-y-2">
                   {resources.map((resource) => (
-                    <div key={resource.id} className="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-muted/30 px-3 py-2">
-                      <div className="flex items-center gap-3 min-w-0">
+                    <div key={resource.id} className="flex min-w-0 items-center justify-between gap-3 overflow-hidden rounded-lg border border-border/70 bg-muted/30 px-3 py-2">
+                      <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
                         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 shrink-0">
                           {resource.type === 'link' ? <Link2 className="h-4 w-4 text-primary" /> : null}
                           {resource.type === 'image' ? <ImageIcon className="h-4 w-4 text-primary" /> : null}
                           {resource.type === 'file' ? <FileText className="h-4 w-4 text-primary" /> : null}
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1 overflow-hidden">
                           <p className="text-sm font-medium text-foreground truncate">{resource.name}</p>
                           <p className="text-xs text-muted-foreground truncate">
                             {resource.type === 'link' ? resource.url : resource.type === 'image' ? 'Imagen adjunta' : 'Archivo adjunto'}
@@ -868,7 +990,7 @@ const Admin = () => {
             </Button>
           </div>
 
-          <div className="bg-card rounded-lg border border-border p-5">
+          <div className="min-w-0 overflow-hidden bg-card rounded-lg border border-border p-5">
             <h2 className="text-lg font-medium text-foreground mb-3">Categorias activas</h2>
             <div className="space-y-2">
               {categoryCommentCounts.map((category) => (
@@ -909,7 +1031,7 @@ const Admin = () => {
             <div className="space-y-3">
               {(data?.posts ?? []).map((post) => (
                 <div key={post.id} className="rounded-lg border border-border p-4">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="text-sm font-medium text-foreground">{post.title}</p>
                       <p className="text-xs text-muted-foreground">
@@ -957,7 +1079,7 @@ const Admin = () => {
             <div className="space-y-3">
               {commentsBySelectedCategory.map((comment) => (
                 <div key={comment.id} className="rounded-lg border border-border p-4">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="text-sm font-medium text-foreground">{comment.user.fullName}</p>
                       <p className="text-xs text-muted-foreground">
@@ -996,7 +1118,7 @@ const Admin = () => {
           <div className="space-y-3">
             {(data?.users ?? []).map((managedUser) => (
               <div key={managedUser.id} className="rounded-lg border border-border p-4">
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <button
                       type="button"
@@ -1022,7 +1144,7 @@ const Admin = () => {
                     )}
                   </div>
                   {managedUser.role !== 'admin' && (
-                    <div className="flex gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row">
                       <Button
                         variant={managedUser.status === 'active' ? 'outline' : 'default'}
                         size="sm"

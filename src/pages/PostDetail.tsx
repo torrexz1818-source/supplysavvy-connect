@@ -46,14 +46,14 @@ const PostDetail = () => {
   const progress = lesson?.progress || 65;
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="mx-auto w-full max-w-6xl px-3 py-5 sm:px-6 sm:py-8">
       {isLoading && <p className="text-muted-foreground mb-4">Cargando post...</p>}
       <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4 text-muted-foreground">
         <ArrowLeft className="w-4 h-4 mr-1" /> Volver
       </Button>
 
       {post && (
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(500px,1fr)]">
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1.45fr)_minmax(420px,1fr)]">
           <div className="min-w-0">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
                 {(post.videoUrl || post.thumbnailUrl) && (

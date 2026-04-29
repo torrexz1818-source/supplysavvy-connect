@@ -178,14 +178,14 @@ const MainLayout = ({ children }: MainLayoutProps) => {
                   <NavLink
                     to={item.to}
                     onClick={onNavigate}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                       isActive(item.to)
                         ? 'sidebar-link-active'
                         : 'sidebar-link'
                     }`}
                   >
-                    <item.icon className="w-4 h-4" />
-                    {item.label}
+                    <item.icon className="w-4 h-4 shrink-0" />
+                    <span className="min-w-0 truncate">{item.label}</span>
                   </NavLink>
                   <div className="ml-4 space-y-1 border-l border-white/10 pl-3">
                     {item.children.map((child) => (
@@ -193,14 +193,14 @@ const MainLayout = ({ children }: MainLayoutProps) => {
                         key={child.to}
                         to={child.to}
                         onClick={onNavigate}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        className={`flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                           isActive(child.to)
                             ? 'sidebar-link-active'
                             : 'sidebar-link'
                         }`}
                       >
-                        <child.icon className="w-4 h-4" />
-                        {child.label}
+                        <child.icon className="w-4 h-4 shrink-0" />
+                        <span className="min-w-0 truncate">{child.label}</span>
                       </NavLink>
                     ))}
                   </div>
@@ -210,14 +210,14 @@ const MainLayout = ({ children }: MainLayoutProps) => {
                   key={item.to}
                   to={item.to}
                   onClick={onNavigate}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     isActive(item.to)
                       ? 'sidebar-link-active'
                       : 'sidebar-link'
                   }`}
                 >
-                  <item.icon className="w-4 h-4" />
-                  {item.label}
+                  <item.icon className="w-4 h-4 shrink-0" />
+                  <span className="min-w-0 truncate">{item.label}</span>
                 </NavLink>
               )
             ))}
@@ -234,7 +234,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
             onNavigate?.();
             handleLogout();
           }}
-          className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-md border border-white/20 px-3 py-2 text-sm font-medium text-white/90 hover:bg-white/10 transition-colors"
+          className="mt-3 w-full inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-white/20 px-3 py-2 text-sm font-medium text-white/90 hover:bg-white/10 transition-colors"
         >
           <LogOut className="w-4 h-4" />
           Cerrar sesion
@@ -250,16 +250,17 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       </aside>
 
       <main className="flex-1 min-w-0 overflow-y-auto">
-        <div className="max-w-6xl mx-auto px-3 py-3 sm:px-6 sm:py-4">
-          <div className="topbar-shell flex items-center justify-between gap-3 rounded-2xl px-3 py-3 sm:px-4">
+        <div className="mx-auto w-full max-w-7xl px-3 py-3 sm:px-6 sm:py-6 2xl:max-w-[1440px]">
+          <div className="sticky top-3 z-40 mb-5 flex justify-center sm:justify-end sm:pr-12 xl:pr-20">
+          <div className="topbar-shell relative flex w-full items-center justify-between gap-2 rounded-2xl px-3 py-3 sm:w-fit sm:gap-3 sm:px-4">
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card text-foreground transition-colors hover:bg-muted lg:hidden"
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-border bg-card text-foreground transition-colors hover:bg-muted lg:hidden"
                   aria-label="Abrir menu"
                 >
-                  <Menu className="h-4 w-4" />
+                  <Menu className="h-5 w-5" />
                 </button>
               </SheetTrigger>
               <SheetContent side="left" className="sidebar-shell flex w-[86vw] max-w-[320px] flex-col overflow-hidden p-0 text-white">
@@ -268,7 +269,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
               </SheetContent>
             </Sheet>
 
-            <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground sm:max-w-[260px] lg:flex-none">
+            <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground sm:hidden">
               {user?.fullName ?? 'Usuario'}
             </span>
             <div className="flex shrink-0 items-center gap-2 sm:gap-3">
@@ -276,6 +277,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
               <NotificationBell />
               <NewsAccessButton />
             </div>
+          </div>
           </div>
         </div>
         {children}

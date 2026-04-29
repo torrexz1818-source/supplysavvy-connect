@@ -364,7 +364,7 @@ const Messages = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="mx-auto w-full max-w-6xl px-3 py-5 sm:px-6 sm:py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground">Mensajeria</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -377,7 +377,7 @@ const Messages = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(280px,340px)_1fr]">
           <aside className="bg-card border border-border rounded-2xl overflow-hidden">
             <div className="p-4 border-b border-border">
               <div className="relative">

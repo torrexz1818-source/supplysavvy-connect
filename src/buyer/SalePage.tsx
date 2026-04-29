@@ -156,11 +156,11 @@ const SalePage = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
+    <div className="mx-auto w-full max-w-5xl px-3 py-5 sm:px-6 sm:py-8">
       <motion.section
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="hero-brand relative mb-6 overflow-hidden rounded-[28px] p-8 shadow-[var(--shadow-purple)]"
+        className="hero-brand relative mb-6 overflow-hidden rounded-[28px] p-5 shadow-[var(--shadow-purple)] sm:p-8"
         style={{ background: 'var(--gradient-brand)' }}
       >
         <div className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
@@ -172,17 +172,17 @@ const SalePage = () => {
             <div className="mb-4 inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-white/85">
               Oportunidades de stock
             </div>
-            <h1 className="mb-3 text-3xl font-bold tracking-tight text-primary-foreground lg:text-4xl">
+            <h1 className="mb-3 text-2xl font-bold tracking-tight text-primary-foreground sm:text-3xl lg:text-4xl">
               Liquidaciones de inventario
             </h1>
-            <p className="max-w-xl text-base leading-7 text-primary-foreground/85 lg:text-lg">
+            <p className="max-w-xl text-sm leading-6 text-primary-foreground/85 sm:text-base sm:leading-7 lg:text-lg">
               Publica oportunidades de stock y encuentra liquidaciones activas en una vista clara.
             </p>
           </div>
 
           <a
             href="#liquidation-feed"
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-8 text-sm font-medium text-[#0E109E] shadow-sm transition-colors hover:bg-white/95"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 py-2 text-center text-sm font-medium text-[#0E109E] shadow-sm transition-colors hover:bg-white/95 sm:px-8"
           >
             Explorar liquidaciones <ArrowRight className="h-4 w-4" />
           </a>
@@ -237,7 +237,7 @@ const SalePage = () => {
           )}
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <label className="group inline-flex w-fit cursor-pointer items-center gap-3 rounded-xl border border-dashed border-primary/35 bg-primary/5 px-4 py-3 text-sm font-medium text-primary transition-all hover:border-primary/60 hover:bg-primary/10">
+            <label className="group inline-flex w-full cursor-pointer items-center gap-3 rounded-xl border border-dashed border-primary/35 bg-primary/5 px-4 py-3 text-sm font-medium text-primary transition-all hover:border-primary/60 hover:bg-primary/10 sm:w-fit">
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                 {imagen ? <CheckCircle2 className="h-5 w-5" /> : <ImagePlus className="h-5 w-5" />}
               </span>
@@ -254,7 +254,7 @@ const SalePage = () => {
               onClick={handlePublicar}
               disabled={createMutation.isPending || (!titulo.trim() && !descripcion.trim())}
               size="sm"
-              className="h-11 rounded-xl px-5"
+              className="h-11 w-full rounded-xl px-5 sm:w-auto"
             >
               {createMutation.isPending ? 'Publicando...' : 'Publicar liquidacion'}
             </Button>

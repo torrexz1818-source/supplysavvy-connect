@@ -5,12 +5,12 @@ import {
   Param,
   Post,
   Req,
-  UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import type { Request } from 'express';
 import { existsSync, mkdirSync, rmSync } from 'fs';
@@ -24,6 +24,12 @@ import { NewsService } from './news.service';
 type CreateNewsBody = {
   title: string;
   body?: string;
+  resourceUrl?: string;
+};
+
+type UploadedNewsFiles = {
+  image?: Array<{ filename: string; path: string; originalname: string; mimetype: string }>;
+  pdf?: Array<{ filename: string; path: string; originalname: string; mimetype: string }>;
 };
 
 type CreateCommentBody = {
@@ -48,7 +54,7 @@ export class NewsController {
   @Post()
   @UseGuards(AuthenticatedGuard, AdminGuard)
   @UseInterceptors(
-    FileInterceptor('image', {
+    FileFieldsInterceptor([{ name: 'image', maxCount: 1 }, { name: 'pdf', maxCount: 1 }], {
       storage: diskStorage({
         destination: (_req, _file, callback) => {
           const uploadDir = join(process.cwd(), 'uploads');
@@ -68,9 +74,11 @@ export class NewsController {
   )
   async create(
     @Body() body: CreateNewsBody,
-    @UploadedFile() image: { filename: string; path: string; originalname: string; mimetype: string } | undefined,
+    @UploadedFiles() files: UploadedNewsFiles | undefined,
     @CurrentUser() user: { sub: string },
   ): Promise<unknown> {
+    const image = files?.image?.[0];
+    const pdf = files?.pdf?.[0];
     const imageUrl = image
       ? await this.uploadsService.saveFile({
           filePath: image.path,
@@ -79,15 +87,29 @@ export class NewsController {
           mimeType: image.mimetype,
         })
       : undefined;
+    const pdfUrl = pdf
+      ? await this.uploadsService.saveFile({
+          filePath: pdf.path,
+          relativePath: pdf.filename,
+          originalName: pdf.originalname,
+          mimeType: pdf.mimetype,
+        })
+      : undefined;
 
     if (image) {
       rmSync(image.path, { force: true });
+    }
+
+    if (pdf) {
+      rmSync(pdf.path, { force: true });
     }
 
     return this.newsService.createPost({
       title: body.title,
       body: body.body,
       imageUrl,
+      pdfUrl,
+      resourceUrl: body.resourceUrl,
       authorId: user.sub,
     });
   }

@@ -355,9 +355,21 @@ export class PostsService {
 
   async getPostDetail(id: string, viewerId?: string) {
     const post = await this.findPost(id);
+    const relatedPostsQuery =
+      post.type === 'educational'
+        ? {
+            type: post.type,
+            id: { $ne: post.id },
+            learningRoute: post.learningRoute ?? 'ruta-1',
+          }
+        : {
+            type: post.type,
+            id: { $ne: post.id },
+          };
+
     const [relatedPosts, comments, lesson] = await Promise.all([
       this.postsCollection()
-        .find({ type: post.type, id: { $ne: post.id } })
+        .find(relatedPostsQuery)
         .sort({ createdAt: -1 })
         .limit(3)
         .toArray(),

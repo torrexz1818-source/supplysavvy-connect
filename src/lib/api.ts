@@ -223,6 +223,7 @@ function normalizeNewsPostAssetUrls<T extends NewsPost>(post: T): T {
   return {
     ...post,
     imageUrl: resolveApiAssetUrl(post.imageUrl),
+    pdfUrl: resolveApiAssetUrl(post.pdfUrl),
   };
 }
 
@@ -763,6 +764,8 @@ export async function createNewsPost(payload: {
   title: string;
   body?: string;
   image?: File | null;
+  pdf?: File | null;
+  resourceUrl?: string;
 }) {
   const formData = new FormData();
   formData.set('title', payload.title);
@@ -773,6 +776,14 @@ export async function createNewsPost(payload: {
 
   if (payload.image) {
     formData.append('image', payload.image);
+  }
+
+  if (payload.pdf) {
+    formData.append('pdf', payload.pdf);
+  }
+
+  if (payload.resourceUrl?.trim()) {
+    formData.set('resourceUrl', payload.resourceUrl.trim());
   }
 
   return apiRequest<NewsPostMutationResponse>('/news', {

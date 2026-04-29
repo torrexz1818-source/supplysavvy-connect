@@ -101,7 +101,7 @@ const UserProfilePage = () => {
       (sessionUser?.role === 'buyer' && profileRole === 'supplier'));
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8">
+    <div className="mx-auto w-full max-w-3xl px-3 py-5 sm:px-6 sm:py-8">
       {!isOwnProfile && <BackButton fallback="/home" className="mb-6" />}
 
       <div className="bg-card border border-border rounded-xl p-6 space-y-4">

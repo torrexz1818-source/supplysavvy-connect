@@ -340,7 +340,7 @@ const Employability = () => {
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <section className="overflow-hidden rounded-[30px] bg-[linear-gradient(110deg,#1f20b7_0%,#3620b6_50%,#6235de_100%)] text-white shadow-[0_18px_44px_rgba(14,16,158,0.16)]">
-        <div className="grid gap-8 px-8 py-8 md:grid-cols-[1.3fr_0.95fr] md:px-10 md:py-9 lg:px-12">
+        <div className="grid gap-6 px-5 py-6 sm:px-8 sm:py-8 md:grid-cols-[1.3fr_0.95fr] md:px-10 md:py-9 lg:px-12">
           <div>
             <div className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
               Modulo Empleabilidad

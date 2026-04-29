@@ -64,12 +64,12 @@ const Community = () => {
   );
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
+    <div className="mx-auto w-full max-w-5xl px-3 py-5 sm:px-6 sm:py-8">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="hero-brand relative mb-8 overflow-hidden rounded-[28px] p-8 shadow-[var(--shadow-purple)]"
+        className="hero-brand relative mb-8 overflow-hidden rounded-[28px] p-5 shadow-[var(--shadow-purple)] sm:p-8"
         style={{
           background: 'var(--gradient-brand)',
         }}

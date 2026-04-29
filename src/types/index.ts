@@ -265,6 +265,8 @@ export interface NewsPost {
   title: string;
   body?: string;
   imageUrl?: string;
+  pdfUrl?: string;
+  resourceUrl?: string;
   timestamp: string;
   likes: number;
   isLiked: boolean;

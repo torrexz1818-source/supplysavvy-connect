@@ -131,7 +131,7 @@ export default function SectorSuppliers() {
       <BackButton fallback="/buyer/directory" className="mb-4" />
 
       <section className="mb-8 overflow-hidden rounded-3xl bg-[linear-gradient(110deg,#1f20b7_0%,#3620b6_50%,#6235de_100%)] text-white shadow-[0_18px_44px_rgba(14,16,158,0.16)]">
-        <div className="grid gap-8 px-8 py-8 md:grid-cols-[1.25fr_0.9fr] md:px-10 md:py-9 lg:px-12">
+        <div className="grid gap-6 px-5 py-6 sm:px-8 sm:py-8 md:grid-cols-[1.25fr_0.9fr] md:px-10 md:py-9 lg:px-12">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-white">
               Proveedores del sector {sector}

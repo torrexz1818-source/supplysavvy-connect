@@ -5,15 +5,22 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
 
   html {
     font-family: var(--font-main);
     background: var(--app-bg);
+    overflow-x: hidden;
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
     @apply text-foreground antialiased;
+    width: 100%;
+    min-width: 320px;
+    overflow-x: hidden;
     background: var(--app-bg);
     background-attachment: fixed;
     color: var(--text-on-light);
@@ -21,6 +28,34 @@
     font-size: var(--text-base-size);
     font-weight: var(--font-weight-regular);
     line-height: var(--line-height-base);
+  }
+
+  #root {
+    min-height: 100vh;
+    overflow-x: clip;
+  }
+
+  img,
+  video,
+  canvas,
+  iframe {
+    max-width: 100%;
+  }
+
+  img,
+  video {
+    height: auto;
+  }
+
+  input,
+  textarea,
+  select {
+    max-width: 100%;
+  }
+
+  button,
+  [role="button"] {
+    touch-action: manipulation;
   }
 
   h1,
@@ -60,5 +95,24 @@
   ::selection {
     color: var(--text-on-dark);
     background: var(--color-purple-innovation);
+  }
+
+  @media (max-width: 767px) {
+    body {
+      font-size: 15px;
+    }
+
+    button,
+    [role="button"],
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
+
+    button,
+    [role="button"] {
+      min-height: 44px;
+    }
   }
 }

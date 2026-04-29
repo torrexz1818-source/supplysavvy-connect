@@ -289,7 +289,7 @@ const NexuExperts = () => {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="rounded-[28px] bg-[linear-gradient(110deg,#0E109E_0%,#2521B9_48%,#5A31D5_100%)] px-8 py-8 text-white shadow-[0_18px_44px_rgba(14,16,158,0.16)] sm:px-10">
+        <section className="rounded-[28px] bg-[linear-gradient(110deg,#0E109E_0%,#2521B9_48%,#5A31D5_100%)] px-5 py-6 text-white shadow-[0_18px_44px_rgba(14,16,158,0.16)] sm:px-10 sm:py-8">
         <div className="grid gap-6 lg:grid-cols-[1.4fr_0.9fr] lg:items-end">
           <div className="max-w-3xl">
             <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white ring-1 ring-white/18">

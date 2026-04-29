@@ -14,6 +14,8 @@ type NewsPostRecord = {
   title: string;
   body?: string;
   imageUrl?: string;
+  pdfUrl?: string;
+  resourceUrl?: string;
   authorId: string;
   likedBy: string[];
   createdAt: Date;
@@ -51,6 +53,8 @@ type NewsPostResponse = {
   title: string;
   body?: string;
   imageUrl?: string;
+  pdfUrl?: string;
+  resourceUrl?: string;
   timestamp: string;
   likes: number;
   isLiked: boolean;
@@ -92,6 +96,8 @@ export class NewsService {
     title: string;
     body?: string;
     imageUrl?: string;
+    pdfUrl?: string;
+    resourceUrl?: string;
     authorId: string;
   }): Promise<{ post: NewsPostResponse }> {
     const author = await this.usersService.requireActiveUser(data.authorId);
@@ -106,6 +112,8 @@ export class NewsService {
       title: data.title.trim(),
       body: data.body?.trim() || undefined,
       imageUrl: data.imageUrl?.trim() || undefined,
+      pdfUrl: data.pdfUrl?.trim() || undefined,
+      resourceUrl: data.resourceUrl?.trim() || undefined,
       authorId: author.id,
       likedBy: [],
       createdAt: now,
@@ -120,6 +128,8 @@ export class NewsService {
         title: post.title,
         body: post.body,
         imageUrl: post.imageUrl,
+        pdfUrl: post.pdfUrl,
+        resourceUrl: post.resourceUrl,
         timestamp: post.createdAt.toISOString(),
         likes: 0,
         isLiked: false,
@@ -239,6 +249,8 @@ export class NewsService {
       title: post.title,
       body: post.body,
       imageUrl: post.imageUrl,
+      pdfUrl: post.pdfUrl,
+      resourceUrl: post.resourceUrl,
       timestamp: post.createdAt.toISOString(),
       likes: post.likedBy.length,
       isLiked: viewerId ? post.likedBy.includes(viewerId) : false,

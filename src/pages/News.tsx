@@ -1,7 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, Heart, ImagePlus, MessageCircle, Send } from 'lucide-react';
+import { ArrowRight, ExternalLink, FileText, Heart, ImagePlus, Link, MessageCircle, Send } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createNewsComment, createNewsPost, getNewsPosts, resolveApiAssetUrl, toggleNewsLike } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -151,13 +151,35 @@ const NewsCard = ({
 
       <div className="space-y-5 p-6 md:p-8">
         <div className="space-y-3">
-          <p className="text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground/70">Novedades</p>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground/70">
-            <span>{formatRelativeTime(post.timestamp)}</span>
-            <span className="rounded-full bg-primary/10 px-3 py-1">{post.commentsCount} comentarios</span>
-          </div>
           <h2 className="text-2xl font-bold tracking-tight text-foreground md:text-4xl">{post.title}</h2>
+          <p className="text-sm text-muted-foreground/70">{formatRelativeTime(post.timestamp)}</p>
           {post.body && <p className="max-w-3xl whitespace-pre-wrap text-base leading-7 text-foreground/80">{post.body}</p>}
+          {(post.pdfUrl || post.resourceUrl) && (
+            <div className="flex flex-wrap gap-3 pt-1">
+              {post.pdfUrl && (
+                <a
+                  href={resolveApiAssetUrl(post.pdfUrl)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#0E109E]/10 px-4 py-2 text-sm font-medium text-[#0E109E] transition-colors hover:bg-[#0E109E]/16"
+                >
+                  <FileText className="h-4 w-4" />
+                  Ver PDF
+                </a>
+              )}
+              {post.resourceUrl && (
+                <a
+                  href={post.resourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#0E109E]/10 px-4 py-2 text-sm font-medium text-[#0E109E] transition-colors hover:bg-[#0E109E]/16"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Abrir URL
+                </a>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-3 border-t border-primary/15 pt-4">
@@ -248,6 +270,9 @@ const News = () => {
   const [form, setForm] = useState({ title: '', body: '' });
   const [image, setImage] = useState<File | null>(null);
   const [imageName, setImageName] = useState('');
+  const [pdf, setPdf] = useState<File | null>(null);
+  const [pdfName, setPdfName] = useState('');
+  const [resourceUrl, setResourceUrl] = useState('');
 
   const newsQuery = useQuery({
     queryKey: ['news-posts'],
@@ -260,6 +285,9 @@ const News = () => {
       setForm({ title: '', body: '' });
       setImage(null);
       setImageName('');
+      setPdf(null);
+      setPdfName('');
+      setResourceUrl('');
       void queryClient.invalidateQueries({ queryKey: ['news-posts'] });
     },
   });
@@ -289,6 +317,12 @@ const News = () => {
     setImageName(file?.name ?? '');
   };
 
+  const handlePdfChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    setPdf(file);
+    setPdfName(file?.name ?? '');
+  };
+
   const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!form.title.trim()) return;
@@ -296,6 +330,8 @@ const News = () => {
       title: form.title,
       body: form.body,
       image,
+      pdf,
+      resourceUrl,
     });
   };
 
@@ -347,6 +383,26 @@ const News = () => {
                 <span className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground/70">Seleccionar</span>
                 <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
               </label>
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-dashed border-primary/25 bg-primary/5 px-4 py-4 transition-colors hover:bg-primary/10">
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <FileText className="h-5 w-5" />
+                    <span>{pdfName || 'Agregar PDF opcional'}</span>
+                  </div>
+                  <span className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground/70">Seleccionar</span>
+                  <input type="file" accept="application/pdf,.pdf" className="hidden" onChange={handlePdfChange} />
+                </label>
+                <div className="flex items-center gap-3 rounded-2xl border border-dashed border-primary/25 bg-primary/5 px-4 py-3">
+                  <Link className="h-5 w-5 text-muted-foreground" />
+                  <Input
+                    type="url"
+                    value={resourceUrl}
+                    onChange={(event) => setResourceUrl(event.target.value)}
+                    placeholder="Agregar URL opcional"
+                    className="h-10 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+                  />
+                </div>
+              </div>
               {createMutation.error && (
                 <p className="text-sm text-destructive">
                   {createMutation.error instanceof Error ? createMutation.error.message : 'No se pudo publicar la novedad.'}

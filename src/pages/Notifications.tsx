@@ -122,7 +122,7 @@ const Notifications = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
+    <div className="mx-auto w-full max-w-5xl px-3 py-5 sm:px-6 sm:py-8">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <Bell className="w-5 h-5 text-primary" />
@@ -145,7 +145,7 @@ const Notifications = () => {
               onClick={() => setActiveFilter(filter.key)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
                 activeFilter === filter.key
-                  ? 'bg-primary text-primary-foreground border-primary'
+                  ? 'border-primary/25 bg-primary/10 text-primary shadow-[0_8px_18px_rgba(14,16,158,0.08)] hover:bg-primary/15 active:bg-primary/20'
                   : 'bg-card text-muted-foreground border-border hover:text-foreground'
               }`}
             >

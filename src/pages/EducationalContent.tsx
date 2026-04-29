@@ -26,10 +26,16 @@ const formatPostDate = (date: string) =>
 interface LearningRoutesSectionProps {
   activeRouteId: LearningRouteId | null;
   countsByRoute: Record<LearningRouteId, number>;
+  firstPostByRoute: Partial<Record<LearningRouteId, Post>>;
   onSelectRoute: (routeId: LearningRouteId) => void;
 }
 
-const LearningRoutesSection = ({ activeRouteId, countsByRoute, onSelectRoute }: LearningRoutesSectionProps) => (
+const LearningRoutesSection = ({
+  activeRouteId,
+  countsByRoute,
+  firstPostByRoute,
+  onSelectRoute,
+}: LearningRoutesSectionProps) => (
   <section className="mb-10">
     <div className="mb-5">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/70">
@@ -40,6 +46,8 @@ const LearningRoutesSection = ({ activeRouteId, countsByRoute, onSelectRoute }: 
 
     <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
       {LEARNING_ROUTES.map((route, index) => {
+        const firstPost = firstPostByRoute[route.id];
+
         return (
           <motion.article
             key={route.id}
@@ -72,8 +80,13 @@ const LearningRoutesSection = ({ activeRouteId, countsByRoute, onSelectRoute }: 
 
             <div className="mt-auto pt-7">
               <span className="inline-flex rounded-full bg-[#0E109E] px-4 py-2 text-sm font-bold text-white shadow-[0_8px_18px_rgba(14,16,158,0.22)]">
-                {countsByRoute[route.id]} contenidos
+                {countsByRoute[route.id]} {countsByRoute[route.id] === 1 ? 'contenido' : 'contenidos'}
               </span>
+              {firstPost && (
+                <p className="mt-3 line-clamp-2 text-xs font-medium leading-5 text-white/88">
+                  Ultimo video: {firstPost.title}
+                </p>
+              )}
             </div>
           </motion.article>
         );
@@ -167,6 +180,17 @@ const EducationalContent = () => {
       ),
     [educationalPosts],
   );
+  const firstPostByRoute = useMemo(
+    () =>
+      LEARNING_ROUTES.reduce((acc, route) => {
+        const firstPost = educationalPosts.find((post) => post.learningRoute === route.id);
+        return {
+          ...acc,
+          ...(firstPost ? { [route.id]: firstPost } : {}),
+        };
+      }, {} as Partial<Record<LearningRouteId, Post>>),
+    [educationalPosts],
+  );
   const filteredPosts = useMemo(
     () =>
       educationalPosts.filter(
@@ -200,8 +224,8 @@ const EducationalContent = () => {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-8">
-      <div className="mb-8 overflow-hidden rounded-[30px] bg-[linear-gradient(110deg,#1f20b7_0%,#3620b6_50%,#6235de_100%)] px-8 py-8 text-white shadow-[0_18px_44px_rgba(14,16,158,0.16)] sm:px-10 sm:py-9">
+    <div className="mx-auto w-full max-w-7xl px-3 py-5 sm:px-6 sm:py-8 2xl:max-w-[1440px]">
+      <div className="mb-8 overflow-hidden rounded-[30px] bg-[linear-gradient(110deg,#1f20b7_0%,#3620b6_50%,#6235de_100%)] px-5 py-6 text-white shadow-[0_18px_44px_rgba(14,16,158,0.16)] sm:px-10 sm:py-9">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
@@ -228,6 +252,7 @@ const EducationalContent = () => {
       <LearningRoutesSection
         activeRouteId={activeRouteId}
         countsByRoute={countsByRoute}
+        firstPostByRoute={firstPostByRoute}
         onSelectRoute={selectLearningRoute}
       />
 

@@ -15,15 +15,17 @@
   }
 
   .btn-innovation {
-    background: rgba(90, 49, 213, 0.76);
+    background: rgba(90, 49, 213, 0.16);
     border-color: rgba(90, 49, 213, 0.28);
-    color: var(--color-white);
-    box-shadow: 0 12px 28px rgba(90, 49, 213, 0.14);
+    color: var(--color-purple-innovation);
+    box-shadow: 0 12px 28px rgba(90, 49, 213, 0.10);
   }
 
-  .btn-innovation:hover {
-    background: rgba(90, 49, 213, 0.88);
-    color: var(--color-white);
+  .btn-innovation:hover,
+  .btn-innovation:active,
+  .btn-innovation:focus-visible {
+    background: rgba(90, 49, 213, 0.24);
+    color: var(--color-purple-innovation);
   }
 
   .btn-orange {
@@ -38,33 +40,108 @@
   }
 
   .btn-secondary {
-    background: rgba(90, 49, 213, 0.84);
-    color: var(--color-white);
-    border-color: rgba(90, 49, 213, 0.42);
-    box-shadow: 0 12px 28px rgba(90, 49, 213, 0.14);
+    background: rgba(90, 49, 213, 0.16);
+    color: var(--color-purple-innovation);
+    border-color: rgba(90, 49, 213, 0.30);
+    box-shadow: 0 12px 28px rgba(90, 49, 213, 0.10);
   }
 
-  .btn-secondary:hover {
-    background: rgba(90, 49, 213, 0.94);
+  .btn-secondary:hover,
+  .btn-secondary:active,
+  .btn-secondary:focus-visible {
+    background: rgba(90, 49, 213, 0.24);
+    color: var(--color-purple-innovation);
   }
 
   button[class~="bg-primary"],
   a[class~="bg-primary"],
   [role="button"][class~="bg-primary"] {
-    background: rgba(90, 49, 213, 0.84);
-    border-color: rgba(90, 49, 213, 0.42);
-    color: var(--color-white);
-    box-shadow: 0 12px 28px rgba(90, 49, 213, 0.14);
+    background: rgba(14, 16, 158, 0.12) !important;
+    border-color: rgba(14, 16, 158, 0.24) !important;
+    color: var(--color-blue-buyer) !important;
+    box-shadow: 0 12px 28px rgba(14, 16, 158, 0.08);
   }
 
   button[class~="bg-primary"]:hover,
+  button[class~="bg-primary"]:active,
+  button[class~="bg-primary"]:focus-visible,
+  button[class~="bg-primary"]:focus,
   a[class~="bg-primary"]:hover,
+  a[class~="bg-primary"]:active,
+  a[class~="bg-primary"]:focus-visible,
+  a[class~="bg-primary"]:focus,
   [role="button"][class~="bg-primary"]:hover,
+  [role="button"][class~="bg-primary"]:active,
+  [role="button"][class~="bg-primary"]:focus-visible,
+  [role="button"][class~="bg-primary"]:focus,
   button[class~="hover:bg-primary"]:hover,
+  button[class~="active:bg-primary"]:active,
+  button[class~="focus:bg-primary"]:focus,
   a[class~="hover:bg-primary"]:hover,
-  [role="button"][class~="hover:bg-primary"]:hover {
-    background: rgba(90, 49, 213, 0.94);
-    color: var(--color-white);
+  a[class~="active:bg-primary"]:active,
+  a[class~="focus:bg-primary"]:focus,
+  [role="button"][class~="hover:bg-primary"]:hover,
+  [role="button"][class~="active:bg-primary"]:active,
+  [role="button"][class~="focus:bg-primary"]:focus {
+    background: rgba(14, 16, 158, 0.18) !important;
+    border-color: rgba(14, 16, 158, 0.32) !important;
+    color: var(--color-blue-buyer) !important;
+  }
+
+  button[class~="bg-secondary"],
+  a[class~="bg-secondary"],
+  [role="button"][class~="bg-secondary"] {
+    background: rgba(90, 49, 213, 0.16) !important;
+    border-color: rgba(90, 49, 213, 0.30) !important;
+    color: var(--color-purple-innovation) !important;
+    box-shadow: 0 12px 28px rgba(90, 49, 213, 0.08);
+  }
+
+  button[class~="bg-secondary"]:hover,
+  button[class~="bg-secondary"]:active,
+  button[class~="bg-secondary"]:focus-visible,
+  button[class~="bg-secondary"]:focus,
+  a[class~="bg-secondary"]:hover,
+  a[class~="bg-secondary"]:active,
+  a[class~="bg-secondary"]:focus-visible,
+  a[class~="bg-secondary"]:focus,
+  [role="button"][class~="bg-secondary"]:hover,
+  [role="button"][class~="bg-secondary"]:active,
+  [role="button"][class~="bg-secondary"]:focus-visible,
+  [role="button"][class~="bg-secondary"]:focus,
+  button[class~="hover:bg-secondary"]:hover,
+  button[class~="active:bg-secondary"]:active,
+  button[class~="focus:bg-secondary"]:focus,
+  a[class~="hover:bg-secondary"]:hover,
+  a[class~="active:bg-secondary"]:active,
+  a[class~="focus:bg-secondary"]:focus,
+  [role="button"][class~="hover:bg-secondary"]:hover,
+  [role="button"][class~="active:bg-secondary"]:active,
+  [role="button"][class~="focus:bg-secondary"]:focus {
+    background: rgba(90, 49, 213, 0.24) !important;
+    border-color: rgba(90, 49, 213, 0.38) !important;
+    color: var(--color-purple-innovation) !important;
+  }
+
+  button[aria-selected="true"][class*="primary"],
+  button[aria-selected="true"][class*="secondary"],
+  button[data-active="true"][class*="primary"],
+  button[data-active="true"][class*="secondary"],
+  button[data-state="active"][class*="primary"],
+  button[data-state="active"][class*="secondary"],
+  button.active[class*="primary"],
+  button.active[class*="secondary"],
+  [role="button"][aria-selected="true"][class*="primary"],
+  [role="button"][aria-selected="true"][class*="secondary"],
+  [role="button"][data-active="true"][class*="primary"],
+  [role="button"][data-active="true"][class*="secondary"],
+  [role="button"][data-state="active"][class*="primary"],
+  [role="button"][data-state="active"][class*="secondary"],
+  [role="button"].active[class*="primary"],
+  [role="button"].active[class*="secondary"] {
+    background: rgba(90, 49, 213, 0.18) !important;
+    border-color: rgba(90, 49, 213, 0.34) !important;
+    color: var(--color-purple-innovation) !important;
   }
 
   button[class~="bg-primary/15"],
@@ -196,10 +273,17 @@
   }
 
   .filter-pill-active {
-    background: rgba(90, 49, 213, 0.78);
-    border-color: rgba(90, 49, 213, 0.38);
-    color: var(--color-white);
-    box-shadow: 0 10px 22px rgba(90, 49, 213, 0.14);
+    background: rgba(90, 49, 213, 0.18);
+    border-color: rgba(90, 49, 213, 0.34);
+    color: var(--color-purple-innovation);
+    box-shadow: 0 10px 22px rgba(90, 49, 213, 0.10);
+  }
+
+  .filter-pill-active:hover,
+  .filter-pill-active:active,
+  .filter-pill-active:focus-visible {
+    background: rgba(90, 49, 213, 0.24);
+    color: var(--color-purple-innovation);
   }
 
   .filter-pill-muted {

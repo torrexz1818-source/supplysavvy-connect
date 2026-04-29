@@ -21,7 +21,7 @@ const Reports = () => {
   const monthLabel = useMemo(() => month ?? report?.month ?? 'Mes actual', [month, report?.month]);
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="mx-auto w-full max-w-6xl px-3 py-5 sm:px-6 sm:py-8">
         <h1 className="text-2xl font-bold text-foreground">Reportes</h1>
         <p className="text-sm text-muted-foreground mt-1 mb-6">Resumen mensual {monthLabel}</p>
 

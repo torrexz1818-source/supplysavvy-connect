@@ -154,7 +154,7 @@ const SaleDetailPage = () => {
   const canContact = user?.role !== selectedPost.author.role && user?.role !== 'admin';
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="mx-auto w-full max-w-6xl px-3 py-5 sm:px-6 sm:py-8">
       <BackButton fallback={saleListPath} className="mb-4" />
       <h1 className="text-2xl font-bold text-foreground mb-6">Liquidaciones</h1>
 
@@ -165,7 +165,7 @@ const SaleDetailPage = () => {
             onClick={() => navigate(user?.role === 'supplier' ? `/supplier/sale/${post.id}` : `/buyer/sale/${post.id}`)}
             className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
               selectedPost.id === post.id
-                ? 'bg-primary text-primary-foreground border-primary'
+                ? 'border-primary/25 bg-primary/10 text-primary shadow-[0_8px_18px_rgba(14,16,158,0.08)] hover:bg-primary/15 active:bg-primary/20'
                 : 'bg-card border-border text-muted-foreground hover:text-foreground'
             }`}
           >

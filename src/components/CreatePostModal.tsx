@@ -103,8 +103,8 @@ const CreatePostModal = ({ isOpen, onClose, categories, onCreated }: CreatePostM
                       onClick={() => setSelectedCategory(cat.id)}
                       className={`px-3 py-1.5 rounded-md border text-sm font-medium transition-colors ${
                         selectedCategory === cat.id
-                          ? 'border-[#0E109E]/28 bg-[#0E109E]/85 text-white shadow-[0_8px_18px_rgba(14,16,158,0.12)]'
-                          : 'border-[#0E109E]/16 bg-[#0E109E]/10 text-[#0E109E] hover:bg-[#0E109E]/16'
+                          ? 'border-[#0E109E]/30 bg-[#0E109E]/15 text-[#0E109E] shadow-[0_8px_18px_rgba(14,16,158,0.10)] hover:bg-[#0E109E]/20 active:bg-[#0E109E]/25 focus-visible:bg-[#0E109E]/20'
+                          : 'border-[#0E109E]/15 bg-[#0E109E]/10 text-[#0E109E] hover:bg-[#0E109E]/15 active:bg-[#0E109E]/20 focus-visible:bg-[#0E109E]/15'
                       }`}
                     >
                       {cat.name}
@@ -147,7 +147,7 @@ const CreatePostModal = ({ isOpen, onClose, categories, onCreated }: CreatePostM
 
             <div className="flex justify-end gap-3 p-5 border-t border-border">
               <Button variant="outline" className="border-[#0E109E]/18 bg-white text-[#0E109E] hover:bg-[#0E109E]/10 hover:text-[#0E109E]" onClick={onClose}>Cancelar</Button>
-              <Button className="border border-[#0E109E]/20 bg-[#0E109E]/85 text-white shadow-[0_12px_28px_rgba(14,16,158,0.14)] hover:bg-[#0E109E] hover:text-white" onClick={() => void handleSubmit()} disabled={createPostMutation.isPending}>
+              <Button className="border border-[#0E109E]/25 bg-[#0E109E]/15 text-[#0E109E] shadow-[0_12px_28px_rgba(14,16,158,0.10)] hover:bg-[#0E109E]/20 hover:text-[#0E109E] active:bg-[#0E109E]/25 focus-visible:bg-[#0E109E]/20" onClick={() => void handleSubmit()} disabled={createPostMutation.isPending}>
                 {createPostMutation.isPending ? 'Publicando...' : 'Publicar'}
               </Button>
             </div>

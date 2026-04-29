@@ -44,12 +44,12 @@ const BuyerDashboard = () => {
   const totalSectorUsers = (platformStats?.sectorBreakdown ?? []).reduce((acc, item) => acc + item.count, 0);
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
+    <div className="mx-auto w-full max-w-5xl px-3 py-5 sm:px-6 sm:py-8">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="hero-brand relative overflow-hidden rounded-[28px] p-8 mb-8 shadow-[var(--shadow-purple)]"
+        className="hero-brand relative mb-8 overflow-hidden rounded-[28px] p-5 shadow-[var(--shadow-purple)] sm:p-8"
         style={{
           background: 'var(--gradient-brand)',
         }}
@@ -63,10 +63,10 @@ const BuyerDashboard = () => {
             <div className="mb-4 inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-white/85">
               Panel de comprador
             </div>
-            <h1 className="mb-3 text-3xl font-bold tracking-tight text-primary-foreground lg:text-4xl">
+            <h1 className="mb-3 text-2xl font-bold tracking-tight text-primary-foreground sm:text-3xl lg:text-4xl">
               BUYER NODUS
             </h1>
-            <p className="max-w-xl text-base leading-7 text-primary-foreground/85 lg:text-lg">
+            <p className="max-w-xl text-sm leading-6 text-primary-foreground/85 sm:text-base sm:leading-7 lg:text-lg">
               Es un ecosistema digital B2B especializada para compradores donde aprenden, comparten experiencias y automatizan sus procesos.
             </p>
           </div>
@@ -96,7 +96,7 @@ const BuyerDashboard = () => {
       {platformStats && (
         <div className="space-y-6 mb-8">
           <section>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Dashboard</h1>
             <p className="text-muted-foreground mt-1">Resumen general de la plataforma</p>
           </section>
 
@@ -180,7 +180,8 @@ const BuyerDashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <table className="w-full table-fixed text-sm">
+                <div className="w-full overflow-x-auto">
+                <table className="min-w-[560px] w-full table-fixed text-sm">
                   <thead>
                     <tr className="border-b border-border/50 text-left text-xs text-foreground">
                       <th className="w-[34%] py-2 pr-3 font-semibold">Nombre</th>
@@ -213,6 +214,7 @@ const BuyerDashboard = () => {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </CardContent>
             </Card>
           </section>
