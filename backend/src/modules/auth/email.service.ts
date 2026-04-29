@@ -67,6 +67,22 @@ export class EmailService {
     return Boolean(smtpHost && smtpUser && smtpPass);
   }
 
+  getConfigurationStatus() {
+    const smtpHost = process.env.SMTP_HOST?.trim();
+    const smtpPort = process.env.SMTP_PORT?.trim() || '587';
+    const smtpUser = process.env.SMTP_USER?.trim();
+    const smtpPass = process.env.SMTP_PASS?.trim();
+
+    return {
+      configured: Boolean(smtpHost && smtpUser && smtpPass),
+      host: smtpHost || null,
+      port: smtpPort,
+      hasUser: Boolean(smtpUser),
+      hasPassword: Boolean(smtpPass),
+      from: this.from,
+    };
+  }
+
   async sendPasswordResetOtp(data: SendPasswordResetOtpData): Promise<void> {
     this.ensureConfigured();
 
@@ -93,7 +109,9 @@ export class EmailService {
         `Error enviando correo a ${data.to}`,
         error instanceof Error ? error.stack : undefined,
       );
-      throw new Error('No se pudo enviar el correo');
+      throw new ServiceUnavailableException(
+        'No se pudo enviar el correo de recuperacion. Revisa las credenciales SMTP del servidor.',
+      );
     }
   }
 
@@ -145,7 +163,9 @@ export class EmailService {
         `Error enviando confirmacion de cita a ${data.buyerEmail} / ${data.expertEmail}`,
         error instanceof Error ? error.stack : undefined,
       );
-      throw new Error('No se pudo enviar el correo de confirmacion');
+      throw new ServiceUnavailableException(
+        'No se pudo enviar el correo de confirmacion. Revisa las credenciales SMTP del servidor.',
+      );
     }
   }
 

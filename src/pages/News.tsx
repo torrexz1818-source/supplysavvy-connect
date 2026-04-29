@@ -302,17 +302,17 @@ const News = () => {
   return (
     <div className="min-h-screen bg-[var(--gradient-soft)]">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="rounded-[32px] border border-white/70 bg-white/65 p-6 shadow-[0_20px_60px_rgba(14, 16, 158, 0.10)] backdrop-blur md:p-8">
+        <div className="rounded-[32px] bg-[linear-gradient(110deg,#1f20b7_0%,#3620b6_50%,#6235de_100%)] p-6 text-white shadow-[0_18px_44px_rgba(14,16,158,0.16)] md:p-8">
           <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <div className="max-w-3xl">
-              <p className="text-sm font-medium uppercase tracking-[0.3em] text-primary">Pantalla de bienvenida</p>
-              <h1 className="mt-3 text-4xl font-bold tracking-tight text-foreground md:text-5xl">Novedades</h1>
-              <p className="mt-3 text-base leading-7 text-muted-foreground md:text-lg">
+              <p className="text-sm font-medium uppercase tracking-[0.3em] text-white/78">Pantalla de bienvenida</p>
+              <h1 className="mt-3 text-4xl font-bold tracking-tight text-white md:text-5xl">Novedades</h1>
+              <p className="mt-3 text-base leading-7 text-white/88 md:text-lg">
                 Un espacio donde encontar las las novedades del mundo de compras, para mantenerte siempre informado.
               </p>
             </div>
-            <div className="rounded-2xl bg-primary px-5 py-4 text-white shadow-lg">
-              <p className="text-xs uppercase tracking-[0.25em] text-white/70">Sesion activa</p>
+            <div className="rounded-2xl bg-[#6B49D8] px-5 py-4 text-white shadow-none">
+              <p className="text-xs uppercase tracking-[0.25em] text-white/78">Sesion activa</p>
               <p className="mt-1 text-lg font-medium">{user?.fullName ?? 'Usuario'}</p>
             </div>
           </div>

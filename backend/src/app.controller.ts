@@ -1,9 +1,13 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
+import { EmailService } from './modules/auth/email.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly emailService: EmailService,
+  ) {}
 
   @Get()
   getHello(): string {
@@ -15,6 +19,7 @@ export class AppController {
     return {
       ok: true,
       message: 'Backend funcionando correctamente',
+      email: this.emailService.getConfigurationStatus(),
     };
   }
 }
