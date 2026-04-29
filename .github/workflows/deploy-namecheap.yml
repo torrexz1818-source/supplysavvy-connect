@@ -29,7 +29,7 @@ jobs:
       - name: Build frontend
         run: npm run build
         env:
-          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://api.supplynexu.com' }}
+          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://api.buyernodus.com' }}
 
       - name: Install backend dependencies
         run: npm ci
@@ -85,7 +85,7 @@ jobs:
           protocol: ftp
           port: ${{ secrets.CPANEL_FTP_PORT || 21 }}
           local-dir: ./.deploy/restart/
-          server-dir: ${{ vars.CPANEL_PASSENGER_TMP_DIR || '/api.supplynexu.com/tmp/' }}
+          server-dir: ${{ vars.CPANEL_PASSENGER_TMP_DIR || '/api.buyernodus.com/tmp/' }}
           state-name: .ftp-state-restart.json
 
       - name: Install backend dependencies and restart app over SSH
@@ -102,5 +102,5 @@ jobs:
             cd ${{ vars.CPANEL_BACKEND_ABS_PATH || '/home/supptjug/backend' }}
             npm install --omit=dev
             npm run build
-            mkdir -p ${{ vars.CPANEL_PASSENGER_TMP_ABS_PATH || '/home/supptjug/api.supplynexu.com/tmp' }}
-            touch ${{ vars.CPANEL_PASSENGER_TMP_ABS_PATH || '/home/supptjug/api.supplynexu.com/tmp' }}/restart.txt
+            mkdir -p ${{ vars.CPANEL_PASSENGER_TMP_ABS_PATH || '/home/supptjug/api.buyernodus.com/tmp' }}
+            touch ${{ vars.CPANEL_PASSENGER_TMP_ABS_PATH || '/home/supptjug/api.buyernodus.com/tmp' }}/restart.txt
