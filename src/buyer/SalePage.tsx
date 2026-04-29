@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search, Heart, Share2, Building2, Info, ImagePlus, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Search, Heart, Share2, Building2, Info, ImagePlus, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +8,6 @@ import { useAuth } from '@/lib/auth';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { isBuyerLikeRole } from '@/lib/roles';
 
 function cleanUrl(url: string): string {
@@ -161,39 +160,32 @@ const SalePage = () => {
       <motion.section
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="overflow-hidden rounded-3xl border border-secondary/15 bg-[var(--gradient-soft)] text-foreground shadow-sm mb-6"
+        className="hero-brand relative mb-6 overflow-hidden rounded-[28px] p-8 shadow-[var(--shadow-purple)]"
+        style={{ background: 'var(--gradient-brand)' }}
       >
-        <div className="grid gap-4 px-6 py-8 md:grid-cols-[1.25fr_0.9fr] md:px-8">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-primary">
+        <div className="pointer-events-none absolute -right-12 -top-14 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+        <div className="pointer-events-none absolute right-24 bottom-[-42px] h-32 w-32 rounded-full bg-secondary/10 blur-2xl" />
+        <div className="hero-radial-light pointer-events-none absolute inset-y-0 right-0 w-[42%]" />
+
+        <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <div className="mb-4 inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-white/85">
+              Oportunidades de stock
+            </div>
+            <h1 className="mb-3 text-3xl font-bold tracking-tight text-primary-foreground lg:text-4xl">
               Liquidaciones de inventario
             </h1>
-            <p className="mt-3 max-w-2xl text-sm text-muted-foreground md:text-base">
+            <p className="max-w-xl text-base leading-7 text-primary-foreground/85 lg:text-lg">
               Publica oportunidades de stock y encuentra liquidaciones activas en una vista clara.
             </p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-1">
-            <Card className="border-secondary/15 bg-white/85 text-foreground shadow-none">
-              <CardContent className="p-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-secondary">Publicaciones</p>
-                <p className="mt-2 text-3xl font-bold">{filtered.length}</p>
-                <p className="mt-1 text-sm text-muted-foreground">Liquidaciones visibles en el feed actual.</p>
-              </CardContent>
-            </Card>
-            <Card className="border-secondary/15 bg-white/85 text-foreground shadow-none">
-              <CardContent className="p-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-secondary">Accion rapida</p>
-                <p className="mt-2 text-lg font-bold text-primary">
-                  {canPublishLiquidation ? 'Puedes publicar' : 'Explora oportunidades'}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {canPublishLiquidation
-                    ? 'Comparte una liquidacion con titulo, descripcion e imagen.'
-                    : 'Revisa el inventario disponible y solicita mas informacion.'}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+
+          <a
+            href="#liquidation-feed"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-8 text-sm font-medium text-[#0E109E] shadow-sm transition-colors hover:bg-white/95"
+          >
+            Explorar liquidaciones <ArrowRight className="h-4 w-4" />
+          </a>
         </div>
       </motion.section>
 
@@ -208,7 +200,7 @@ const SalePage = () => {
       </div>
 
       {canPublishLiquidation && (
-        <div className="mb-6 rounded-3xl border border-primary/15 bg-white p-5 shadow-sm">
+        <div className="mb-6 rounded-3xl bg-white p-5 shadow-sm">
           <div className="mb-4">
             <h2 className="mb-1 text-lg font-medium text-foreground">Publicar liquidacion</h2>
             <p className="text-sm text-muted-foreground">
@@ -279,14 +271,14 @@ const SalePage = () => {
       {isLoading && <p className="text-muted-foreground text-sm">Cargando publicaciones...</p>}
       {isError && <p className="text-destructive text-sm">No se pudo cargar el feed de liquidaciones.</p>}
 
-      <div className="space-y-4">
+      <div id="liquidation-feed" className="space-y-4">
         {filtered.map((post, i) => (
           <motion.div
             key={post.id}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="bg-white rounded-3xl border border-primary/15 shadow-sm overflow-hidden"
+            className="bg-white rounded-3xl shadow-sm overflow-hidden"
           >
             <div className="p-5">
               <div className="flex items-center gap-3 mb-3">
@@ -363,11 +355,11 @@ const SalePage = () => {
                 }}
                 className={`flex items-center gap-1.5 text-sm transition-colors ${
                   post.isLiked
-                    ? 'text-primary font-medium'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'text-red-600 font-medium'
+                    : 'text-muted-foreground hover:text-red-600'
                 }`}
               >
-                <Heart className={`w-4 h-4 ${post.isLiked ? 'fill-primary' : ''}`} /> {post.likes}
+                <Heart className={`w-4 h-4 ${post.isLiked ? 'fill-red-600' : ''}`} /> {post.likes}
               </button>
               <button
                 type="button"

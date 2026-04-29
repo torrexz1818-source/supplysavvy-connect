@@ -14,13 +14,78 @@
     background: color-mix(in srgb, var(--color-green-growth) 82%, var(--color-white));
   }
 
-  .btn-secondary {
-    background: var(--color-blue-buyer);
+  .btn-innovation {
+    background: rgba(90, 49, 213, 0.76);
+    border-color: rgba(90, 49, 213, 0.28);
+    color: var(--color-white);
+    box-shadow: 0 12px 28px rgba(90, 49, 213, 0.14);
+  }
+
+  .btn-innovation:hover {
+    background: rgba(90, 49, 213, 0.88);
     color: var(--color-white);
   }
 
+  .btn-orange {
+    background: color-mix(in srgb, var(--color-red-nodus) 72%, var(--color-green-growth));
+    color: var(--color-blue-buyer);
+    box-shadow: 0 14px 32px rgba(243, 49, 63, 0.14);
+  }
+
+  .btn-orange:hover {
+    background: color-mix(in srgb, var(--color-red-nodus) 80%, var(--color-green-growth));
+    color: var(--color-blue-buyer);
+  }
+
+  .btn-secondary {
+    background: rgba(90, 49, 213, 0.84);
+    color: var(--color-white);
+    border-color: rgba(90, 49, 213, 0.42);
+    box-shadow: 0 12px 28px rgba(90, 49, 213, 0.14);
+  }
+
   .btn-secondary:hover {
-    background: var(--color-purple-innovation);
+    background: rgba(90, 49, 213, 0.94);
+  }
+
+  button[class~="bg-primary"],
+  a[class~="bg-primary"],
+  [role="button"][class~="bg-primary"] {
+    background: rgba(90, 49, 213, 0.84);
+    border-color: rgba(90, 49, 213, 0.42);
+    color: var(--color-white);
+    box-shadow: 0 12px 28px rgba(90, 49, 213, 0.14);
+  }
+
+  button[class~="bg-primary"]:hover,
+  a[class~="bg-primary"]:hover,
+  [role="button"][class~="bg-primary"]:hover,
+  button[class~="hover:bg-primary"]:hover,
+  a[class~="hover:bg-primary"]:hover,
+  [role="button"][class~="hover:bg-primary"]:hover {
+    background: rgba(90, 49, 213, 0.94);
+    color: var(--color-white);
+  }
+
+  button[class~="bg-primary/15"],
+  a[class~="bg-primary/15"],
+  [role="button"][class~="bg-primary/15"],
+  button[class~="bg-primary/10"],
+  a[class~="bg-primary/10"],
+  [role="button"][class~="bg-primary/10"] {
+    background: rgba(90, 49, 213, 0.14);
+    border-color: rgba(90, 49, 213, 0.24);
+    color: var(--color-purple-innovation);
+  }
+
+  button[class~="hover:bg-primary/15"]:hover,
+  a[class~="hover:bg-primary/15"]:hover,
+  [role="button"][class~="hover:bg-primary/15"]:hover,
+  button[class~="hover:bg-primary/10"]:hover,
+  a[class~="hover:bg-primary/10"]:hover,
+  [role="button"][class~="hover:bg-primary/10"]:hover {
+    background: rgba(90, 49, 213, 0.20);
+    color: var(--color-purple-innovation);
   }
 
   .btn-ghost {
@@ -50,7 +115,8 @@
   .feature-card {
     background: var(--surface-2);
     color: var(--text-on-light);
-    border: 1px solid var(--border-soft);
+    border-width: 0 !important;
+    border-color: transparent !important;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-card);
     backdrop-filter: blur(10px);
@@ -87,27 +153,65 @@
   }
 
   .badge-buyer {
-    background: rgba(14, 16, 158, 0.10);
-    border-color: rgba(14, 16, 158, 0.18);
-    color: var(--color-blue-buyer);
+    background: var(--role-buyer-bg);
+    border-color: var(--role-buyer-border);
+    color: var(--role-buyer-text);
   }
 
   .badge-provider {
-    background: var(--color-green-growth);
-    border-color: var(--color-green-growth);
-    color: var(--color-blue-buyer);
+    background: var(--role-provider-bg);
+    border-color: var(--role-provider-border);
+    color: var(--role-provider-text);
   }
 
   .badge-alert {
-    background: var(--color-red-nodus);
-    border-color: var(--color-red-nodus);
-    color: var(--color-white);
+    background: var(--role-admin-bg);
+    border-color: var(--role-admin-border);
+    color: var(--role-admin-text);
   }
 
   .badge-premium {
-    background: var(--color-purple-innovation);
-    border-color: var(--color-purple-innovation);
+    background: var(--role-expert-bg);
+    border-color: var(--role-expert-border);
+    color: var(--role-expert-text);
+  }
+
+  .badge-expert {
+    background: var(--role-expert-bg);
+    border-color: var(--role-expert-border);
+    color: var(--role-expert-text);
+  }
+
+  .badge-admin {
+    background: var(--role-admin-bg);
+    border-color: var(--role-admin-border);
+    color: var(--role-admin-text);
+  }
+
+  .filter-pill {
+    border: 1px solid rgba(90, 49, 213, 0.18);
+    border-radius: var(--radius-full);
+    color: var(--color-purple-innovation);
+    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
+  }
+
+  .filter-pill-active {
+    background: rgba(90, 49, 213, 0.78);
+    border-color: rgba(90, 49, 213, 0.38);
     color: var(--color-white);
+    box-shadow: 0 10px 22px rgba(90, 49, 213, 0.14);
+  }
+
+  .filter-pill-muted {
+    background: rgba(90, 49, 213, 0.16);
+    border-color: rgba(90, 49, 213, 0.20);
+    color: var(--color-purple-innovation);
+  }
+
+  .filter-pill-muted:hover {
+    background: rgba(90, 49, 213, 0.24);
+    border-color: rgba(90, 49, 213, 0.32);
+    color: var(--color-purple-innovation);
   }
 
   .table-brand {

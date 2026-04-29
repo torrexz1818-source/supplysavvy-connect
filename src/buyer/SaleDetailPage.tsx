@@ -175,7 +175,7 @@ const SaleDetailPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr_1fr] gap-4 items-start">
-        <div className="bg-card border border-border rounded-xl overflow-hidden min-h-[420px] flex items-center justify-center">
+        <div className="bg-card rounded-xl overflow-hidden min-h-[420px] flex items-center justify-center">
           {selectedPost.thumbnailUrl ? (
             <img
               src={resolveApiAssetUrl(selectedPost.thumbnailUrl)}
@@ -189,7 +189,7 @@ const SaleDetailPage = () => {
           )}
         </div>
 
-        <div className="bg-card border border-border rounded-xl overflow-hidden flex flex-col">
+        <div className="bg-card rounded-xl overflow-hidden flex flex-col">
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
             <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-sm flex-shrink-0">
               {selectedPost.author.company.charAt(0)}
@@ -263,14 +263,14 @@ const SaleDetailPage = () => {
                 }
                 likeMutation.mutate(selectedPost.id);
               }}
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-red-600 transition-colors"
             >
               <Heart
                 className={`w-4 h-4 ${
-                  selectedPost.isLiked ? 'fill-destructive text-white0' : ''
+                  selectedPost.isLiked ? 'fill-red-600 text-red-600' : ''
                 }`}
               />
-              <span className="font-medium text-foreground">
+              <span className={`font-medium ${selectedPost.isLiked ? 'text-red-600' : 'text-foreground'}`}>
                 {selectedPost.likes.toLocaleString()} Me gusta
               </span>
             </button>
@@ -281,7 +281,7 @@ const SaleDetailPage = () => {
         </div>
 
         <div className="flex flex-col gap-4">
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="bg-card rounded-xl p-4">
             <button
               type="button"
               onClick={() => navigate(`/perfil/${selectedPost.author.role}/${selectedPost.author.id}`)}
@@ -310,7 +310,7 @@ const SaleDetailPage = () => {
             </div>
           </div>
 
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="bg-card rounded-xl p-4">
             <p className="text-sm font-medium text-foreground mb-3">
               {isSupplierAuthor ? 'Comentarios de compradores' : 'Comentarios de la publicacion'}
             </p>

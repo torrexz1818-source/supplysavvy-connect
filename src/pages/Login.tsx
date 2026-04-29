@@ -97,7 +97,7 @@ const Login = () => {
             </div>
 
             {submitError && <p className="text-xs text-destructive">{submitError}</p>}
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button type="submit" className="btn-orange w-full" disabled={isSubmitting}>
               {isSubmitting ? 'Ingresando...' : 'Iniciar sesion'}
             </Button>
           </form>

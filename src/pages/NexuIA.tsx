@@ -30,6 +30,7 @@ import {
   runAgent,
   runN8nComparativeWebhook,
 } from '@/lib/api';
+import type { Agent } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -59,6 +60,189 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
+const curatedAgents: Agent[] = [
+  {
+    id: 'agent-quote-comparator',
+    slug: 'comparativos-propuestas-proveedores',
+    name: 'Comparativos de propuestas de proveedores',
+    description:
+      'Compara propuestas de distintos proveedores y entrega un resumen ejecutivo con recomendacion final.',
+    longDescription:
+      'Centraliza propuestas comerciales, analiza diferencias clave y genera un comparativo orientado a decision para procesos RFQ, licitaciones privadas y compras recurrentes.',
+    category: 'Compras',
+    automationType: 'Evaluacion',
+    useCase:
+      'Comparar propuestas en procesos de compra y sustentar la recomendacion de adjudicacion.',
+    functionalities: [
+      'Consolida propuestas y anexos',
+      'Ordena diferencias por precio, plazo y condiciones',
+      'Genera comparativo ejecutivo listo para compartir',
+    ],
+    benefits: [
+      'Acelera decisiones de compra',
+      'Reduce sesgos al evaluar propuestas',
+      'Mejora trazabilidad para auditoria interna',
+    ],
+    inputs: ['Archivos de propuestas'],
+    outputs: ['PDF comparativo', 'Ranking recomendado', 'Resumen ejecutivo'],
+    isActive: true,
+    accentColor: '#0f766e',
+    icon: 'Scale',
+    createdAt: '2026-04-01T00:00:00.000Z',
+    updatedAt: '2026-04-01T00:00:00.000Z',
+  },
+  {
+    id: 'agent-terms-reference',
+    slug: 'elaboracion-terminos-referencia',
+    name: 'Elaboracion de terminos de referencia',
+    description:
+      'Redacta terminos de referencia claros y bien estructurados para procesos de compra y contratacion.',
+    longDescription:
+      'Ayuda a construir TdR a partir del objetivo, alcance y entregables de la necesidad, entregando una base consistente para solicitar propuestas y alinear expectativas.',
+    category: 'Compras',
+    automationType: 'Generacion',
+    useCase:
+      'Preparar bases documentales para servicios, consultorias, licitaciones y compras tecnicas.',
+    functionalities: [
+      'Estructura objetivo, alcance y entregables',
+      'Propone secciones minimas requeridas',
+      'Genera borrador listo para revision',
+    ],
+    benefits: [
+      'Reduce tiempo de redaccion',
+      'Mejora consistencia documental',
+      'Facilita coordinacion con usuarios internos',
+    ],
+    inputs: ['Objetivo de la contratacion', 'Alcance', 'Entregables esperados'],
+    outputs: ['Borrador de TdR', 'Criterios sugeridos', 'Estructura documental'],
+    isActive: true,
+    accentColor: '#1d4ed8',
+    icon: 'FileCheck',
+    createdAt: '2026-04-02T00:00:00.000Z',
+    updatedAt: '2026-04-02T00:00:00.000Z',
+  },
+  {
+    id: 'agent-contract-management',
+    slug: 'administracion-contratos',
+    name: 'Administracion de contratos',
+    description:
+      'Organiza obligaciones, alertas y vencimientos clave para una gestion contractual mas ordenada.',
+    longDescription:
+      'Resume hitos contractuales, identifica renovaciones proximas y ayuda a controlar compromisos operativos o comerciales a lo largo del ciclo de vida del contrato.',
+    category: 'Contratos',
+    automationType: 'Gestion',
+    useCase:
+      'Monitorear contratos de suministro, servicios y convenios marco desde compras.',
+    functionalities: [
+      'Resume clausulas y fechas criticas',
+      'Detecta hitos y renovaciones proximas',
+      'Genera alertas y checklist de seguimiento',
+    ],
+    benefits: [
+      'Reduce riesgo por vencimientos',
+      'Mejora orden documental',
+      'Facilita seguimiento contractual',
+    ],
+    inputs: ['Contrato o anexos', 'Fechas relevantes', 'Obligaciones contractuales'],
+    outputs: ['Resumen contractual', 'Alertas de gestion', 'Checklist de seguimiento'],
+    isActive: true,
+    accentColor: '#7c3aed',
+    icon: 'FileCheck',
+    createdAt: '2026-04-03T00:00:00.000Z',
+    updatedAt: '2026-04-03T00:00:00.000Z',
+  },
+  {
+    id: 'agent-kraljic-matrix',
+    slug: 'segmentacion-proveedores-matriz-kraljic',
+    name: 'Segmentacion de proveedores y matriz de Kraljic',
+    description:
+      'Clasifica proveedores y categorias para apoyar decisiones estrategicas del abastecimiento.',
+    longDescription:
+      'Segmenta proveedores segun impacto economico y nivel de criticidad, proponiendo una lectura tipo Kraljic que ayude a priorizar estrategias de gestion y relacion.',
+    category: 'Sourcing',
+    automationType: 'Analitica',
+    useCase:
+      'Definir estrategias por cuadrante y ordenar cartera de proveedores.',
+    functionalities: [
+      'Segmenta proveedores por criticidad',
+      'Sugiere cuadrantes Kraljic',
+      'Propone acciones por segmento',
+    ],
+    benefits: [
+      'Aporta foco estrategico',
+      'Mejora priorizacion del equipo',
+      'Facilita conversaciones ejecutivas',
+    ],
+    inputs: ['Base de proveedores o categorias', 'Volumen de compra', 'Criticidad del suministro'],
+    outputs: ['Matriz Kraljic', 'Segmentacion recomendada', 'Acciones por cuadrante'],
+    isActive: true,
+    accentColor: '#ea580c',
+    icon: 'ShieldCheck',
+    createdAt: '2026-04-04T00:00:00.000Z',
+    updatedAt: '2026-04-04T00:00:00.000Z',
+  },
+  {
+    id: 'agent-supplier-performance',
+    slug: 'medicion-desempeno-proveedores',
+    name: 'Medicion del desempeno de proveedores',
+    description:
+      'Evalua el comportamiento del proveedor con base en indicadores, incidencias y compromisos de servicio.',
+    longDescription:
+      'Consolida indicadores de cumplimiento, tiempos, calidad y servicio para generar una evaluacion clara y accionable del desempeno del proveedor.',
+    category: 'Proveedores',
+    automationType: 'Monitoreo',
+    useCase:
+      'Seguimiento mensual, trimestral o por proyecto del desempeno de proveedores.',
+    functionalities: [
+      'Consolida KPIs de desempeno',
+      'Resume fortalezas y brechas',
+      'Sugiere acciones de mejora',
+    ],
+    benefits: [
+      'Mejora visibilidad del servicio',
+      'Estandariza evaluaciones',
+      'Facilita planes de mejora',
+    ],
+    inputs: ['KPIs del proveedor', 'Incidencias relevantes', 'Periodo de evaluacion'],
+    outputs: ['Scorecard del proveedor', 'Resumen de desempeno', 'Plan de mejora sugerido'],
+    isActive: true,
+    accentColor: '#dc2626',
+    icon: 'TrendingUp',
+    createdAt: '2026-04-05T00:00:00.000Z',
+    updatedAt: '2026-04-05T00:00:00.000Z',
+  },
+  {
+    id: 'agent-reporting-taylor-made',
+    slug: 'reporteria-taylor-made',
+    name: 'Reporteria Taylor Made',
+    description:
+      'Genera reportes personalizados para distintas necesidades ejecutivas, tacticas u operativas.',
+    longDescription:
+      'Transforma informacion de compras en reportes hechos a medida para comites, liderazgo, usuarios internos o seguimiento especializado de gestion.',
+    category: 'Reporteria',
+    automationType: 'Generacion',
+    useCase:
+      'Preparar reportes adaptados al publico, objetivo y necesidad de negocio.',
+    functionalities: [
+      'Estructura reportes segun audiencia',
+      'Resume datos clave y hallazgos',
+      'Sugiere narrativa ejecutiva y conclusiones',
+    ],
+    benefits: [
+      'Ahorra tiempo de armado manual',
+      'Mejora claridad del mensaje',
+      'Permite reportes mas accionables',
+    ],
+    inputs: ['Datos base del reporte', 'Audiencia objetivo', 'Objetivo del reporte'],
+    outputs: ['Reporte personalizado', 'Resumen ejecutivo', 'Recomendaciones accionables'],
+    isActive: true,
+    accentColor: '#be185d',
+    icon: 'BrainCircuit',
+    createdAt: '2026-04-06T00:00:00.000Z',
+    updatedAt: '2026-04-06T00:00:00.000Z',
+  },
+];
+
 const NexuIA = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -75,12 +259,24 @@ const NexuIA = () => {
     queryFn: () => getAgents(),
   });
 
+  const curatedAgentsById = useMemo(
+    () => new Map(curatedAgents.map((agent) => [agent.id, agent])),
+    [],
+  );
+  const curatedAgentsBySlug = useMemo(
+    () => new Map(curatedAgents.map((agent) => [agent.slug, agent])),
+    [],
+  );
+  const routeCuratedAgent =
+    (routeAgentId ? curatedAgentsById.get(routeAgentId) : undefined) ||
+    (routeAgentId ? curatedAgentsBySlug.get(routeAgentId) : undefined);
+
   const selectedAgentId = routeAgentId || '';
 
   const detailQuery = useQuery({
     queryKey: ['agents', selectedAgentId],
     queryFn: () => getAgentDetail(selectedAgentId),
-    enabled: Boolean(selectedAgentId),
+    enabled: Boolean(selectedAgentId && !routeCuratedAgent),
   });
 
   const executionsQuery = useQuery({
@@ -182,20 +378,29 @@ const NexuIA = () => {
     },
   });
 
-  const categories = useMemo(() => {
-    const items = new Set((agentsQuery.data ?? []).map((agent) => agent.category));
-    return ['Todos', ...items];
+  const catalogAgents = useMemo(() => {
+    const agentsFromApi = agentsQuery.data ?? [];
+    const merged = curatedAgents.map((curatedAgent) => {
+      const apiAgent = agentsFromApi.find((agent) => agent.id === curatedAgent.id);
+      return apiAgent ? { ...apiAgent, ...curatedAgent } : curatedAgent;
+    });
+    return merged;
   }, [agentsQuery.data]);
 
-  const automationTypes = useMemo(() => {
-    const items = new Set((agentsQuery.data ?? []).map((agent) => agent.automationType));
+  const categories = useMemo(() => {
+    const items = new Set(catalogAgents.map((agent) => agent.category));
     return ['Todos', ...items];
-  }, [agentsQuery.data]);
+  }, [catalogAgents]);
+
+  const automationTypes = useMemo(() => {
+    const items = new Set(catalogAgents.map((agent) => agent.automationType));
+    return ['Todos', ...items];
+  }, [catalogAgents]);
 
   const filteredAgents = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
-    return (agentsQuery.data ?? []).filter((agent) => {
+    return catalogAgents.filter((agent) => {
       const matchesCategory =
         selectedCategory === 'Todos' || agent.category === selectedCategory;
       const matchesAutomation =
@@ -207,9 +412,16 @@ const NexuIA = () => {
 
       return matchesCategory && matchesAutomation && matchesSearch;
     });
-  }, [agentsQuery.data, search, selectedAutomationType, selectedCategory]);
+  }, [catalogAgents, search, selectedAutomationType, selectedCategory]);
 
-  const selectedAgent = detailQuery.data;
+  const selectedAgent = routeCuratedAgent
+    ? routeCuratedAgent
+    : detailQuery.data
+      ? {
+          ...detailQuery.data,
+          ...(curatedAgentsById.get(detailQuery.data.id) ?? {}),
+        }
+      : undefined;
   const selectedAgentExecutions = (executionsQuery.data ?? []).filter(
     (execution) => execution.agentId === selectedAgent?.id,
   );
@@ -221,7 +433,7 @@ const NexuIA = () => {
   const marketplaceStats = [
     {
       label: 'Agentes disponibles',
-      value: String(agentsQuery.data?.length ?? 0),
+      value: String(catalogAgents.length),
       icon: Layers3,
     },
     {
@@ -266,48 +478,46 @@ const NexuIA = () => {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[32px] border border-primary/15 bg-[var(--gradient-soft)]">
-        <div className="grid gap-8 px-6 py-8 lg:grid-cols-[1.35fr_0.95fr] lg:px-8">
+      <section className="overflow-hidden rounded-[32px] border border-[#2e24ba]/15 bg-[linear-gradient(135deg,#1f1fae_0%,#3325b8_38%,#4f31cb_70%,#6844dc_100%)] shadow-[0_24px_60px_rgba(54,33,170,0.22)]">
+        <div className="grid gap-8 px-8 py-9 lg:grid-cols-[1.35fr_0.95fr] lg:items-center lg:px-8">
           <div>
-            <Badge variant="outline" className="border-primary/25 bg-white/80 text-foreground/80">
-              NEXU AI MARKETPLACE
+            <Badge
+              variant="outline"
+              className="border-white/20 bg-white/10 px-4 py-1 text-[13px] font-medium uppercase tracking-[0.24em] text-white backdrop-blur-sm"
+            >
+              Nodus IA
             </Badge>
-            <h1 className="mt-4 max-w-3xl text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-              Tienda de agentes IA y automatizaciones para compras
+            <h1 className="mt-5 max-w-3xl text-4xl font-bold tracking-tight text-white md:text-5xl">
+              Agentes IA y automatizaciones
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
+            <p className="mt-4 max-w-2xl text-base leading-8 text-white/85 md:text-[1.1rem]">
               Explora agentes especializados, activa automatizaciones y ejecuta flujos de compras
               en un entorno simple, visual y escalable para sourcing, riesgo, logistica y
               negociacion.
             </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/80 px-4 py-2 text-sm text-foreground/80">
-                <Bot className="h-4 w-4 text-muted-foreground" />
-                Catalogo listo para usar
-              </div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/80 px-4 py-2 text-sm text-foreground/80">
-                <Zap className="h-4 w-4 text-muted-foreground" />
-                Ejecucion bajo demanda
-              </div>
-            </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            {marketplaceStats.map((item) => {
-              const Icon = item.icon;
+          <div className="flex flex-col gap-4 lg:items-end lg:justify-center">
+            <div className="grid w-full gap-3 sm:grid-cols-3 lg:max-w-[420px] lg:grid-cols-1">
+              {marketplaceStats.map((item) => {
+                const Icon = item.icon;
 
-              return (
-                <Card key={item.label} className="border-white/70 bg-white/80 shadow-sm">
-                  <CardHeader className="pb-3">
-                    <CardDescription className="flex items-center gap-2 text-muted-foreground/70">
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                      {item.label}
-                    </CardDescription>
-                    <CardTitle className="text-3xl text-foreground">{item.value}</CardTitle>
-                  </CardHeader>
-                </Card>
-              );
-            })}
+                return (
+                  <Card
+                    key={item.label}
+                    className="border-white/10 bg-white/10 text-white shadow-none backdrop-blur-sm"
+                  >
+                    <CardHeader className="pb-3">
+                      <CardDescription className="flex items-center gap-2 text-white/75">
+                        <Icon className="h-4 w-4 text-white/80" />
+                        {item.label}
+                      </CardDescription>
+                      <CardTitle className="text-3xl text-white">{item.value}</CardTitle>
+                    </CardHeader>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>

@@ -15,6 +15,20 @@
   --color-success: var(--color-green-growth);
   --color-surface: var(--color-white);
 
+  /* Role badges */
+  --role-buyer-bg: rgba(243, 49, 63, 0.12);
+  --role-buyer-border: rgba(243, 49, 63, 0.26);
+  --role-buyer-text: var(--color-red-nodus);
+  --role-provider-bg: rgba(178, 235, 74, 0.24);
+  --role-provider-border: rgba(178, 235, 74, 0.42);
+  --role-provider-text: var(--color-blue-buyer);
+  --role-expert-bg: rgba(90, 49, 213, 0.12);
+  --role-expert-border: rgba(90, 49, 213, 0.24);
+  --role-expert-text: var(--color-purple-innovation);
+  --role-admin-bg: rgba(243, 49, 63, 0.12);
+  --role-admin-border: rgba(243, 49, 63, 0.24);
+  --role-admin-text: var(--color-red-nodus);
+
   /* Tailwind/shadcn HSL channels derived from the authorized palette */
   --background: 0 0% 100%;
   --foreground: 239 84% 34%;

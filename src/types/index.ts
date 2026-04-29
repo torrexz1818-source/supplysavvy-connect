@@ -97,6 +97,7 @@ export interface Post {
   category: PostCategory;
   title: string;
   description: string;
+  learningRoute?: 'ruta-1' | 'ruta-2' | 'ruta-3' | 'ruta-4';
   mediaType?: 'video' | 'image';
   videoUrl?: string;
   thumbnailUrl?: string;

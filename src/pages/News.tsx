@@ -166,8 +166,8 @@ const NewsCard = ({
             onClick={() => void onToggleLike(post.id)}
             className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
               post.isLiked
-                ? 'border-destructive/20 bg-destructive/10 text-destructive'
-                : 'border-primary/15 text-muted-foreground hover:bg-primary/5'
+                ? 'border-red-500/20 bg-red-500/10 text-red-600'
+                : 'border-primary/15 text-muted-foreground hover:bg-red-500/10 hover:text-red-600'
             }`}
           >
             <Heart className={`h-4 w-4 ${post.isLiked ? 'fill-current' : ''}`} />
@@ -176,7 +176,7 @@ const NewsCard = ({
           <button
             type="button"
             onClick={() => setCommentsOpen((current) => !current)}
-            className="inline-flex items-center gap-2 rounded-full border border-primary/15 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/5"
+            className="inline-flex items-center gap-2 rounded-full border border-[#0E109E]/15 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#0E109E]/10 hover:text-[#0E109E]"
           >
             <MessageCircle className="h-4 w-4" />
             Comentar

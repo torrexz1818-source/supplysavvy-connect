@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { createConversation, getBuyerById, getConversationByPair, getSupplierById, sendConversationMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { getRoleBadgeClass, getRoleLabel } from '@/lib/roles';
 import { useState } from 'react';
 
 const UserProfilePage = () => {
@@ -108,8 +109,8 @@ const UserProfilePage = () => {
           <h1 className="text-2xl font-bold text-foreground">
             {'name' in profile ? profile.name : sessionUser?.fullName ?? 'Usuario'}
           </h1>
-          <Badge className={profileRole === 'supplier' ? 'bg-success/25 text-success-foreground' : 'bg-primary/15 text-primary'}>
-            {profileRole === 'supplier' ? 'Proveedor' : 'Comprador'}
+          <Badge className={getRoleBadgeClass(profileRole)}>
+            {getRoleLabel(profileRole)}
           </Badge>
         </div>
 

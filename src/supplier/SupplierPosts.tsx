@@ -150,7 +150,7 @@ const SupplierPosts = () => {
         Publica liquidaciones y revisa los mensajes privados asociados a cada oportunidad.
       </p>
 
-      <div className="bg-card border border-border rounded-xl p-5 mb-8">
+      <div className="bg-card rounded-xl p-5 mb-8">
         <Input
           value={titulo}
           onChange={(event) => setTitulo(event.target.value)}
@@ -220,7 +220,7 @@ const SupplierPosts = () => {
             messageCount >= 3 ? publication.messages.slice(2) : [];
 
           return (
-            <article id={`item-${publication.id}`} key={publication.id} className="bg-card border border-border rounded-xl p-5">
+            <article id={`item-${publication.id}`} key={publication.id} className="bg-card rounded-xl p-5">
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div>
                   <p className="text-base font-medium text-foreground">{publication.title}</p>

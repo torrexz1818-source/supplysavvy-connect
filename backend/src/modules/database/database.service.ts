@@ -106,6 +106,7 @@ type PostDocument = {
   categoryId: string;
   title: string;
   description: string;
+  learningRoute?: 'ruta-1' | 'ruta-2' | 'ruta-3' | 'ruta-4';
   type: 'educational' | 'community' | 'liquidation';
   videoUrl?: string;
   thumbnailUrl?: string;
@@ -427,16 +428,12 @@ function buildMongoUri(): string {
   const username = sanitizeEnv(process.env.MONGODB_USERNAME);
   const password = sanitizeEnv(process.env.MONGODB_PASSWORD);
   const host = sanitizeEnv(process.env.MONGODB_HOST);
-  const dbName = sanitizeEnv(process.env.MONGODB_DB_NAME) ?? 'supplynexu';
+  const dbName = sanitizeEnv(process.env.MONGODB_DB_NAME) ?? 'supplyconnect';
 
   if (!host) {
-    if (isProductionRuntime()) {
-      throw new Error(
-        'Missing MongoDB configuration. Set MONGODB_URI in Render, or set MONGODB_USERNAME, MONGODB_PASSWORD, and MONGODB_HOST.',
-      );
-    }
-
-    return 'mongodb://127.0.0.1:27017';
+    throw new Error(
+      'Missing MongoDB Atlas configuration. Set MONGODB_URI, or set MONGODB_USERNAME, MONGODB_PASSWORD, and MONGODB_HOST.',
+    );
   }
 
   if (isProductionRuntime() && (!username || !password)) {

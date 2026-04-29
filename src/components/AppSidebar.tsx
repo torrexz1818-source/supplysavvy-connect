@@ -19,9 +19,9 @@ const buyerNavItems = [
   { title: 'Comunidad', url: '/community', icon: Users },
   { title: 'Contenido Educativo', icon: BookOpen },
   { title: 'Empleabilidad', url: '/empleabilidad', icon: BriefcaseBusiness, indent: true },
-  { title: 'Nexu Experts', url: '/nexu-experts', icon: Users, indent: true },
+  { title: 'Nodus Experts', url: '/nexu-experts', icon: Users, indent: true },
   { title: 'Liquidaciones', url: '/buyer/sale', icon: FileText },
-  { title: 'Nexu IA', url: '/nexu-ia', icon: Bot },
+  { title: 'Nodus IA', url: '/nexu-ia', icon: Bot },
   { title: 'Directorio de proveedores', url: '/buyer/directory', icon: Building2 },
 ];
 

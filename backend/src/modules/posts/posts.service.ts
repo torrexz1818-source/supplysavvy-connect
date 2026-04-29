@@ -11,6 +11,15 @@ import { UserStatus } from '../users/domain/user-status.enum';
 import { UsersService } from '../users/users.service';
 
 type PostType = 'educational' | 'community' | 'liquidation';
+type LearningRouteId = 'ruta-1' | 'ruta-2' | 'ruta-3' | 'ruta-4';
+
+const learningRouteIds: LearningRouteId[] = ['ruta-1', 'ruta-2', 'ruta-3', 'ruta-4'];
+
+function normalizeLearningRoute(value?: string): LearningRouteId | undefined {
+  return learningRouteIds.includes(value as LearningRouteId)
+    ? (value as LearningRouteId)
+    : undefined;
+}
 
 type PostCategory = {
   id: string;
@@ -24,6 +33,7 @@ type PostRecord = {
   categoryId: string;
   title: string;
   description: string;
+  learningRoute?: LearningRouteId;
   type: PostType;
   mediaType?: 'video' | 'image';
   videoUrl?: string;
@@ -90,6 +100,7 @@ type CreatePostData = {
   description: string;
   categoryId: string;
   type?: PostType;
+  learningRoute?: string;
   mediaType?: 'video' | 'image';
   videoUrl?: string;
   thumbnailUrl?: string;
@@ -138,6 +149,7 @@ type PostResponse = {
   category: PostCategory;
   title: string;
   description: string;
+  learningRoute?: LearningRouteId;
   mediaType?: 'video' | 'image';
   videoUrl?: string;
   thumbnailUrl?: string;
@@ -398,6 +410,9 @@ export class PostsService {
       categoryId: data.categoryId,
       title: data.title.trim(),
       description: data.description.trim(),
+      learningRoute: type === 'educational'
+        ? normalizeLearningRoute(data.learningRoute) ?? 'ruta-1'
+        : undefined,
       type,
       mediaType: data.mediaType ?? (data.videoUrl ? 'video' : data.thumbnailUrl ? 'image' : undefined),
       videoUrl: data.videoUrl?.trim() || undefined,
@@ -416,73 +431,7 @@ export class PostsService {
 
     await this.postsCollection().insertOne(post);
 
-    if (type === 'community') {
-      const [buyerRecipients, supplierRecipients] = await Promise.all([
-        this.usersService.listActiveUserIdsByRoles([UserRole.BUYER, UserRole.EXPERT], author.id),
-        this.usersService.listActiveUserIdsByRole(UserRole.SUPPLIER, author.id),
-      ]);
-      await Promise.all([
-        this.notificationsService.createForUsers({
-          icon: 'FileText',
-          type: 'SYSTEM',
-          title: 'Nueva publicacion en Comunidad',
-          body: `${author.company} publico: "${post.title}".`,
-          entityType: 'publication',
-          entityId: post.id,
-          fromUserId: author.id,
-          role: UserRole.BUYER,
-          userIds: buyerRecipients,
-          url: `/buyer/community/post/${post.id}`,
-          time: 'Ahora',
-        }),
-        this.notificationsService.createForUsers({
-          icon: 'FileText',
-          type: 'SYSTEM',
-          title: 'Nueva publicacion en Comunidad',
-          body: `${author.company} publico: "${post.title}".`,
-          entityType: 'publication',
-          entityId: post.id,
-          fromUserId: author.id,
-          role: UserRole.SUPPLIER,
-          userIds: supplierRecipients,
-          url: `/buyer/community/post/${post.id}`,
-          time: 'Ahora',
-        }),
-      ]);
-    } else if (type === 'educational') {
-      const [buyerRecipients, supplierRecipients] = await Promise.all([
-        this.usersService.listActiveUserIdsByRoles([UserRole.BUYER, UserRole.EXPERT], author.id),
-        this.usersService.listActiveUserIdsByRole(UserRole.SUPPLIER, author.id),
-      ]);
-      await Promise.all([
-        this.notificationsService.createForUsers({
-          icon: 'FileText',
-          type: 'NEW_EDUCATIONAL_CONTENT',
-          title: `Nuevo contenido educativo: "${post.title}"`,
-          body: `${post.categoryId} - ${post.description.slice(0, 80)}`,
-          entityType: 'content',
-          entityId: post.id,
-          fromUserId: author.id,
-          role: UserRole.BUYER,
-          userIds: buyerRecipients,
-          url: `/contenido-educativo?highlight=${post.id}`,
-          time: 'Ahora',
-        }),
-        this.notificationsService.createForUsers({
-          icon: 'FileText',
-          type: 'NEW_EDUCATIONAL_CONTENT',
-          title: `Nuevo contenido educativo: "${post.title}"`,
-          body: `${post.categoryId} - ${post.description.slice(0, 80)}`,
-          entityType: 'content',
-          entityId: post.id,
-          fromUserId: author.id,
-          role: UserRole.SUPPLIER,
-          userIds: supplierRecipients,
-          url: `/post/${post.id}`,
-          time: 'Ahora',
-        }),
-      ]);
-    }
+    await this.notifyNewPostToAllUsers(post, author);
 
     const categoriesMap = await this.createCategoriesMap([post.categoryId]);
     const usersMap = new Map([[author.id, author]]);
@@ -663,6 +612,42 @@ export class PostsService {
         });
       }
     }
+
+    return {
+      liked: !wasLiked,
+      likes: likedBy.length,
+    };
+  }
+
+  async toggleCommentLike(postId: string, commentId: string, userId: string) {
+    const actor = await this.usersService.requireActiveUser(userId);
+    const [post, comment] = await Promise.all([
+      this.findPost(postId),
+      this.commentsCollection().findOne({ id: commentId, postId }),
+    ]);
+
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    if (post.type === 'community' && actor.role === UserRole.ADMIN) {
+      throw new ForbiddenException('Solo compradores y proveedores pueden interactuar en Comunidad');
+    }
+
+    const wasLiked = comment.likedBy.includes(userId);
+    const likedBy = wasLiked
+      ? comment.likedBy.filter((item) => item !== userId)
+      : [...comment.likedBy, userId];
+
+    await this.commentsCollection().updateOne(
+      { id: commentId, postId },
+      {
+        $set: {
+          likedBy,
+          updatedAt: new Date(),
+        },
+      },
+    );
 
     return {
       liked: !wasLiked,
@@ -958,6 +943,7 @@ export class PostsService {
       category: this.getRequiredCategoryFromMap(categoriesMap, post.categoryId),
       title: post.title,
       description: post.description,
+      learningRoute: post.learningRoute,
       mediaType: post.mediaType,
       videoUrl: post.videoUrl,
       thumbnailUrl: post.thumbnailUrl,
@@ -1076,6 +1062,7 @@ export class PostsService {
       category,
       title: post.title,
       description: post.description,
+      learningRoute: post.learningRoute,
       mediaType: post.mediaType,
       videoUrl: post.videoUrl,
       thumbnailUrl: post.thumbnailUrl,
@@ -1099,6 +1086,51 @@ export class PostsService {
     }
 
     return `/publicaciones?highlight=${post.id}&expand=messages`;
+  }
+
+  private async notifyNewPostToAllUsers(post: PostRecord, author: User): Promise<void> {
+    const [buyerRecipients, supplierRecipients] = await Promise.all([
+      this.usersService.listActiveUserIdsByRoles([UserRole.BUYER, UserRole.EXPERT], author.id),
+      this.usersService.listActiveUserIdsByRole(UserRole.SUPPLIER, author.id),
+    ]);
+
+    const isEducational = post.type === 'educational';
+    const notificationType = isEducational ? 'NEW_EDUCATIONAL_CONTENT' : 'NEW_PUBLICATION';
+    const titleByType: Record<PostType, string> = {
+      community: 'Nueva publicacion en Comunidad',
+      educational: `Nuevo contenido educativo: "${post.title}"`,
+      liquidation: 'Nueva publicacion de proveedor',
+    };
+    const url = this.getPostNotificationUrl(post);
+
+    await Promise.all([
+      this.notificationsService.createForUsers({
+        icon: 'FileText',
+        type: notificationType,
+        title: titleByType[post.type],
+        body: `${author.company} publico: "${post.title}".`,
+        entityType: isEducational ? 'content' : 'publication',
+        entityId: post.id,
+        fromUserId: author.id,
+        role: UserRole.BUYER,
+        userIds: buyerRecipients,
+        url,
+        time: 'Ahora',
+      }),
+      this.notificationsService.createForUsers({
+        icon: 'FileText',
+        type: notificationType,
+        title: titleByType[post.type],
+        body: `${author.company} publico: "${post.title}".`,
+        entityType: isEducational ? 'content' : 'publication',
+        entityId: post.id,
+        fromUserId: author.id,
+        role: UserRole.SUPPLIER,
+        userIds: supplierRecipients,
+        url,
+        time: 'Ahora',
+      }),
+    ]);
   }
 
   private async buildCommunityActivityByDay(startDate: Date): Promise<HomeActivityPoint[]> {

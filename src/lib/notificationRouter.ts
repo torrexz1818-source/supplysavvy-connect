@@ -11,6 +11,8 @@ export function getNotificationUrl(notification: NotificationItem): string {
       return `/publicaciones?highlight=${entityId}`;
     case 'COMMENT_PUBLICATION':
       return `/publicaciones?highlight=${entityId}&expand=messages`;
+    case 'NEW_PUBLICATION':
+      return `/publicaciones?highlight=${entityId}`;
     case 'NEW_MESSAGE':
       return `/publicaciones?highlight=${entityId}&expand=messages`;
     case 'NEW_CONVERSATION':

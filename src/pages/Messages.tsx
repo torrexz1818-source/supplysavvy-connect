@@ -146,6 +146,10 @@ const Messages = () => {
   const sourceTargetHeadline = searchParams.get('targetHeadline');
 
   const hasMembershipAccess = Boolean(user?.hasSensitiveAccess);
+  const currentUserIsBuyer = isBuyerLikeRole(user?.role);
+  const otherUserAvatarClass = currentUserIsBuyer
+    ? 'bg-success/20 text-success-foreground'
+    : 'bg-destructive/10 text-destructive';
 
   const conversationsQuery = useQuery({
     queryKey: ['conversations'],
@@ -391,10 +395,10 @@ const Messages = () => {
               {filteredConversations.map((conversation) => {
                 const name =
                   conversation.otherUserName ||
-                  (isBuyerLikeRole(user?.role) ? conversation.supplierName : conversation.buyerName);
+                  (currentUserIsBuyer ? conversation.supplierName : conversation.buyerName);
                 const company =
                   conversation.otherUserCompany ||
-                  (isBuyerLikeRole(user?.role) ? conversation.supplierCompany : conversation.buyerCompany);
+                  (currentUserIsBuyer ? conversation.supplierCompany : conversation.buyerCompany);
                 const isActive = conversation.id === activeConversationId;
 
                 return (
@@ -410,7 +414,7 @@ const Messages = () => {
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium shrink-0">
+                      <div className={`w-11 h-11 rounded-full flex items-center justify-center text-xs font-medium shrink-0 ${otherUserAvatarClass}`}>
                         {getInitials(name)}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -450,20 +454,20 @@ const Messages = () => {
               {activeConversation ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium shrink-0">
+                    <div className={`w-11 h-11 rounded-full flex items-center justify-center text-xs font-medium shrink-0 ${otherUserAvatarClass}`}>
                       {getInitials(
                         activeConversation.otherUserName ||
-                        (isBuyerLikeRole(user?.role) ? activeConversation.supplierName : activeConversation.buyerName),
+                        (currentUserIsBuyer ? activeConversation.supplierName : activeConversation.buyerName),
                       )}
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground">
                         {activeConversation.otherUserName ||
-                          (isBuyerLikeRole(user?.role) ? activeConversation.supplierName : activeConversation.buyerName)}
+                          (currentUserIsBuyer ? activeConversation.supplierName : activeConversation.buyerName)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {activeConversation.otherUserCompany ||
-                          (isBuyerLikeRole(user?.role) ? activeConversation.supplierCompany : activeConversation.buyerCompany)}
+                          (currentUserIsBuyer ? activeConversation.supplierCompany : activeConversation.buyerCompany)}
                       </p>
                     </div>
                   </div>

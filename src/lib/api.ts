@@ -131,7 +131,7 @@ function getApiBaseFromCurrentDomain() {
   const { protocol, hostname } = window.location;
 
   if (isBrowserLocalHost(hostname)) {
-    return '/api';
+    return DEFAULT_PRODUCTION_API_URL;
   }
 
   if (hostname.startsWith('api.')) {
@@ -264,13 +264,7 @@ function getFallbackBaseUrls() {
     window.location.hostname === '127.0.0.1' ||
     isPrivateIpv4Host(window.location.hostname);
 
-  if (!isLocalEnvironment) {
-    return API_BASE_URL === '/api' ? [DEFAULT_PRODUCTION_API_URL] : [];
-  }
-
-  return ['http://127.0.0.1:10000', 'http://localhost:10000'].filter(
-    (baseUrl) => baseUrl !== API_BASE_URL,
-  );
+  return API_BASE_URL === '/api' ? [DEFAULT_PRODUCTION_API_URL] : [];
 }
 
 function getConnectionErrorMessage() {
@@ -282,10 +276,6 @@ function getConnectionErrorMessage() {
     window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1' ||
     isPrivateIpv4Host(window.location.hostname);
-
-  if (isLocalEnvironment) {
-    return 'No se pudo conectar con el servidor. Verifica que el backend este encendido en http://127.0.0.1:10000.';
-  }
 
   return `No se pudo conectar con el backend publicado. Verifica que ${DEFAULT_PRODUCTION_API_URL} este activo y accesible.`;
 }
@@ -564,6 +554,7 @@ export async function createPost(payload: {
   description: string;
   categoryId: string;
   type?: 'educational' | 'community' | 'liquidation';
+  learningRoute?: 'ruta-1' | 'ruta-2' | 'ruta-3' | 'ruta-4';
   mediaType?: 'video' | 'image';
   videoUrl?: string;
   thumbnailUrl?: string;
@@ -616,6 +607,13 @@ export async function togglePostLike(postId: string) {
   });
 }
 
+export async function toggleCommentLike(postId: string, commentId: string) {
+  return apiRequest<LikeResponse>(`/posts/${postId}/comments/${commentId}/like`, {
+    method: 'POST',
+    auth: true,
+  });
+}
+
 export async function getAdminDashboard() {
   const data = await apiRequest<AdminDashboardData>('/admin/dashboard', { auth: true });
 
@@ -630,6 +628,7 @@ export async function adminCreatePost(payload: {
   description: string;
   categoryId: string;
   type: 'educational' | 'community' | 'liquidation';
+  learningRoute?: 'ruta-1' | 'ruta-2' | 'ruta-3' | 'ruta-4';
   mediaType?: 'video' | 'image';
   videoUrl?: string;
   thumbnailUrl?: string;

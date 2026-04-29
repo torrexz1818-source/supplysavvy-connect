@@ -130,29 +130,29 @@ export default function SectorSuppliers() {
     <div className="max-w-6xl mx-auto animate-fade-in">
       <BackButton fallback="/buyer/directory" className="mb-4" />
 
-      <section className="mb-8 overflow-hidden rounded-3xl border border-secondary/15 bg-[var(--gradient-soft)] shadow-sm">
-        <div className="grid gap-4 px-6 py-8 md:grid-cols-[1.25fr_0.9fr] md:px-8">
+      <section className="mb-8 overflow-hidden rounded-3xl bg-[linear-gradient(110deg,#1f20b7_0%,#3620b6_50%,#6235de_100%)] text-white shadow-[0_18px_44px_rgba(14,16,158,0.16)]">
+        <div className="grid gap-8 px-8 py-8 md:grid-cols-[1.25fr_0.9fr] md:px-10 md:py-9 lg:px-12">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-primary">
+            <h1 className="text-3xl font-bold tracking-tight text-white">
               Proveedores del sector {sector}
             </h1>
-            <p className="mt-3 text-sm text-muted-foreground md:text-base">
+            <p className="mt-3 text-sm text-white/88 md:text-base">
               Busca, filtra y compara proveedores con una experiencia visual alineada al resto del modulo.
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-1">
-            <Card className="border-secondary/15 bg-white/85 text-foreground shadow-none">
+            <Card className="border-0 bg-[#6B49D8] text-white shadow-none">
               <CardContent className="p-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-secondary">Resultados</p>
-                <p className="mt-2 text-3xl font-bold">{filtrados.length}</p>
-                <p className="mt-1 text-sm text-muted-foreground">Proveedores visibles con los filtros actuales.</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-white/78">Resultados</p>
+                <p className="mt-2 text-3xl font-bold text-white">{filtrados.length}</p>
+                <p className="mt-1 text-sm text-white/78">Proveedores visibles con los filtros actuales.</p>
               </CardContent>
             </Card>
-            <Card className="border-secondary/15 bg-white/85 text-foreground shadow-none">
+            <Card className="border-0 bg-[#6B49D8] text-white shadow-none">
               <CardContent className="p-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-secondary">Sector</p>
-                <p className="mt-2 text-lg font-bold text-primary">{sector}</p>
-                <p className="mt-1 text-sm text-muted-foreground">Navegacion enfocada por categoria.</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-white/78">Sector</p>
+                <p className="mt-2 text-lg font-bold text-white">{sector}</p>
+                <p className="mt-1 text-sm text-white/78">Navegacion enfocada por categoria.</p>
               </CardContent>
             </Card>
           </div>
@@ -165,13 +165,13 @@ export default function SectorSuppliers() {
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           placeholder="Buscar por servicio (ej: limpieza industrial, catering, seguridad, transporte...)"
-          className="pl-12 h-12 text-base bg-card border-border"
+          className="pl-12 h-12 border-0 bg-card text-base shadow-sm focus-visible:ring-[#0E109E]/20"
         />
       </div>
 
       <div className="flex flex-wrap gap-3 mb-8">
         <Select onValueChange={(val) => setUbicacionFiltro(val)}>
-          <SelectTrigger className="w-56 bg-card">
+          <SelectTrigger className="w-56 border-0 bg-card shadow-sm focus:ring-[#0E109E]/20">
             <MapPin className="h-4 w-4 mr-1 text-muted-foreground" />
             <SelectValue placeholder="Distrito / Ciudad" />
           </SelectTrigger>
@@ -185,7 +185,7 @@ export default function SectorSuppliers() {
         </Select>
 
         <Select onValueChange={(val) => setRatingFiltro(val)}>
-          <SelectTrigger className="w-36 bg-card">
+          <SelectTrigger className="w-36 border-0 bg-card shadow-sm focus:ring-[#0E109E]/20">
             <Star className="h-4 w-4 mr-1 text-muted-foreground" />
             <SelectValue placeholder="Rating" />
           </SelectTrigger>
@@ -197,7 +197,7 @@ export default function SectorSuppliers() {
         </Select>
 
         <Select onValueChange={(val) => setExperienciaFiltro(val)}>
-          <SelectTrigger className="w-40 bg-card">
+          <SelectTrigger className="w-40 border-0 bg-card shadow-sm focus:ring-[#0E109E]/20">
             <Briefcase className="h-4 w-4 mr-1 text-muted-foreground" />
             <SelectValue placeholder="Experiencia" />
           </SelectTrigger>
@@ -209,7 +209,7 @@ export default function SectorSuppliers() {
         </Select>
 
         <Select onValueChange={(val) => setCertFiltro(val)}>
-          <SelectTrigger className="w-52 bg-card">
+          <SelectTrigger className="w-52 border-0 bg-card shadow-sm focus:ring-[#0E109E]/20">
             <Award className="h-4 w-4 mr-1 text-muted-foreground" />
             <SelectValue placeholder="Certificaciones" />
           </SelectTrigger>
@@ -232,14 +232,14 @@ export default function SectorSuppliers() {
       )}
 
       {!!feedback && (
-        <p className="text-sm text-success-foreground bg-success/15 border border-success/25 rounded-md px-3 py-2 mb-4">
+        <p className="text-sm text-success-foreground bg-success/15 border-0 rounded-md px-3 py-2 mb-4 shadow-sm">
           {feedback}
         </p>
       )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filtrados.map((p) => (
-          <Card id={`item-${p.id}`} key={p.id} className="rounded-3xl border-primary/15 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+          <Card id={`item-${p.id}`} key={p.id} className="rounded-3xl border-0 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
             <CardContent className="p-5">
               <div className="flex items-start justify-between mb-3">
                 <div>

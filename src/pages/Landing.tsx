@@ -44,7 +44,7 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border">
+      <nav className="navbar-sticky">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <span className="text-lg font-bold text-gradient">BUYER NODUS</span>
           <div className="flex gap-2">

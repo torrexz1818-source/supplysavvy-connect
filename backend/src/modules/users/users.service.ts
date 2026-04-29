@@ -699,6 +699,44 @@ export class UsersService {
     return users.map((user) => user.id);
   }
 
+  async listActiveUsersByRolesInSector(
+    roles: UserRole[],
+    sector?: string,
+    excludeUserId?: string,
+  ): Promise<User[]> {
+    const normalizedRoles = Array.from(new Set(roles));
+    if (!normalizedRoles.length) {
+      return [];
+    }
+
+    const normalizedSector = (sector ?? '').trim();
+    const filter: Record<string, unknown> = {
+      role: { $in: normalizedRoles },
+      status: UserStatus.ACTIVE,
+    };
+
+    if (excludeUserId) {
+      filter.id = { $ne: excludeUserId };
+    }
+
+    if (normalizedSector) {
+      filter.sector = {
+        $regex: new RegExp(`^${this.escapeRegExp(normalizedSector)}$`, 'i'),
+      };
+    } else {
+      filter.$or = [
+        { sector: { $exists: false } },
+        { sector: '' },
+        { sector: { $regex: /^\s+$/ } },
+      ];
+    }
+
+    return this.collection()
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .toArray();
+  }
+
   isBuyerLikeRole(role: UserRole | string | undefined): boolean {
     return role === UserRole.BUYER || role === UserRole.EXPERT;
   }

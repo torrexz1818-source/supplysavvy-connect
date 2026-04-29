@@ -19,6 +19,7 @@ type CreatePostBody = {
   description: string;
   categoryId: string;
   type?: 'educational' | 'community' | 'liquidation';
+  learningRoute?: string;
   mediaType?: 'video' | 'image';
   videoUrl?: string;
   thumbnailUrl?: string;
@@ -63,6 +64,7 @@ export class PostsController {
       description: body.description,
       categoryId: body.categoryId,
       type: body.type,
+      learningRoute: body.learningRoute,
       mediaType: body.mediaType,
       videoUrl: body.videoUrl,
       thumbnailUrl: body.thumbnailUrl,
@@ -104,6 +106,16 @@ export class PostsController {
       authorId: user.sub,
       parentId: body.parentId,
     });
+  }
+
+  @UseGuards(AuthenticatedGuard)
+  @Post(':id/comments/:commentId/like')
+  toggleCommentLike(
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+    @CurrentUser() user: { sub: string },
+  ): Promise<unknown> {
+    return this.postsService.toggleCommentLike(id, commentId, user.sub);
   }
 
   @UseGuards(AuthenticatedGuard)

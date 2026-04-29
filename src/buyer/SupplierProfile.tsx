@@ -109,7 +109,7 @@ const SupplierProfile = () => {
         Volver
       </button>
 
-      <div className="bg-card border border-border rounded-xl p-6 mb-6">
+      <div className="bg-card border-0 rounded-xl p-6 mb-6 shadow-sm">
         <div className="flex items-start justify-between mb-5">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold text-foreground">{supplier.name}</h1>
@@ -128,7 +128,7 @@ const SupplierProfile = () => {
           </div>
           <Badge
             variant="outline"
-            className="text-xs border-success text-success-foreground bg-success/15"
+            className="text-xs border-0 text-success-foreground bg-success/15"
           >
             Proveedor
           </Badge>
@@ -172,7 +172,7 @@ const SupplierProfile = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-card border border-border rounded-xl p-5">
+        <div className="bg-card border-0 rounded-xl p-5 shadow-sm">
           <p className="text-sm font-medium text-foreground mb-4">
             Comentarios de compradores
           </p>
@@ -200,7 +200,7 @@ const SupplierProfile = () => {
         </div>
 
         <div className="flex flex-col gap-4">
-          <div className="bg-card border border-border rounded-xl p-5">
+          <div className="bg-card border-0 rounded-xl p-5 shadow-sm">
             <p className="text-sm font-medium text-foreground mb-3">
               Contactar proveedor
             </p>
@@ -210,7 +210,7 @@ const SupplierProfile = () => {
                 onChange={(e) => setMensaje(e.target.value)}
                 placeholder="Escribe tu mensaje para contactar al proveedor (opcional)..."
                 rows={3}
-                className="resize-none text-sm mb-3"
+                className="resize-none border-0 text-sm mb-3 shadow-sm focus-visible:ring-[#0E109E]/20"
               />
               <Button
                 size="sm"
@@ -229,7 +229,7 @@ const SupplierProfile = () => {
             </>
           </div>
 
-          <div className="bg-card border border-border rounded-xl p-5">
+          <div className="bg-card border-0 rounded-xl p-5 shadow-sm">
             <p className="text-sm font-medium text-foreground mb-1">
               Dejar comentario y estrellas
             </p>
@@ -266,7 +266,7 @@ const SupplierProfile = () => {
               placeholder="Escribe tu comentario..."
               rows={2}
               disabled={!contactado}
-              className="resize-none text-sm mb-3"
+              className="resize-none border-0 text-sm mb-3 shadow-sm focus-visible:ring-[#0E109E]/20"
             />
 
             {comentarioEnviado && (
@@ -293,7 +293,7 @@ const SupplierProfile = () => {
       </div>
 
       {!!feedback && (
-        <p className="mt-4 text-sm rounded-md border border-success/25 bg-success/15 text-success-foreground px-3 py-2">
+        <p className="mt-4 text-sm rounded-md border-0 bg-success/15 text-success-foreground px-3 py-2 shadow-sm">
           {feedback}
         </p>
       )}

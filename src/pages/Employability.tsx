@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { BriefcaseBusiness, MapPin, Plus, Search, Sparkles, Users } from 'lucide-react';
+import { BriefcaseBusiness, MapPin, Plus, Search, Users } from 'lucide-react';
 import {
   applyToEmployabilityJob,
   createConversation,
@@ -31,6 +31,8 @@ const Employability = () => {
   const [isEditingTalent, setIsEditingTalent] = useState(false);
   const jobFormRef = useRef<HTMLDivElement | null>(null);
   const talentFormRef = useRef<HTMLDivElement | null>(null);
+  const jobsSectionRef = useRef<HTMLElement | null>(null);
+  const talentSectionRef = useRef<HTMLElement | null>(null);
   const [jobForm, setJobForm] = useState({
     title: '',
     description: '',
@@ -285,6 +287,16 @@ const Employability = () => {
     }, 50);
   };
 
+  const scrollToSection = (section: 'jobs' | 'talent') => {
+    window.setTimeout(() => {
+      const targetRef = section === 'jobs' ? jobsSectionRef : talentSectionRef;
+      targetRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 50);
+  };
+
   const handleEditJob = (jobId: string) => {
     const job = jobs.find((item) => item.id === jobId && item.isOwner);
     if (!job) {
@@ -327,17 +339,16 @@ const Employability = () => {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
-      <section className="overflow-hidden rounded-[30px] border border-secondary/15 bg-[var(--gradient-soft)] text-foreground shadow-sm">
-        <div className="grid gap-8 px-6 py-8 md:grid-cols-[1.3fr_0.95fr] md:px-8 lg:px-10">
+      <section className="overflow-hidden rounded-[30px] bg-[linear-gradient(110deg,#1f20b7_0%,#3620b6_50%,#6235de_100%)] text-white shadow-[0_18px_44px_rgba(14,16,158,0.16)]">
+        <div className="grid gap-8 px-8 py-8 md:grid-cols-[1.3fr_0.95fr] md:px-10 md:py-9 lg:px-12">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-secondary/25 bg-white/90 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-secondary shadow-sm">
-              <Sparkles className="h-3.5 w-3.5 text-secondary" />
+            <div className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
               Modulo Empleabilidad
             </div>
-            <h1 className="mt-5 max-w-2xl text-3xl font-bold tracking-tight text-primary md:text-4xl">
+            <h1 className="mt-5 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-white md:text-[3.1rem] md:leading-[1.04]">
               Empleo, talento y crecimiento profesional en una sola vista.
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
+            <p className="mt-4 max-w-2xl text-base leading-7 text-white/88">
               Publica vacantes, encuentra profesionales disponibles.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
@@ -346,13 +357,14 @@ const Employability = () => {
                 variant="outline"
                 className={`rounded-2xl ${
                   activeSection === 'jobs'
-                    ? 'border-primary bg-primary text-white hover:bg-secondary hover:text-white'
-                    : 'border-secondary/25 bg-secondary/10 text-primary hover:bg-secondary/15'
+                    ? 'border-white bg-white text-[#1f20b7] hover:bg-white/95'
+                    : 'border-white/30 bg-white/10 text-white hover:bg-white/15'
                 }`}
                 onClick={() => {
                   setActiveSection('jobs');
                   setShowTalentForm(false);
                   setIsEditingTalent(false);
+                  scrollToSection('jobs');
                 }}
               >
                 Publicaciones laborales
@@ -362,13 +374,14 @@ const Employability = () => {
                 variant="outline"
                 className={`rounded-2xl ${
                   activeSection === 'talent'
-                    ? 'border-primary bg-primary text-white hover:bg-secondary hover:text-white'
-                    : 'border-secondary/25 bg-secondary/10 text-primary hover:bg-secondary/15'
+                    ? 'border-white bg-white text-[#1f20b7] hover:bg-white/95'
+                    : 'border-white/30 bg-white/10 text-white hover:bg-white/15'
                 }`}
                 onClick={() => {
                   setActiveSection('talent');
                   setShowJobForm(false);
                   setEditingJobId(null);
+                  scrollToSection('talent');
                 }}
               >
                 Busco empleo
@@ -377,18 +390,18 @@ const Employability = () => {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-1">
-            <Card className="rounded-[26px] border-secondary/15 bg-white/90 text-foreground shadow-none">
+            <Card className="rounded-[26px] border-0 bg-[#6B49D8] text-white shadow-none">
               <CardContent className="p-6">
-                <p className="text-xs uppercase tracking-[0.2em] text-secondary">Vacantes activas</p>
-                <p className="mt-3 text-4xl font-bold text-primary">{feedQuery.data?.stats.jobs ?? 0}</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">Publicaciones listas para recibir postulaciones.</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-white/78">Vacantes activas</p>
+                <p className="mt-3 text-4xl font-bold text-white">{feedQuery.data?.stats.jobs ?? 0}</p>
+                <p className="mt-2 text-sm leading-6 text-white/78">Publicaciones listas para recibir postulaciones.</p>
               </CardContent>
             </Card>
-            <Card className="rounded-[26px] border-secondary/15 bg-white/90 text-foreground shadow-none">
+            <Card className="rounded-[26px] border-0 bg-[#6B49D8] text-white shadow-none">
               <CardContent className="p-6">
-                <p className="text-xs uppercase tracking-[0.2em] text-secondary">Talento visible</p>
-                <p className="mt-3 text-4xl font-bold text-primary">{feedQuery.data?.stats.talentProfiles ?? 0}</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">Profesionales mostrando skills y experiencia.</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-white/78">Talento visible</p>
+                <p className="mt-3 text-4xl font-bold text-white">{feedQuery.data?.stats.talentProfiles ?? 0}</p>
+                <p className="mt-2 text-sm leading-6 text-white/78">Profesionales mostrando skills y experiencia.</p>
               </CardContent>
             </Card>
           </div>
@@ -504,7 +517,7 @@ const Employability = () => {
       )}
 
       {activeSection === 'jobs' && (
-      <section id="publicaciones-laborales" className="space-y-5">
+      <section id="publicaciones-laborales" ref={jobsSectionRef} className="space-y-5">
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-secondary">Vacantes</p>
@@ -531,6 +544,14 @@ const Employability = () => {
                     location: '',
                   });
                   setShowJobForm((current) => !current);
+                  window.setTimeout(() => {
+                    const nextVisible = !showJobForm;
+                    if (nextVisible) {
+                      scrollToEditableCard('jobs');
+                    } else {
+                      scrollToSection('jobs');
+                    }
+                  }, 0);
                 }}
               >
                 <Plus className="h-4 w-4" />
@@ -640,7 +661,7 @@ const Employability = () => {
       )}
 
       {activeSection === 'talent' && (
-      <section id="busco-empleo" className="space-y-5">
+      <section id="busco-empleo" ref={talentSectionRef} className="space-y-5">
         <div className="space-y-5">
           <div className="flex items-end justify-between gap-4">
             <div>
@@ -664,6 +685,14 @@ const Employability = () => {
                   availability: '',
                 });
                 setShowTalentForm((current) => !current);
+                window.setTimeout(() => {
+                  const nextVisible = !showTalentForm;
+                  if (nextVisible) {
+                    scrollToEditableCard('talent');
+                  } else {
+                    scrollToSection('talent');
+                  }
+                }, 0);
               }}
             >
               <Users className="h-4 w-4" />

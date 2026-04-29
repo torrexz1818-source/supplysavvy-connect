@@ -109,7 +109,11 @@ const MessageBell = () => {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card hover:bg-muted transition-colors"
+        className={`relative inline-flex h-9 w-9 items-center justify-center rounded-md border transition-colors ${
+          open
+            ? 'border-[#0E109E]/35 bg-[#0E109E]/10'
+            : 'border-border bg-card hover:bg-[#0E109E]/10 active:bg-[#0E109E]/15'
+        }`}
         aria-label="Abrir mensajeria"
       >
         <MessageCircle className="w-4 h-4 text-foreground" />
@@ -121,7 +125,7 @@ const MessageBell = () => {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-[380px] rounded-2xl border border-border bg-card shadow-lg z-50 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-[min(380px,calc(100vw-1.5rem))] rounded-2xl border border-border bg-card shadow-lg z-50 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <div>
               <p className="text-sm font-medium text-foreground">Mensajes</p>
@@ -140,8 +144,12 @@ const MessageBell = () => {
 
           <div className="max-h-80 overflow-y-auto">
             {items.map((item) => {
-              const name = isBuyerLikeRole(user?.role) ? item.supplierName : item.buyerName;
-              const company = isBuyerLikeRole(user?.role) ? item.supplierCompany : item.buyerCompany;
+              const currentUserIsBuyer = isBuyerLikeRole(user?.role);
+              const name = currentUserIsBuyer ? item.supplierName : item.buyerName;
+              const company = currentUserIsBuyer ? item.supplierCompany : item.buyerCompany;
+              const avatarClass = currentUserIsBuyer
+                ? 'bg-success/20 text-success-foreground'
+                : 'bg-destructive/10 text-destructive';
               return (
                 <button
                   key={item.id}
@@ -150,7 +158,7 @@ const MessageBell = () => {
                   className="w-full text-left px-4 py-3 border-b border-border/70 hover:bg-muted/60 transition-colors"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium shrink-0">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-medium shrink-0 ${avatarClass}`}>
                       {getInitials(name)}
                     </div>
                     <div className="min-w-0 flex-1">

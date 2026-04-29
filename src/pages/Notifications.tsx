@@ -24,8 +24,10 @@ const FILTERS = [
   { key: 'UNREAD', label: 'No leídas' },
   { key: 'LIKE', label: 'Likes' },
   { key: 'COMMENT', label: 'Comentarios' },
+  { key: 'PUBLICATION', label: 'Publicaciones' },
   { key: 'MESSAGE', label: 'Mensajes' },
   { key: 'NEW_USER', label: 'Nuevos usuarios' },
+  { key: 'EMPLOYMENT', label: 'Empleo' },
   { key: 'PROFILE', label: 'Vistas perfil' },
   { key: 'CONTENT', label: 'Contenido' },
   { key: 'REPORT', label: 'Reportes' },
@@ -44,7 +46,10 @@ function getTypeBadge(type?: string) {
   if (!type) return 'bg-primary/10 text-foreground/80';
   if (type.includes('LIKE')) return 'bg-secondary/15 text-secondary';
   if (type.includes('COMMENT') || type.includes('MESSAGE')) return 'bg-primary/15 text-primary';
-  if (type.includes('NEW_BUYER') || type.includes('NEW_SUPPLIER')) return 'bg-success/25 text-success-foreground';
+  if (type.includes('PUBLICATION')) return 'bg-primary/10 text-primary';
+  if (type.includes('NEW_BUYER') || type.includes('NEW_SECTOR_USER')) return 'bg-destructive/15 text-destructive';
+  if (type.includes('NEW_SUPPLIER')) return 'bg-success/25 text-success-foreground';
+  if (type.includes('JOB') || type.includes('APPLICATION')) return 'bg-secondary/15 text-secondary';
   if (type.includes('PROFILE')) return 'bg-destructive/15 text-destructive';
   if (type.includes('EDUCATIONAL')) return 'bg-success/25 text-success-foreground';
   if (type.includes('REPORT') || type.includes('MONTHLY')) return 'bg-primary/10 text-foreground/80';
@@ -58,8 +63,10 @@ function matchesFilter(item: NotificationItem, filter: string) {
   if (filter === 'UNREAD') return unread;
   if (filter === 'LIKE') return type.includes('LIKE');
   if (filter === 'COMMENT') return type.includes('COMMENT');
+  if (filter === 'PUBLICATION') return type.includes('PUBLICATION') || type.includes('EDUCATIONAL');
   if (filter === 'MESSAGE') return type.includes('MESSAGE') || type.includes('CONVERSATION');
-  if (filter === 'NEW_USER') return type.includes('NEW_BUYER') || type.includes('NEW_SUPPLIER');
+  if (filter === 'NEW_USER') return type.includes('NEW_BUYER') || type.includes('NEW_SUPPLIER') || type.includes('NEW_SECTOR_USER');
+  if (filter === 'EMPLOYMENT') return type.includes('JOB') || type.includes('APPLICATION');
   if (filter === 'PROFILE') return type.includes('PROFILE');
   if (filter === 'CONTENT') return type.includes('EDUCATIONAL');
   if (filter === 'REPORT') return type.includes('REPORT') || type.includes('MONTHLY');

@@ -13,6 +13,13 @@ interface PostCardProps {
   index?: number;
 }
 
+function getCategoryStyles(slug?: string) {
+  if (slug === 'experiencia') return 'bg-[#F72A3A] text-white hover:bg-[#de2130]';
+  if (slug === 'pregunta') return 'bg-[#A7E13F] text-[#0F172A] hover:bg-[#C3E971]';
+  if (slug === 'tips') return 'bg-[#1512A8] text-white hover:bg-[#1D1AAE]';
+  return 'bg-[#5A36D8] text-white hover:bg-[#4f2dca]';
+}
+
 const PostCard = ({ post, index = 0 }: PostCardProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -68,8 +75,12 @@ const PostCard = ({ post, index = 0 }: PostCardProps) => {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08, duration: 0.4 }}
-      onClick={() => navigate(isCommunity ? `/buyer/community/post/${post.id}` : `/post/${post.id}`)}
-      className={`cursor-pointer overflow-hidden rounded-2xl border border-border/60 bg-card shadow-smooth transition-all hover:shadow-smooth-hover ${
+      onClick={() =>
+        navigate(isCommunity ? `/community/post/${post.id}` : `/post/${post.id}`, {
+          state: isCommunity ? { post } : undefined,
+        })
+      }
+      className={`cursor-pointer overflow-hidden rounded-2xl border-0 bg-card shadow-smooth transition-all hover:shadow-smooth-hover ${
         isEducational ? 'hover:-translate-y-0.5' : ''
       }`}
     >
@@ -85,7 +96,7 @@ const PostCard = ({ post, index = 0 }: PostCardProps) => {
         </div>
       ) : (
         <div className="relative p-5 pb-4">
-          <Badge className="absolute right-5 top-5 rounded-full bg-primary px-3 py-1 text-[11px] text-primary-foreground hover:bg-primary">
+          <Badge className={`absolute right-5 top-5 rounded-full px-3 py-1 text-[11px] ${getCategoryStyles(post.category.slug)}`}>
             {post.category.name}
           </Badge>
           <div className="mb-4 flex items-start gap-3">
@@ -126,7 +137,7 @@ const PostCard = ({ post, index = 0 }: PostCardProps) => {
       {(post.videoUrl || post.thumbnailUrl) && (
         <div
           className={`group relative flex items-center justify-center overflow-hidden bg-muted ${
-            isEducational ? 'mx-6 mb-4 h-56 rounded-xl ring-1 ring-border/50' : 'h-72 border-y border-border/70 sm:h-80'
+            isEducational ? 'mx-6 mb-4 h-56 rounded-xl ring-1 ring-border/50' : 'h-72 sm:h-80'
           }`}
         >
           {post.thumbnailUrl ? (
@@ -156,7 +167,7 @@ const PostCard = ({ post, index = 0 }: PostCardProps) => {
       )}
 
       {isCommunity && (
-        <div className="border-t border-border/70 px-5 py-3 text-xs text-muted-foreground">
+        <div className="px-5 py-3 text-xs text-muted-foreground">
           <div className="flex items-center justify-between gap-3">
             <span>{likeCount.toLocaleString()} Me gusta</span>
             <span>{post.comments.toLocaleString()} comentarios</span>
@@ -164,26 +175,28 @@ const PostCard = ({ post, index = 0 }: PostCardProps) => {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-1 border-t border-border p-2">
+      <div className="grid grid-cols-2 gap-1 p-2">
         <button
           onClick={(e) => void handleLike(e)}
           className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-            liked ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-primary'
+            liked ? 'bg-[rgba(247,42,58,0.10)] text-[#F72A3A]' : 'text-[#61708F] hover:bg-[rgba(247,42,58,0.14)] hover:text-[#F72A3A]'
           }`}
         >
-          <Heart className={`h-4 w-4 ${liked ? 'fill-primary' : ''}`} />
+          <Heart className={`h-4 w-4 text-[#F72A3A] ${liked ? 'fill-[#F72A3A]' : ''}`} />
           Me gusta
         </button>
         <button
           onClick={(e) => {
             e.stopPropagation();
             if (isCommunity) {
-              navigate(`/buyer/community/post/${post.id}`);
+              navigate(`/community/post/${post.id}#community-comments`, {
+                state: { post },
+              });
               return;
             }
             navigate(`/post/${post.id}`);
           }}
-          className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-primary"
+          className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-[#1D1AAE] transition-colors hover:bg-[rgba(29,26,174,0.06)] hover:text-[#1512A8]"
         >
           <MessageCircle className="h-4 w-4" />
           Comentar

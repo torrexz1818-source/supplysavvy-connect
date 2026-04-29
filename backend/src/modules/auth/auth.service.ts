@@ -364,28 +364,33 @@ export class AuthService {
     }
 
     const isBuyer = this.usersService.isBuyerLikeRole(user.role);
-    const targetRole = isBuyer ? UserRole.SUPPLIER : UserRole.BUYER;
-    const targetUserIds = isBuyer
-      ? await this.usersService.listActiveUserIdsByRole(UserRole.SUPPLIER)
-      : await this.usersService.listActiveUserIdsByRoles([UserRole.BUYER, UserRole.EXPERT]);
+    const targetUsers = await this.usersService.listActiveUsersByRolesInSector(
+      isBuyer ? [UserRole.SUPPLIER] : [UserRole.BUYER, UserRole.EXPERT],
+      user.sector,
+      user.id,
+    );
 
-    this.notificationsService.createForUsers({
-      icon: 'Building2',
-      type: isBuyer ? 'NEW_BUYER' : 'NEW_SUPPLIER',
-      title: isBuyer
-        ? `Nuevo comprador: ${user.fullName} de ${user.company}`
-        : `Nuevo proveedor disponible: ${user.company} en ${user.sector ?? 'General'}`,
-      body: `${user.sector ?? 'General'} · ${user.location ?? 'Sin ubicacion'}`,
-      entityType: 'user',
-      entityId: user.id,
-      fromUserId: user.id,
-      role: targetRole,
-      userIds: targetUserIds,
-      url: isBuyer
-        ? `/directorio-compradores?highlight=${user.id}`
-        : `/directorio-proveedores?highlight=${user.id}`,
-      time: 'Ahora',
-    });
+    await Promise.all(
+      targetUsers.map((targetUser) =>
+        this.notificationsService.create({
+          icon: 'Building2',
+          type: 'NEW_SECTOR_USER',
+          title: isBuyer
+            ? `Nuevo comprador de tu sector: ${user.fullName}`
+            : `Nuevo proveedor de tu sector: ${user.company}`,
+          body: `${user.sector?.trim() || 'General'} · ${user.location ?? 'Sin ubicacion'}`,
+          entityType: 'user',
+          entityId: user.id,
+          fromUserId: user.id,
+          role: targetUser.role === UserRole.SUPPLIER ? UserRole.SUPPLIER : UserRole.BUYER,
+          userId: targetUser.id,
+          url: isBuyer
+            ? `/directorio-compradores?highlight=${user.id}`
+            : `/directorio-proveedores?highlight=${user.id}`,
+          time: 'Ahora',
+        }),
+      ),
+    );
 
     return {
       accessToken: await this.signToken(user),

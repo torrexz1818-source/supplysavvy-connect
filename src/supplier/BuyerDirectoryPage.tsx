@@ -42,7 +42,7 @@ const BuyerDirectoryPage = () => {
       <section className="overflow-hidden rounded-3xl border border-secondary/15 bg-[var(--gradient-soft)] text-foreground shadow-sm">
         <div className="grid gap-4 px-6 py-8 md:grid-cols-[1.25fr_0.9fr] md:px-8">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-primary">Directorio de compradores</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-destructive">Directorio de compradores</h1>
             <p className="mt-3 max-w-2xl text-sm text-muted-foreground md:text-base">
               Explora compradores agrupados por sector con el mismo lenguaje visual del resto del modulo.
             </p>
@@ -57,8 +57,8 @@ const BuyerDirectoryPage = () => {
             </Card>
             <Card className="border-secondary/15 bg-white/85 text-foreground shadow-none">
               <CardContent className="p-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-secondary">Compradores</p>
-                <p className="mt-2 text-3xl font-bold">{totalBuyers}</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-destructive">Compradores</p>
+                <p className="mt-2 text-3xl font-bold text-destructive">{totalBuyers}</p>
                 <p className="mt-1 text-sm text-muted-foreground">Perfiles organizados por sector.</p>
               </CardContent>
             </Card>
@@ -87,7 +87,7 @@ const BuyerDirectoryPage = () => {
                 to={`/supplier/directory/${encodeURIComponent(item.sector)}`}
                 className="rounded-3xl border border-primary/15 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-secondary/25"
               >
-                <Icon className="w-5 h-5 text-success-foreground" />
+                <Icon className="w-5 h-5 text-destructive" />
                 <p className="mt-3 text-lg font-medium text-foreground">{item.sector}</p>
                 <p className="text-sm text-muted-foreground">
                   {item.count} comprador(es) en este sector

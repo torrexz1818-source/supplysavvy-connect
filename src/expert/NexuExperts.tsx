@@ -289,35 +289,33 @@ const NexuExperts = () => {
 
   return (
     <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-[28px] border border-secondary/15 bg-[var(--gradient-soft)]">
-        <div className="grid gap-6 px-6 py-8 lg:grid-cols-[1.4fr_0.9fr] lg:px-8">
-          <div>
-            <Badge variant="outline" className="border-secondary/25 bg-white/80 text-secondary">
-              NEXU EXPERTS
-            </Badge>
-            <h1 className="mt-4 max-w-2xl text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+      <section className="rounded-[28px] bg-[linear-gradient(110deg,#0E109E_0%,#2521B9_48%,#5A31D5_100%)] px-8 py-8 text-white shadow-[0_18px_44px_rgba(14,16,158,0.16)] sm:px-10">
+        <div className="grid gap-6 lg:grid-cols-[1.4fr_0.9fr] lg:items-end">
+          <div className="max-w-3xl">
+            <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white ring-1 ring-white/18">
+              Nodus Experts
+            </span>
+            <h1 className="mt-5 text-3xl font-bold leading-tight text-white sm:text-4xl">
               Conecta con expertos del sector
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
-              Descubre perfiles completos, valida disponibilidad en tiempo real, agenda tu cita y
-              genera automaticamente tu reunion en Google Meet, con confirmacion directa a tu
-              correo.
+            <p className="mt-4 max-w-2xl text-base leading-7 text-white/90">
+              Descubre perfiles completos, valida disponibilidad en tiempo real y agenda tu cita con expertos del sector.
             </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-            <Card className="border-white/70 bg-white/80 shadow-sm">
+            <Card className="border-0 bg-[#6B49D8] text-white shadow-none">
               <CardHeader className="pb-3">
-                <CardDescription>Expertos activos</CardDescription>
-                <CardTitle className="text-3xl text-foreground">
+                <CardDescription className="text-white/78">Expertos activos</CardDescription>
+                <CardTitle className="text-3xl text-white">
                   {expertsQuery.data?.length ?? 0}
                 </CardTitle>
               </CardHeader>
             </Card>
-            <Card className="border-white/70 bg-white/80 shadow-sm">
+            <Card className="border-0 bg-[#6B49D8] text-white shadow-none">
               <CardHeader className="pb-3">
-                <CardDescription>Tus citas programadas</CardDescription>
-                <CardTitle className="text-3xl text-foreground">{dashboardItems.length}</CardTitle>
+                <CardDescription className="text-white/78">Tus citas programadas</CardDescription>
+                <CardTitle className="text-3xl text-white">{dashboardItems.length}</CardTitle>
               </CardHeader>
             </Card>
           </div>
@@ -617,7 +615,7 @@ const NexuExperts = () => {
       <section className="grid gap-6">
         {!isDetailView ? (
           <Card className="border-primary/15">
-            <CardHeader>
+            <CardHeader id="experts-list">
               <CardTitle className="text-xl text-foreground">Listado de expertos</CardTitle>
               <CardDescription>
                 Cards modernas con experiencia, especialidad y acceso directo a agenda.
@@ -640,7 +638,7 @@ const NexuExperts = () => {
                   >
                     <div className="flex items-center gap-3">
                       <img
-                        src={expert.photo || 'https://placehold.co/160x160?text=Nexu'}
+                    src={expert.photo || 'https://placehold.co/160x160?text=Nodus'}
                         alt={expert.fullName}
                         className="h-16 w-16 rounded-2xl object-cover"
                       />
@@ -700,7 +698,7 @@ const NexuExperts = () => {
                 <div className="space-y-5">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                     <img
-                      src={expertProfileQuery.data.photo || 'https://placehold.co/320x320?text=Nexu'}
+                src={expertProfileQuery.data.photo || 'https://placehold.co/320x320?text=Nodus'}
                       alt={expertProfileQuery.data.fullName}
                       className="h-28 w-28 rounded-[24px] object-cover"
                     />

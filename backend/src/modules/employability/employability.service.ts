@@ -209,6 +209,7 @@ export class EmployabilityService {
     await this.jobsCollection().insertOne(job);
     await this.notifyAudience({
       actorId: author.id,
+      type: 'NEW_JOB',
       title: `${author.fullName} publico una nueva vacante: ${job.title}`,
       body: `${author.company} · ${job.location}`,
       entityId: job.id,
@@ -325,11 +326,19 @@ export class EmployabilityService {
     };
 
     await this.applicationsCollection().insertOne(application);
-    await this.notifyAudience({
-      actorId: applicant.id,
-      title: `${applicant.fullName} esta postulando a la vacante "${job.title}"`,
-      body: `${applicant.company} · ${applicant.position}`,
+    const jobAuthor = await this.usersService.findById(job.authorId);
+    await this.notificationsService.create({
+      icon: 'FileText',
+      type: 'JOB_APPLICATION',
+      title: `${applicant.fullName} postulo a tu vacante`,
+      body: `${job.title} · ${applicant.company} · ${applicant.position}`,
+      entityType: 'publication',
       entityId: job.id,
+      fromUserId: applicant.id,
+      role: jobAuthor?.role === UserRole.SUPPLIER ? UserRole.SUPPLIER : UserRole.BUYER,
+      userId: job.authorId,
+      url: `/empleabilidad?job=${job.id}`,
+      time: 'Ahora',
     });
 
     return {
@@ -438,6 +447,7 @@ export class EmployabilityService {
 
   private async notifyAudience(data: {
     actorId: string;
+    type: 'NEW_JOB';
     title: string;
     body: string;
     entityId: string;
@@ -457,7 +467,7 @@ export class EmployabilityService {
       users.map((user) =>
         this.notificationsService.create({
           icon: 'FileText',
-          type: 'SYSTEM',
+          type: data.type,
           title: data.title,
           body: data.body,
           entityType: 'publication',

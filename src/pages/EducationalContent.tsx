@@ -1,4 +1,4 @@
-import { Search, Play } from 'lucide-react';
+import { Play, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { useHighlight } from '@/hooks/useHighlight';
 import { Post } from '@/types';
+import { LEARNING_ROUTES, LearningRouteId, isLearningRouteId } from '@/lib/learningRoutes';
 
 interface EducationalPostCardProps {
   post: Post;
@@ -21,6 +22,65 @@ const formatPostDate = (date: string) =>
     month: 'long',
     year: 'numeric',
   });
+
+interface LearningRoutesSectionProps {
+  activeRouteId: LearningRouteId | null;
+  countsByRoute: Record<LearningRouteId, number>;
+  onSelectRoute: (routeId: LearningRouteId) => void;
+}
+
+const LearningRoutesSection = ({ activeRouteId, countsByRoute, onSelectRoute }: LearningRoutesSectionProps) => (
+  <section className="mb-10">
+    <div className="mb-5">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/70">
+        Rutas tematicas
+      </p>
+      <h2 className="mt-1 text-2xl font-bold text-primary">Rutas tematicas de aprendizaje</h2>
+    </div>
+
+    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      {LEARNING_ROUTES.map((route, index) => {
+        return (
+          <motion.article
+            key={route.id}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.07, duration: 0.35 }}
+            onClick={() => onSelectRoute(route.id)}
+            role="button"
+            tabIndex={0}
+            aria-label={`Ver videos de ${route.title}`}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onSelectRoute(route.id);
+              }
+            }}
+            className={`flex min-h-[280px] cursor-pointer flex-col rounded-3xl p-6 text-white shadow-[0_16px_34px_rgba(14,16,158,0.12)] transition-transform duration-200 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 ${
+              activeRouteId === route.id ? 'ring-4 ring-primary/20' : ''
+            }`}
+            style={{ backgroundColor: route.color }}
+          >
+            <div className="mb-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/80">
+                {route.label}
+              </p>
+            </div>
+
+            <h3 className="text-xl font-bold leading-tight text-white">{route.title}</h3>
+            <p className="mt-4 text-sm leading-6 text-white/85">{route.description}</p>
+
+            <div className="mt-auto pt-7">
+              <span className="inline-flex rounded-full bg-[#0E109E] px-4 py-2 text-sm font-bold text-white shadow-[0_8px_18px_rgba(14,16,158,0.22)]">
+                {countsByRoute[route.id]} contenidos
+              </span>
+            </div>
+          </motion.article>
+        );
+      })}
+    </div>
+  </section>
+);
 
 const EducationalPostCard = ({ post, index, onOpen }: EducationalPostCardProps) => {
   const hasMedia = Boolean(post.thumbnailUrl);
@@ -84,8 +144,10 @@ const EducationalPostCard = ({ post, index, onOpen }: EducationalPostCardProps) 
 const EducationalContent = () => {
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const highlightedId = searchParams.get('highlight');
+  const routeParam = searchParams.get('route');
+  const activeRouteId = isLearningRouteId(routeParam ?? undefined) ? routeParam : null;
   useHighlight(highlightedId);
   const { data, isLoading, isError } = useQuery({
     queryKey: ['home-feed'],
@@ -94,24 +156,80 @@ const EducationalContent = () => {
 
   const educationalPosts = data?.educationalPosts ?? [];
   const continueWatching = data?.continueWatching ?? [];
+  const countsByRoute = useMemo(
+    () =>
+      LEARNING_ROUTES.reduce(
+        (acc, route) => ({
+          ...acc,
+          [route.id]: educationalPosts.filter((post) => post.learningRoute === route.id).length,
+        }),
+        {} as Record<LearningRouteId, number>,
+      ),
+    [educationalPosts],
+  );
   const filteredPosts = useMemo(
     () =>
       educationalPosts.filter(
         (post) =>
-          post.title.toLowerCase().includes(search.toLowerCase()) ||
-          post.description.toLowerCase().includes(search.toLowerCase()),
+          (!activeRouteId || post.learningRoute === activeRouteId) &&
+          (post.title.toLowerCase().includes(search.toLowerCase()) ||
+            post.description.toLowerCase().includes(search.toLowerCase())),
       ),
-    [educationalPosts, search],
+    [activeRouteId, educationalPosts, search],
   );
+  const activeRoute = LEARNING_ROUTES.find((route) => route.id === activeRouteId) ?? null;
+
+  const selectLearningRoute = (routeId: LearningRouteId) => {
+    setSearch('');
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('route', routeId);
+    nextParams.delete('highlight');
+    setSearchParams(nextParams);
+    window.requestAnimationFrame(() => {
+      document.getElementById('educational-content-list')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+  };
+
+  const clearLearningRoute = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('route');
+    setSearchParams(nextParams);
+  };
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-8">
-      <div className="mb-8 rounded-3xl border border-secondary/15 bg-[var(--gradient-soft)] px-6 py-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-primary">Contenido educativo</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Educación especializada en compras: tips, guías, casos reales y tecnología aplicada para una formación continua y estratégica.
-        </p>
+      <div className="mb-8 overflow-hidden rounded-[30px] bg-[linear-gradient(110deg,#1f20b7_0%,#3620b6_50%,#6235de_100%)] px-8 py-8 text-white shadow-[0_18px_44px_rgba(14,16,158,0.16)] sm:px-10 sm:py-9">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
+              Formacion y aprendizaje
+            </span>
+            <h1 className="mt-5 text-3xl font-bold leading-tight text-white sm:text-[3.1rem] sm:leading-[1.04]">
+              Contenido Educativo
+            </h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-white/88 sm:text-[1.05rem]">
+              Accede a recursos, materiales y contenidos especializados para fortalecer tus capacidades en compras.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => document.getElementById('educational-content-list')?.scrollIntoView({ behavior: 'smooth' })}
+            className="inline-flex min-h-10 w-full items-center justify-center rounded-[18px] bg-white px-8 py-3 text-base font-medium text-[#1f20b7] shadow-sm transition-transform hover:-translate-y-0.5 sm:w-[240px]"
+          >
+            Explorar contenido
+          </button>
+        </div>
       </div>
+
+      <LearningRoutesSection
+        activeRouteId={activeRouteId}
+        countsByRoute={countsByRoute}
+        onSelectRoute={selectLearningRoute}
+      />
 
       <div className="relative mb-8">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -123,8 +241,28 @@ const EducationalContent = () => {
         />
       </div>
 
-      <div className="mb-10">
-        <h2 className="text-lg font-medium text-foreground mb-4">Videos y articulos</h2>
+      <div id="educational-content-list" className="mb-10 scroll-mt-6">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-medium text-foreground">
+              {activeRoute ? activeRoute.title : 'Videos y articulos'}
+            </h2>
+            {activeRoute && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                Mostrando videos y contenidos relacionados con {activeRoute.title.toLowerCase()}.
+              </p>
+            )}
+          </div>
+          {activeRoute && (
+            <button
+              type="button"
+              onClick={clearLearningRoute}
+              className="w-fit rounded-full bg-muted px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+            >
+              Ver todos
+            </button>
+          )}
+        </div>
         <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
           {isLoading && <p className="text-muted-foreground text-sm">Cargando contenido...</p>}
           {isError && <p className="text-destructive text-sm">No se pudo cargar el contenido.</p>}
@@ -139,7 +277,9 @@ const EducationalContent = () => {
           ))}
           {!isLoading && !isError && filteredPosts.length === 0 && (
             <p className="py-8 text-center text-sm text-muted-foreground sm:col-span-2 xl:col-span-4">
-              No se encontraron resultados.
+              {activeRoute
+                ? 'Todavia no hay videos asociados a esta ruta.'
+                : 'No se encontraron resultados.'}
             </p>
           )}
         </div>

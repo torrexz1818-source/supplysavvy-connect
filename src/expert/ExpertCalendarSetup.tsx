@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CalendarDays, CheckCircle2, Link2, Unplug } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Unplug } from 'lucide-react';
 import {
   disconnectMyExpertCalendar,
   getMyCalendarOauthUrl,
@@ -211,15 +211,6 @@ const ExpertCalendarSetup = () => {
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-border bg-background p-4 text-sm text-muted-foreground">
-                <div className="flex items-start gap-2">
-                  <Link2 className="mt-0.5 h-4 w-4 text-secondary" />
-                  <p>
-                    El backend completa la autorizacion con Google y solo despues guarda la conexion del calendario en tu cuenta.
-                  </p>
-                </div>
-              </div>
-
               {error && (
                 <p className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-xs text-destructive">
                   {error}
@@ -229,7 +220,7 @@ const ExpertCalendarSetup = () => {
               <div className="flex flex-wrap gap-3">
                 <Button
                   type="button"
-                  className="bg-secondary hover:bg-secondary"
+                  className="bg-[#f3313f] text-white hover:bg-[#db2734]"
                   onClick={handleConnect}
                   disabled={isSaving}
                 >

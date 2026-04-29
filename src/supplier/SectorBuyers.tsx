@@ -71,27 +71,27 @@ const SectorBuyers = () => {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-3xl border border-secondary/15 bg-[var(--gradient-soft)] shadow-sm">
-        <div className="grid gap-4 px-6 py-8 md:grid-cols-[1.25fr_0.9fr] md:px-8">
+      <section className="overflow-hidden rounded-3xl bg-[linear-gradient(110deg,#1f20b7_0%,#3620b6_50%,#6235de_100%)] text-white shadow-[0_18px_44px_rgba(14,16,158,0.16)]">
+        <div className="grid gap-8 px-8 py-8 md:grid-cols-[1.25fr_0.9fr] md:px-10 md:py-9 lg:px-12">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-primary">Compradores del sector {sector}</h1>
-            <p className="mt-3 text-sm text-muted-foreground md:text-base">
+            <h1 className="text-3xl font-bold tracking-tight text-white">Compradores del sector {sector}</h1>
+            <p className="mt-3 text-sm text-white/88 md:text-base">
               Revisa perfiles y conecta con compradores activos usando el mismo estilo visual del modulo.
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-1">
-            <Card className="border-secondary/15 bg-white/85 text-foreground shadow-none">
+            <Card className="border-0 bg-[#6B49D8] text-white shadow-none">
               <CardContent className="p-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-secondary">Resultados</p>
-                <p className="mt-2 text-3xl font-bold">{buyersQuery.data?.length ?? 0}</p>
-                <p className="mt-1 text-sm text-muted-foreground">Compradores cargados para este sector.</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-white/78">Resultados</p>
+                <p className="mt-2 text-3xl font-bold text-white">{buyersQuery.data?.length ?? 0}</p>
+                <p className="mt-1 text-sm text-white/78">Compradores cargados para este sector.</p>
               </CardContent>
             </Card>
-            <Card className="border-secondary/15 bg-white/85 text-foreground shadow-none">
+            <Card className="border-0 bg-[#6B49D8] text-white shadow-none">
               <CardContent className="p-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-secondary">Sector</p>
-                <p className="mt-2 text-lg font-bold text-primary">{sector}</p>
-                <p className="mt-1 text-sm text-muted-foreground">Vista agrupada para prospeccion comercial.</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-white/78">Sector</p>
+                <p className="mt-2 text-lg font-bold text-white">{sector}</p>
+                <p className="mt-1 text-sm text-white/78">Vista agrupada para prospeccion comercial.</p>
               </CardContent>
             </Card>
           </div>
@@ -137,7 +137,7 @@ const SectorBuyers = () => {
                   <span
                     className={`px-2 py-1 rounded-full ${
                       buyer.isActiveBuyer
-                        ? 'bg-success/15 text-success-foreground border border-success/25'
+                        ? 'bg-destructive/10 text-destructive border border-destructive/20'
                         : 'bg-destructive/10 text-destructive border border-destructive/20'
                     }`}
                   >

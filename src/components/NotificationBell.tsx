@@ -101,7 +101,11 @@ const NotificationBell = () => {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card hover:bg-muted transition-colors"
+        className={`relative inline-flex h-9 w-9 items-center justify-center rounded-md border transition-colors ${
+          open
+            ? 'border-[#0E109E]/35 bg-[#0E109E]/10'
+            : 'border-border bg-card hover:bg-[#0E109E]/10 active:bg-[#0E109E]/15'
+        }`}
       >
         <Bell className="w-4 h-4 text-foreground" />
         {count > 0 && (
@@ -112,7 +116,7 @@ const NotificationBell = () => {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-[360px] rounded-lg border border-border bg-card shadow-lg z-50">
+        <div className="absolute right-0 mt-2 w-[min(360px,calc(100vw-1.5rem))] rounded-lg border border-border bg-card shadow-lg z-50">
           <div className="flex items-center justify-between px-3 py-2 border-b border-border">
             <p className="text-sm font-medium text-foreground">Notificaciones</p>
             <button

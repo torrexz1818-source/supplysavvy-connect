@@ -197,11 +197,11 @@ function TagRow({
   tags: string[];
   selected: string[];
   onToggle: (t: string) => void;
-  color: 'blue' | 'green';
+  color: 'buyer' | 'green';
 }) {
   const activeClass =
-    color === 'blue'
-      ? 'border-primary/40 bg-primary/10 text-primary font-medium'
+    color === 'buyer'
+      ? 'border-destructive/40 bg-destructive/10 text-destructive font-medium'
       : 'border-success/45 bg-success/15 text-success-foreground font-medium';
   return (
     <div className="flex flex-wrap gap-2 mt-1">
@@ -285,7 +285,7 @@ function ProgressBar({ form }: { form: FormState }) {
       </div>
       <div className="h-1 bg-muted rounded-full overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all duration-500 ${isBuyer ? 'bg-primary' : 'bg-success'}`}
+          className={`h-full rounded-full transition-all duration-500 ${isBuyer ? 'bg-destructive' : 'bg-success'}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -608,7 +608,7 @@ const Register = () => {
           <form onSubmit={handleSubmit} className="space-y-0">
             <div className="flex bg-muted/60 rounded-xl p-1 gap-1 mb-6">
               {[
-                { value: 'buyer', label: 'Soy Comprador', dot: 'bg-primary' },
+                { value: 'buyer', label: 'Soy Comprador', dot: 'bg-destructive' },
                 { value: 'supplier', label: 'Soy Proveedor', dot: 'bg-success' },
               ].map((opt) => (
                 <button
@@ -636,7 +636,7 @@ const Register = () => {
                 className="flex items-center gap-2 pb-4 mb-1 border-b border-border/50"
               >
                 <span
-                  className={`text-[11px] font-medium px-3 py-1 rounded-full ${isBuyer ? 'bg-primary/10 text-primary' : 'bg-success/15 text-success-foreground'
+                  className={`text-[11px] font-medium px-3 py-1 rounded-full ${isBuyer ? 'bg-destructive/10 text-destructive' : 'bg-success/15 text-success-foreground'
                     }`}
                 >
                   {isBuyer ? 'Comprador' : 'Proveedor'}
@@ -765,7 +765,7 @@ const Register = () => {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
                 <SectionLabel>Necesidades de compra</SectionLabel>
                 <FieldWrap label="Categorias de interes" required>
-                  <TagRow tags={CATEGORIES} selected={form.categories} onToggle={(v) => toggleArray('categories', v)} color="blue" />
+                  <TagRow tags={CATEGORIES} selected={form.categories} onToggle={(v) => toggleArray('categories', v)} color="buyer" />
                 </FieldWrap>
                 <FieldWrap label="Volumen mensual aprox. de compra">
                   <select

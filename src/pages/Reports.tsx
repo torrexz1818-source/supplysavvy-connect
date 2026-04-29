@@ -66,7 +66,7 @@ const Reports = () => {
                 {report.recommendedSuppliers.map((item) => (
                   <div key={item.id} id={`item-${item.id}`} className="flex items-center justify-between">
                     <span className="text-sm">{item.company} · {item.sector}</span>
-                    <button className="text-sm text-primary hover:underline" onClick={() => navigate(`/perfil/${item.id}`)}>Ver proveedor</button>
+                    <button className="text-sm text-success-foreground hover:underline" onClick={() => navigate(`/perfil/${item.id}`)}>Ver proveedor</button>
                   </div>
                 ))}
               </div>

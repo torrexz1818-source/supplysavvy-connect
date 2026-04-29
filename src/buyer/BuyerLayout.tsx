@@ -15,11 +15,11 @@ const buyerNavItems = [
     icon: BookOpen,
     children: [
       { to: '/empleabilidad', label: 'Empleabilidad', icon: BriefcaseBusiness },
-      { to: '/nexu-experts', label: 'Nexu Experts', icon: Users },
+      { to: '/nexu-experts', label: 'Nodus Experts', icon: Users },
     ],
   },
   { to: '/buyer/sale', label: 'Liquidaciones', icon: FileText },
-  { to: '/nexu-ia', label: 'Nexu IA', icon: Bot },
+  { to: '/nexu-ia', label: 'Nodus IA', icon: Bot },
   { to: '/buyer/directory', label: 'Directorio de proveedores', icon: Building2 },
 ];
 
@@ -42,14 +42,14 @@ const BuyerLayout = () => {
       }
     : user?.role === 'expert'
       ? {
-          label: 'Experto Nexu',
+          label: 'Experto Nodus',
           icon: Users,
           className: 'bg-secondary/20 border border-secondary/30 text-white/90',
         }
     : {
         label: 'Comprador',
         icon: Users,
-        className: 'bg-primary/20 border border-primary/30',
+        className: 'bg-destructive/20 border border-destructive/30 text-white/90',
       };
 
   const navSections = isAdmin
@@ -190,13 +190,12 @@ const BuyerLayout = () => {
 
       <main className="flex-1 min-w-0 overflow-y-auto">
         <div className="max-w-6xl mx-auto px-6 py-8">
-          <div className="topbar-shell flex items-center justify-end gap-3 mb-6 rounded-2xl px-4 py-3">
-            <span className="text-sm font-medium text-foreground truncate max-w-[260px]">
-              {user?.fullName ?? 'Comprador'}
-            </span>
-            <MessageBell />
-            <NotificationBell />
-            <NewsAccessButton />
+          <div className="sticky top-4 z-40 mb-6 flex justify-end lg:-mr-28 xl:-mr-48 2xl:-mr-64">
+            <div className="topbar-shell relative flex w-fit items-center justify-end gap-2 rounded-2xl px-3 py-3 sm:gap-3 sm:px-4">
+              <MessageBell />
+              <NotificationBell />
+              <NewsAccessButton />
+            </div>
           </div>
           <Outlet />
         </div>

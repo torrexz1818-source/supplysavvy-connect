@@ -79,6 +79,7 @@ export type SeedPost = {
   categoryId: string;
   title: string;
   description: string;
+  learningRoute?: 'ruta-1' | 'ruta-2' | 'ruta-3' | 'ruta-4';
   type: 'educational' | 'community' | 'liquidation';
   videoUrl?: string;
   thumbnailUrl?: string;
@@ -717,6 +718,7 @@ export const seedPosts: SeedPost[] = [
     title: 'Negociacion Estrategica con Proveedores',
     description:
       'Aprende las tecnicas mas efectivas para negociar contratos con proveedores, desde la preparacion hasta el cierre del acuerdo.',
+    learningRoute: 'ruta-2',
     type: 'educational',
     videoUrl: 'https://example.com/video1',
     thumbnailUrl: '',
@@ -732,6 +734,7 @@ export const seedPosts: SeedPost[] = [
     title: 'Gestion de Riesgos en la Cadena de Suministro',
     description:
       'Descubre como identificar, evaluar y mitigar riesgos en tu cadena de suministro para garantizar la continuidad del negocio.',
+    learningRoute: 'ruta-1',
     type: 'educational',
     videoUrl: 'https://example.com/video2',
     thumbnailUrl: '',
@@ -747,6 +750,7 @@ export const seedPosts: SeedPost[] = [
     title: 'KPIs Esenciales para Compradores B2B',
     description:
       'Los indicadores clave que todo profesional de compras debe monitorear para optimizar su rendimiento y demostrar valor al negocio.',
+    learningRoute: 'ruta-4',
     type: 'educational',
     videoUrl: 'https://example.com/video3',
     thumbnailUrl: '',
@@ -762,6 +766,7 @@ export const seedPosts: SeedPost[] = [
     title: 'Como evaluar proveedores para liquidaciones sin sacrificar margen',
     description:
       'Una guia practica para revisar lote, rotacion, mermas, trazabilidad y terminos comerciales antes de comprar stock en liquidacion.',
+    learningRoute: 'ruta-1',
     type: 'educational',
     videoUrl: 'https://example.com/video4',
     thumbnailUrl: '',
@@ -777,6 +782,7 @@ export const seedPosts: SeedPost[] = [
     title: 'Checklist para publicar empleos en compras y supply chain',
     description:
       'Define perfil, seniority, indicadores del puesto y competencias digitales para atraer candidatos realmente alineados al negocio.',
+    learningRoute: 'ruta-3',
     type: 'educational',
     videoUrl: 'https://example.com/video5',
     thumbnailUrl: '',

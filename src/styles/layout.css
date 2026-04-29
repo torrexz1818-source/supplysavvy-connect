@@ -35,6 +35,19 @@
     color: var(--text-on-light);
     border-bottom: 1px solid var(--border-soft);
     box-shadow: var(--shadow-topbar);
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+
+  .navbar-sticky {
+    background: rgba(255, 255, 255, 0.94);
+    border-bottom: 1px solid var(--border-soft);
+    box-shadow: var(--shadow-topbar), 0 1px 0 rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(14px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
   }
 
   .hero-brand {

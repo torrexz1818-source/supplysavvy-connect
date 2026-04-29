@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getPlatformStats } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getRoleBadgeClass, getRoleLabel } from '@/lib/roles';
 
 const SupplierDashboard = () => {
   const { data, isLoading, isError } = useQuery({
@@ -35,19 +36,19 @@ const SupplierDashboard = () => {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Compradores</CardTitle>
+                <CardTitle className="text-base text-destructive">Compradores</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-4xl font-bold">{data.buyers}</p>
+                <p className="text-4xl font-bold text-destructive">{data.buyers}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Proveedores</CardTitle>
+                <CardTitle className="text-base text-success-foreground">Proveedores</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-4xl font-bold">{data.suppliers}</p>
+                <p className="text-4xl font-bold text-success-foreground">{data.suppliers}</p>
               </CardContent>
             </Card>
           </section>
@@ -96,14 +97,8 @@ const SupplierDashboard = () => {
                         <td className="py-3 pr-4">{user.company}</td>
                         <td className="py-3 pr-4">{user.sector}</td>
                         <td className="py-3 pr-0">
-                          <Badge
-                            className={
-                              user.role === 'buyer'
-                                ? 'bg-primary/15 text-primary hover:bg-primary/15'
-                                : 'bg-success/25 text-success-foreground hover:bg-success/25'
-                            }
-                          >
-                            {user.role === 'buyer' ? 'Comprador' : 'Proveedor'}
+                          <Badge className={getRoleBadgeClass(user.role)}>
+                            {getRoleLabel(user.role)}
                           </Badge>
                         </td>
                       </tr>

@@ -17,6 +17,8 @@ import {
   updateUserStatus,
 } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { DEFAULT_LEARNING_ROUTE_ID, LEARNING_ROUTES, LearningRouteId } from '@/lib/learningRoutes';
+import { getRoleBadgeClass, getRoleLabel } from '@/lib/roles';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,6 +34,7 @@ const Admin = () => {
     description: '',
     mediaType: 'video' as 'video' | 'image',
     categoryId: 'cat-1',
+    learningRoute: DEFAULT_LEARNING_ROUTE_ID as LearningRouteId,
   });
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -75,6 +78,7 @@ const Admin = () => {
         description: '',
         mediaType: 'video',
         categoryId: 'cat-1',
+        learningRoute: DEFAULT_LEARNING_ROUTE_ID,
       });
       setThumbnailFile(null);
       setVideoFile(null);
@@ -524,14 +528,8 @@ const Admin = () => {
                       <td className="py-3 pr-4 text-foreground">{item.company}</td>
                       <td className="py-3 pr-4 text-foreground">{item.sector || 'General'}</td>
                       <td className="py-4">
-                        <Badge
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                            item.role === 'supplier'
-                              ? 'bg-success/25 text-success-foreground hover:bg-success/25'
-                              : 'bg-primary/15 text-primary hover:bg-primary/15'
-                          }`}
-                        >
-                          {item.role === 'supplier' ? 'Proveedor' : 'Comprador'}
+                        <Badge className={`px-3 py-1 ${getRoleBadgeClass(item.role)}`}>
+                          {getRoleLabel(item.role)}
                         </Badge>
                       </td>
                     </tr>
@@ -571,6 +569,25 @@ const Admin = () => {
                 >
                   <option value="video">Video educativo</option>
                   <option value="image">Articulo</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Ruta tematica</label>
+                <select
+                  value={form.learningRoute}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      learningRoute: event.target.value as LearningRouteId,
+                    }))
+                  }
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {LEARNING_ROUTES.map((route) => (
+                    <option key={route.id} value={route.id}>
+                      {route.label} - {route.title}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -811,6 +828,7 @@ const Admin = () => {
                     formData.set('description', form.description);
                     formData.set('categoryId', form.categoryId);
                     formData.set('type', 'educational');
+                    formData.set('learningRoute', form.learningRoute);
                     formData.set('mediaType', form.mediaType);
                     formData.set('videoUrl', uploadedVideoUrl);
                     formData.set('resources', JSON.stringify(resources));
@@ -828,6 +846,7 @@ const Admin = () => {
                   formData.set('description', form.description);
                   formData.set('categoryId', form.categoryId);
                   formData.set('type', 'educational');
+                  formData.set('learningRoute', form.learningRoute);
                   formData.set('mediaType', form.mediaType);
                   formData.set('resources', JSON.stringify(resources));
 

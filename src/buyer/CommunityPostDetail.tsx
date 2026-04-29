@@ -1,18 +1,58 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Heart, MessageCircle } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getPostDetail, resolveApiAssetUrl, togglePostLike } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import CommentSection from '@/components/CommentSection';
 import { Badge } from '@/components/ui/badge';
+import { Comment, Post } from '@/types';
+
+function getCategoryStyles(slug?: string) {
+  if (slug === 'experiencia') return 'bg-[#F72A3A] text-white hover:bg-[#de2130]';
+  if (slug === 'pregunta') return 'bg-[#A7E13F] text-[#0F172A] hover:bg-[#C3E971]';
+  if (slug === 'tips') return 'bg-[#1512A8] text-white hover:bg-[#1D1AAE]';
+  return 'bg-[#5A36D8] text-white hover:bg-[#4f2dca]';
+}
+
+function countComments(items: Comment[]): number {
+  return items.reduce((total, item) => total + 1 + countComments(item.replies), 0);
+}
+
+function appendComment(items: Comment[], comment: Comment, parentId?: string): Comment[] {
+  if (!parentId) {
+    return [comment, ...items];
+  }
+
+  return items.map((item) => {
+    if (item.id === parentId) {
+      return { ...item, replies: [...item.replies, comment] };
+    }
+
+    return { ...item, replies: appendComment(item.replies, comment, parentId) };
+  });
+}
+
+function updateCommentLike(items: Comment[], commentId: string, liked: boolean, likes: number): Comment[] {
+  return items.map((item) => {
+    if (item.id === commentId) {
+      return { ...item, isLiked: liked, likes: Math.max(0, likes) };
+    }
+
+    return { ...item, replies: updateCommentLike(item.replies, commentId, liked, likes) };
+  });
+}
 
 const CommunityPostDetail = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { id = '' } = useParams();
   const { user } = useAuth();
   const [feedback, setFeedback] = useState('');
+  const fallbackPost = (location.state as { post?: Post } | null)?.post;
+  const [displayPost, setDisplayPost] = useState<Post | undefined>(fallbackPost);
+  const [displayComments, setDisplayComments] = useState<Comment[]>([]);
 
   const postQuery = useQuery({
     queryKey: ['community-post-detail', id],
@@ -22,28 +62,62 @@ const CommunityPostDetail = () => {
 
   const likeMutation = useMutation({
     mutationFn: () => togglePostLike(id),
-    onSuccess: async () => {
+    onMutate: () => {
+      if (!displayPost) return undefined;
+
+      const previousPost = displayPost;
+      const nextLiked = !displayPost.isLiked;
+      const nextLikes = Math.max(0, displayPost.likes + (nextLiked ? 1 : -1));
+      setDisplayPost({ ...displayPost, isLiked: nextLiked, likes: nextLikes });
+      return { previousPost };
+    },
+    onError: (error: Error, _variables, context) => {
+      if (context?.previousPost) {
+        setDisplayPost(context.previousPost);
+      }
+      setFeedback(error.message);
+    },
+    onSuccess: async (result) => {
+      setDisplayPost((current) => current ? { ...current, isLiked: result.liked, likes: result.likes } : current);
       await queryClient.invalidateQueries({ queryKey: ['community-post-detail', id] });
       await queryClient.invalidateQueries({ queryKey: ['community-posts'] });
     },
-    onError: (error: Error) => setFeedback(error.message),
   });
 
-  const post = postQuery.data?.post;
-  const comments = postQuery.data?.comments ?? [];
+  useEffect(() => {
+    if (postQuery.data?.post) {
+      setDisplayPost(postQuery.data.post);
+    }
+  }, [postQuery.data?.post]);
+
+  useEffect(() => {
+    if (postQuery.data?.comments) {
+      setDisplayComments(postQuery.data.comments);
+    }
+  }, [postQuery.data?.comments]);
+
+  const post = displayPost;
+  const comments = displayComments;
   const initials = post?.author.fullName.split(' ').map((n) => n[0]).join('').slice(0, 2) ?? 'SC';
-  const totalComments = useMemo(() => {
-    const countReplies = (items: typeof comments): number =>
-      items.reduce((total, item) => total + 1 + countReplies(item.replies), 0);
+  const totalComments = useMemo(() => countComments(comments), [comments]);
+  const visibleCommentCount = postQuery.isLoading ? Math.max(totalComments, post?.comments ?? 0) : totalComments;
 
-    return countReplies(comments);
-  }, [comments]);
+  useEffect(() => {
+    if (postQuery.isLoading || window.location.hash !== '#community-comments') return;
 
-  if (postQuery.isLoading) {
+    window.requestAnimationFrame(() => {
+      document.getElementById('community-comments')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+  }, [postQuery.isLoading]);
+
+  if (postQuery.isLoading && !fallbackPost) {
     return <p className="px-4 py-6 text-sm text-muted-foreground">Cargando publicacion...</p>;
   }
 
-  if (postQuery.isError || !post || post.type !== 'community' || post.author.role !== 'buyer') {
+  if (!post) {
     return <p className="px-4 py-6 text-sm text-muted-foreground">Publicacion no encontrada.</p>;
   }
 
@@ -57,7 +131,7 @@ const CommunityPostDetail = () => {
         Volver
       </button>
 
-      <div className="overflow-hidden rounded-[28px] border border-border/70 bg-card shadow-smooth">
+      <div className="overflow-hidden rounded-[28px] border-0 bg-card shadow-smooth">
         <div className="p-5 sm:p-6">
           <div className="flex items-start gap-3">
             <button
@@ -77,7 +151,7 @@ const CommunityPostDetail = () => {
                 >
                   {post.author.fullName}
                 </button>
-                <Badge variant="secondary" className="rounded-full px-2.5 py-0.5 text-[11px]">
+                <Badge variant="secondary" className={`rounded-full px-2.5 py-0.5 text-[11px] ${getCategoryStyles(post.category.slug)}`}>
                   {post.category.name}
                 </Badge>
               </div>
@@ -100,7 +174,7 @@ const CommunityPostDetail = () => {
         </div>
 
         {(post.videoUrl || post.thumbnailUrl) && (
-          <div className="border-y border-border/70 bg-muted">
+          <div className="bg-muted">
             {post.thumbnailUrl ? (
               <img
                 src={resolveApiAssetUrl(post.thumbnailUrl)}
@@ -115,27 +189,30 @@ const CommunityPostDetail = () => {
           </div>
         )}
 
-        <div className="border-b border-border/70 px-5 py-3 text-sm text-muted-foreground sm:px-6">
+        <div className="px-5 py-3 text-sm text-muted-foreground sm:px-6">
           <div className="flex items-center justify-between gap-3">
             <span>{post.likes.toLocaleString()} Me gusta</span>
-            <span>{totalComments.toLocaleString()} comentarios</span>
+            <span>{visibleCommentCount.toLocaleString()} comentarios</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-1 border-b border-border/70 p-2">
+        <div className="grid grid-cols-2 gap-1 p-2">
           <button
             onClick={() => {
               if (user?.role !== 'buyer' && user?.role !== 'supplier') {
                 setFeedback('Inicia sesion como comprador o proveedor para interactuar en Comunidad.');
                 return;
               }
-              likeMutation.mutate();
+              if (!likeMutation.isPending) {
+                likeMutation.mutate();
+              }
             }}
+            disabled={likeMutation.isPending}
             className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
-              post.isLiked ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-primary'
+              post.isLiked ? 'bg-[rgba(243,49,63,0.10)] text-[#F3313F]' : 'text-[#0E109E] hover:bg-[rgba(243,49,63,0.14)] hover:text-[#F3313F]'
             }`}
           >
-            <Heart className={`h-4 w-4 ${post.isLiked ? 'fill-primary' : ''}`} />
+            <Heart className={`h-4 w-4 text-[#F3313F] ${post.isLiked ? 'fill-[#F3313F]' : ''}`} />
             Me gusta
           </button>
           <button
@@ -143,7 +220,7 @@ const CommunityPostDetail = () => {
               const commentsHeading = document.getElementById('community-comments');
               commentsHeading?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }}
-            className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-primary"
+            className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-[#0E109E] transition-colors hover:bg-[rgba(14,16,158,0.06)]"
           >
             <MessageCircle className="h-4 w-4" />
             Comentar
@@ -154,9 +231,17 @@ const CommunityPostDetail = () => {
           <CommentSection
             postId={id}
             comments={comments}
+            commentCount={visibleCommentCount}
+            isLoadingComments={postQuery.isLoading}
             title="Comentarios"
             emptyMessage="Aun no hay comentarios en esta publicacion."
             composerPlaceholder="Escribe un comentario publico..."
+            onCommentCreated={(comment, parentId) => {
+              setDisplayComments((current) => appendComment(current, comment, parentId));
+            }}
+            onCommentLiked={(commentId, liked, likes) => {
+              setDisplayComments((current) => updateCommentLike(current, commentId, liked, likes));
+            }}
             onCommentAdded={() => {
               void queryClient.invalidateQueries({ queryKey: ['community-post-detail', id] });
               void queryClient.invalidateQueries({ queryKey: ['community-posts'] });

@@ -31,6 +31,7 @@ type CreateManagedPostBody = {
   description: string;
   categoryId: string;
   type: 'educational' | 'community' | 'liquidation';
+  learningRoute?: string;
   mediaType?: 'video' | 'image';
   videoUrl?: string;
   thumbnailUrl?: string;
@@ -270,6 +271,7 @@ export class AdminController {
       description: body.description,
       categoryId: body.categoryId,
       type: body.type,
+      learningRoute: body.learningRoute,
       mediaType: body.mediaType,
       videoUrl: uploadedVideoUrl ?? body.videoUrl,
       thumbnailUrl: uploadedThumbnailUrl ?? uploadedImageUrl ?? body.thumbnailUrl,
