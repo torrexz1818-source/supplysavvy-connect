@@ -51,7 +51,7 @@ function formatConversationTime(value: string) {
 function AttachmentPreview({ attachment, compact = false }: { attachment: MessageAttachment; compact?: boolean }) {
   if (attachment.kind === 'publication') {
     return (
-      <div className={`overflow-hidden rounded-xl border border-border bg-white ${compact ? 'w-40' : 'w-full max-w-sm'}`}>
+      <div className={`max-w-full overflow-hidden rounded-xl border border-border bg-white ${compact ? 'w-40' : 'w-full max-w-sm'}`}>
         {attachment.thumbnailUrl ? (
           <img
             src={resolveApiAssetUrl(attachment.thumbnailUrl)}
@@ -74,7 +74,7 @@ function AttachmentPreview({ attachment, compact = false }: { attachment: Messag
 
   if (attachment.kind === 'profile') {
     return (
-      <div className={`rounded-xl border border-border bg-white p-3 ${compact ? 'w-40' : 'w-full max-w-sm'}`}>
+      <div className={`max-w-full rounded-xl border border-border bg-white p-3 ${compact ? 'w-40' : 'w-full max-w-sm'}`}>
         <p className="text-[11px] font-medium uppercase tracking-wide text-primary/80">
           Perfil compartido
         </p>
@@ -91,7 +91,7 @@ function AttachmentPreview({ attachment, compact = false }: { attachment: Messag
 
   if (attachment.kind === 'image' && attachment.url) {
     return (
-      <div className={`${compact ? 'w-16 h-16' : 'w-48 h-48'} rounded-xl overflow-hidden border border-border bg-white`}>
+      <div className={`${compact ? 'w-16 h-16' : 'w-48 h-48 max-w-full'} rounded-xl overflow-hidden border border-border bg-white`}>
         <img src={resolveApiAssetUrl(attachment.url)} alt={attachment.name} className="w-full h-full object-cover" />
       </div>
     );
@@ -364,21 +364,21 @@ const Messages = () => {
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-3 py-5 sm:px-6 sm:py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground">Mensajeria</h1>
+    <div className="mx-auto w-full max-w-6xl min-w-0 overflow-x-hidden px-[clamp(12px,4vw,20px)] py-5 sm:px-6 sm:py-8">
+        <div className="mb-6 min-w-0">
+          <h1 className="text-[clamp(1.75rem,8vw,2.25rem)] font-bold leading-tight text-foreground">Mensajeria</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Conversaciones en tiempo real con soporte para fotos, archivos y ubicacion.
           </p>
           {!hasMembershipAccess && (
-            <p className="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 mt-3 inline-block">
+            <p className="mt-3 block w-full rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs leading-5 text-destructive sm:inline-block sm:w-auto">
               Tu cuenta puede enviar texto. Fotos, archivos y ubicacion requieren membresia activa autorizada.
             </p>
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(280px,340px)_1fr]">
-          <aside className="bg-card border border-border rounded-2xl overflow-hidden">
+        <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(260px,340px)_minmax(0,1fr)]">
+          <aside className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card">
             <div className="p-4 border-b border-border">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -391,7 +391,7 @@ const Messages = () => {
               </div>
             </div>
 
-            <div className="max-h-[70vh] overflow-y-auto p-2">
+            <div className="max-h-[70vh] overflow-y-auto p-2 max-[430px]:max-h-none">
               {filteredConversations.map((conversation) => {
                 const name =
                   conversation.otherUserName ||
@@ -409,11 +409,11 @@ const Messages = () => {
                       setActiveConversationId(conversation.id);
                       setSearchParams({ conversationId: conversation.id });
                     }}
-                    className={`w-full text-left rounded-xl px-3 py-3 mb-1 transition-colors ${
+                    className={`mb-1 w-full min-w-0 rounded-xl px-3 py-3 text-left transition-colors ${
                       isActive ? 'bg-primary/10 border border-primary/20 shadow-sm' : 'hover:bg-muted/60'
                     }`}
                   >
-                    <div className="flex items-start gap-3">
+                    <div className="flex min-w-0 items-start gap-3">
                       <div className={`w-11 h-11 rounded-full flex items-center justify-center text-xs font-medium shrink-0 ${otherUserAvatarClass}`}>
                         {getInitials(name)}
                       </div>
@@ -449,18 +449,18 @@ const Messages = () => {
             </div>
           </aside>
 
-          <section className="bg-card border border-border rounded-2xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-border bg-muted/20">
+          <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card">
+            <div className="border-b border-border bg-muted/20 px-4 py-4 sm:px-5">
               {activeConversation ? (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
                     <div className={`w-11 h-11 rounded-full flex items-center justify-center text-xs font-medium shrink-0 ${otherUserAvatarClass}`}>
                       {getInitials(
                         activeConversation.otherUserName ||
                         (currentUserIsBuyer ? activeConversation.supplierName : activeConversation.buyerName),
                       )}
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-foreground">
                         {activeConversation.otherUserName ||
                           (currentUserIsBuyer ? activeConversation.supplierName : activeConversation.buyerName)}
@@ -488,7 +488,7 @@ const Messages = () => {
                     <button
                       type="button"
                       onClick={() => publicationPath && navigate(publicationPath)}
-                      className="w-full text-left rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 hover:bg-primary/10 transition-colors"
+                      className="w-full min-w-0 rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 text-left transition-colors hover:bg-primary/10"
                     >
                       <p className="text-[11px] font-medium uppercase tracking-wide text-primary/80">
                         Conversacion ligada a publicacion
@@ -507,7 +507,7 @@ const Messages = () => {
               )}
             </div>
 
-            <div className="min-h-[360px] max-h-[52vh] overflow-y-auto space-y-3 p-5 bg-[linear-gradient(180deg,rgba(14, 16, 158, 0.08),rgba(255, 255, 255, 1))]">
+            <div className="min-h-[320px] max-h-[52vh] space-y-3 overflow-y-auto bg-[linear-gradient(180deg,rgba(14,16,158,0.08),rgba(255,255,255,1))] p-4 sm:min-h-[360px] sm:p-5">
               {messagesQuery.isError && (
                 <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
                   No se pudieron cargar los mensajes de esta conversacion.
@@ -516,7 +516,7 @@ const Messages = () => {
               {(messagesQuery.data ?? []).map((message) => (
                 <div
                   key={message.id}
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                  className={`max-w-[92%] overflow-hidden break-words rounded-2xl px-4 py-3 text-sm shadow-sm sm:max-w-[80%] ${
                     message.isOwn
                       ? 'ml-auto bg-primary text-primary-foreground rounded-br-md'
                       : 'bg-white border border-border text-foreground rounded-bl-md'
@@ -539,7 +539,7 @@ const Messages = () => {
                                     : `/buyer/sale/${attachment.publicationId}`,
                               )
                             }
-                            className="text-left"
+                            className="max-w-full text-left"
                           >
                             <AttachmentPreview attachment={attachment} />
                           </button>
@@ -562,7 +562,7 @@ const Messages = () => {
               )}
             </div>
 
-            <form onSubmit={onSend} className="border-t border-border p-4 bg-card">
+            <form onSubmit={onSend} className="border-t border-border bg-card p-3 sm:p-4">
               {attachments.length > 0 && (
                 <div className="mb-3 flex flex-wrap gap-2">
                   {attachments.map((attachment) => (
@@ -586,8 +586,8 @@ const Messages = () => {
                 </p>
               )}
 
-              <div className="flex gap-2 items-end">
-                <div className="flex-1 space-y-2">
+              <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end">
+                <div className="min-w-0 flex-1 space-y-2">
                   <Textarea
                     ref={inputRef}
                     value={draft}
@@ -630,7 +630,7 @@ const Messages = () => {
                     }}
                   />
                 </div>
-                <Button type="submit" disabled={sendMutation.isPending || isUploadingAttachments || (!draft.trim() && attachments.length === 0)} className="self-end rounded-full px-4">
+                <Button type="submit" disabled={sendMutation.isPending || isUploadingAttachments || (!draft.trim() && attachments.length === 0)} className="w-full rounded-full px-4 sm:w-auto sm:self-end">
                   <Send className="w-4 h-4 mr-1" />
                   {sendMutation.isPending ? 'Enviando...' : 'Enviar'}
                 </Button>
@@ -638,13 +638,13 @@ const Messages = () => {
             </form>
 
             {isBuyerLikeRole(user?.role) && activeConversation?.otherUserRole === 'supplier' && (messagesQuery.data?.length ?? 0) > 0 && (
-              <div className="px-5 pb-5 space-y-5">
+              <div className="space-y-5 px-4 pb-5 sm:px-5">
                 {(similarSuppliersQuery.data?.length ?? 0) > 0 && (
                   <div>
                     <h2 className="text-sm font-medium text-foreground mb-3">
                       Proveedores similares que podrian interesarte
                     </h2>
-                    <div className="grid md:grid-cols-3 gap-3">
+                    <div className="grid min-w-0 gap-3 md:grid-cols-3">
                       {(similarSuppliersQuery.data ?? []).map((supplier) => (
                         <article key={supplier.id} className="rounded-xl border border-border p-3">
                           <p className="text-sm font-medium text-foreground">{supplier.company}</p>

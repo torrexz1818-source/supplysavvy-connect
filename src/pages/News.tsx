@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, ExternalLink, FileText, Heart, ImagePlus, Link, MessageCircle, Send } from 'lucide-react';
@@ -26,12 +26,6 @@ function formatRelativeTime(value: string) {
   }
   const days = Math.floor(diffSeconds / 86400);
   return `hace ${days} ${days === 1 ? 'dia' : 'dias'}`;
-}
-
-function getDashboardPath(role?: string) {
-  if (role === 'supplier') return '/supplier/dashboard';
-  if (role === 'admin') return '/admin/dashboard';
-  return '/buyer/dashboard';
 }
 
 const CommentBranch = ({
@@ -308,7 +302,6 @@ const News = () => {
   });
 
   const highlightedPostId = searchParams.get('post');
-  const dashboardPath = useMemo(() => getDashboardPath(user?.role), [user?.role]);
   const isAdmin = user?.role === 'admin';
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -452,8 +445,8 @@ const News = () => {
 
       <button
         type="button"
-        onClick={() => navigate(dashboardPath)}
-        aria-label="Ir al dashboard"
+        onClick={() => navigate('/inicio')}
+        aria-label="Ir al inicio"
         className="fixed right-4 top-1/2 z-20 inline-flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-white shadow-[0_20px_40px_rgba(14, 16, 158, 0.22)] transition-transform hover:scale-105"
       >
         <span className="news-bounce-arrow inline-flex">
@@ -463,10 +456,10 @@ const News = () => {
 
       <button
         type="button"
-        onClick={() => navigate(dashboardPath)}
+        onClick={() => navigate('/inicio')}
         className="fixed bottom-4 right-4 rounded-full bg-white px-4 py-2 text-sm font-medium text-foreground/80 shadow-lg transition-colors hover:bg-primary/5 sm:hidden"
       >
-        Ir al panel
+        Ir al inicio
       </button>
     </div>
   );

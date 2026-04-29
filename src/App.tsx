@@ -32,6 +32,7 @@ import Admin from "./pages/Admin.tsx";
 import Notifications from "./pages/Notifications.tsx";
 import Messages from "./pages/Messages.tsx";
 import Reports from "./pages/Reports.tsx";
+import EcosystemHome from "./pages/EcosystemHome.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import EducationalContent from "./pages/EducationalContent.tsx";
 import Employability from "./pages/Employability.tsx";
@@ -102,20 +103,12 @@ const DashboardRedirect = () => {
     return <Navigate to="/login" replace />;
   }
 
-  if (user.role === 'supplier') {
-    return <Navigate to="/supplier/dashboard" replace />;
-  }
-
-  if (user.role === 'admin') {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-
   if (user.role === 'expert') {
     return (
       <Navigate
         to={
           user.expertProfile?.googleCalendarConnected
-            ? "/buyer/dashboard"
+            ? "/inicio"
             : "/expert/calendar-setup"
         }
         replace
@@ -123,7 +116,7 @@ const DashboardRedirect = () => {
     );
   }
 
-  return <Navigate to="/novedades" replace />;
+  return <Navigate to="/inicio" replace />;
 };
 
 const ProfileLayoutRedirect = () => {
@@ -185,7 +178,26 @@ const App = () => (
             <Route path="/" element={<PublicHome />} />
             <Route path="/home" element={<DashboardRedirect />} />
             <Route path="/dashboard" element={<DashboardRedirect />} />
-            <Route path="/novedades" element={<RequireAuth><News /></RequireAuth>} />
+            <Route
+              path="/inicio"
+              element={
+                <RequireAuth>
+                  <ProfileLayoutRedirect />
+                </RequireAuth>
+              }
+            >
+              <Route index element={<EcosystemHome />} />
+            </Route>
+            <Route
+              path="/novedades"
+              element={
+                <RequireAuth>
+                  <ProfileLayoutRedirect />
+                </RequireAuth>
+              }
+            >
+              <Route index element={<News />} />
+            </Route>
             <Route
               path="/buyer"
               element={

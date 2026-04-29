@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth';
 import NotificationBell from '@/components/NotificationBell';
 import MessageBell from '@/components/MessageBell';
 import NewsAccessButton from '@/components/NewsAccessButton';
+import HomeAccessButton from '@/components/HomeAccessButton';
 import { isBuyerLikeRole } from '@/lib/roles';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,12 @@ const supplierNavItems = [
   { to: '/supplier/directory', label: 'Directorio de compradores', icon: Building2 },
   { to: '/publicaciones', label: 'Publicaciones', icon: FileText },
 ];
+
+const SIDEBAR_DESKTOP_WIDTH = 'w-72';
+const SIDEBAR_MINI_WIDTH = 'w-20';
+const MAIN_DESKTOP_OFFSET = 'md:ml-72';
+const MAIN_MINI_OFFSET = 'md:ml-20';
+const MOBILE_DRAWER_WIDTH = '!w-[min(86vw,340px)] max-[430px]:!w-[min(82vw,320px)]';
 
 const BuyerLayout = () => {
   const { user, logout } = useAuth();
@@ -233,11 +240,11 @@ const BuyerLayout = () => {
   );
 
   return (
-    <div className="h-screen app-shell overflow-hidden">
+    <div className="h-[100dvh] w-full max-w-full app-shell overflow-hidden">
       <aside
         className={cn(
-          'fixed left-0 top-0 z-30 hidden h-screen flex-col overflow-hidden sidebar-shell md:flex',
-          collapsed ? 'w-20' : 'w-72',
+          'fixed left-0 top-0 z-30 hidden h-[100dvh] max-h-[100dvh] flex-col overflow-hidden sidebar-shell md:flex',
+          collapsed ? SIDEBAR_MINI_WIDTH : SIDEBAR_DESKTOP_WIDTH,
         )}
         style={{ transition: 'width 0.25s ease' }}
       >
@@ -246,26 +253,35 @@ const BuyerLayout = () => {
 
       <main
         className={cn(
-          'h-screen min-w-0 overflow-y-auto',
-          collapsed ? 'md:ml-20' : 'md:ml-72',
-          'ml-0',
+          'ml-0 h-[100dvh] min-w-0 max-w-full overflow-x-hidden overflow-y-auto',
+          collapsed ? MAIN_MINI_OFFSET : MAIN_DESKTOP_OFFSET,
         )}
         style={{ transition: 'margin 0.25s ease' }}
       >
-        <div className="mx-auto w-full max-w-7xl px-3 py-3 sm:px-6 sm:py-6 2xl:max-w-[1440px]">
-          <div className="sticky top-3 z-40 mb-5 flex justify-center sm:justify-end">
-            <div className="topbar-shell relative flex w-full items-center justify-between gap-2 rounded-2xl px-3 py-3 sm:w-fit sm:gap-3 sm:px-4">
+        <div className="mx-auto w-full max-w-7xl min-w-0 px-[clamp(12px,4vw,20px)] py-3 sm:px-6 sm:py-6 2xl:max-w-[1440px]">
+          <div className="sticky top-3 z-40 mb-5 flex w-full justify-center sm:justify-end">
+            <div className="topbar-shell relative flex w-full min-w-0 items-center justify-between gap-2 rounded-2xl px-3 py-3 sm:w-fit sm:gap-3 sm:px-4">
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild>
                   <button
                     type="button"
                     className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-border bg-card text-foreground transition-colors hover:bg-muted md:hidden"
-                    aria-label="Abrir menu"
+                    aria-label="Abrir menú"
+                    aria-haspopup="true"
+                    aria-expanded={mobileMenuOpen}
+                    aria-controls="buyer-mobile-menu"
                   >
                     <Menu className="h-5 w-5" />
                   </button>
                 </SheetTrigger>
-                <SheetContent side="left" className="sidebar-shell flex w-[86vw] max-w-[320px] flex-col overflow-hidden p-0 text-white">
+                <SheetContent
+                  id="buyer-mobile-menu"
+                  side="left"
+                  className={cn(
+                    'sidebar-shell !fixed !inset-y-0 !left-0 flex !h-[100dvh] !max-h-[100dvh] flex-col overflow-y-auto !border-r-0 !bg-[var(--sidebar-bg)] p-0 !text-white',
+                    MOBILE_DRAWER_WIDTH,
+                  )}
+                >
                   <SheetTitle className="sr-only">Menu principal</SheetTitle>
                   {renderSidebarContent(() => setMobileMenuOpen(false), false)}
                 </SheetContent>
@@ -276,6 +292,7 @@ const BuyerLayout = () => {
               <div className="flex shrink-0 items-center gap-2 sm:gap-3">
               <MessageBell />
               <NotificationBell />
+              <HomeAccessButton />
               <NewsAccessButton />
               </div>
             </div>

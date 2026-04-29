@@ -11,6 +11,8 @@
   html {
     font-family: var(--font-main);
     background: var(--app-bg);
+    width: 100%;
+    max-width: 100%;
     overflow-x: hidden;
     text-size-adjust: 100%;
     -webkit-text-size-adjust: 100%;
@@ -19,6 +21,7 @@
   body {
     @apply text-foreground antialiased;
     width: 100%;
+    max-width: 100%;
     min-width: 320px;
     overflow-x: hidden;
     background: var(--app-bg);
@@ -31,6 +34,8 @@
   }
 
   #root {
+    width: 100%;
+    max-width: 100%;
     min-height: 100vh;
     overflow-x: clip;
   }
