@@ -141,7 +141,7 @@ const ProfileLayoutRedirect = () => {
     return <SupplierLayout />;
   }
 
-  if (user.role === 'buyer' || user.role === 'expert') {
+  if (user.role === 'buyer' || user.role === 'expert' || user.role === 'admin') {
     return <BuyerLayout />;
   }
 
