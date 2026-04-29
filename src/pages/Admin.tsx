@@ -44,6 +44,33 @@ import { Textarea } from '@/components/ui/textarea';
 import { PostResource, UserStatus } from '@/types';
 
 const SKILL_CATEGORY_SLUG = 'mejorar-skill';
+const MAX_ADMIN_VIDEO_DURATION_SECONDS = 15 * 60;
+const MAX_ADMIN_VIDEO_SIZE_BYTES = 2 * 1024 * 1024 * 1024;
+
+const formatFileSize = (bytes: number) => {
+  if (bytes >= 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+  }
+
+  return `${Math.ceil(bytes / (1024 * 1024))} MB`;
+};
+
+const getVideoDuration = (file: File) =>
+  new Promise<number>((resolve, reject) => {
+    const video = document.createElement('video');
+    const objectUrl = URL.createObjectURL(file);
+
+    video.preload = 'metadata';
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(video.duration);
+    };
+    video.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('No se pudo leer la duracion del video.'));
+    };
+    video.src = objectUrl;
+  });
 
 const sectorColors = [
   'bg-primary',
@@ -468,8 +495,47 @@ const Admin = () => {
     </section>
   );
 
-  const handleMainMediaChange = (file: File | null, mediaType: 'video' | 'image') => {
+  const handleMainMediaChange = async (file: File | null, mediaType: 'video' | 'image') => {
+    setPublishError('');
+    setPublishSuccess(false);
+
     if (mediaType === 'video') {
+      if (!file) {
+        setVideoFile(null);
+        setVideoPreview('');
+        return;
+      }
+
+      if (file.type && file.type !== 'video/mp4') {
+        setVideoFile(null);
+        setVideoPreview('');
+        setPublishError('Selecciona un video en formato MP4.');
+        return;
+      }
+
+      if (file.size > MAX_ADMIN_VIDEO_SIZE_BYTES) {
+        setVideoFile(null);
+        setVideoPreview('');
+        setPublishError(`El video supera el maximo permitido de ${formatFileSize(MAX_ADMIN_VIDEO_SIZE_BYTES)}.`);
+        return;
+      }
+
+      try {
+        const duration = await getVideoDuration(file);
+
+        if (duration > MAX_ADMIN_VIDEO_DURATION_SECONDS + 1) {
+          setVideoFile(null);
+          setVideoPreview('');
+          setPublishError('El video no debe superar los 15 minutos.');
+          return;
+        }
+      } catch (error) {
+        setVideoFile(null);
+        setVideoPreview('');
+        setPublishError(error instanceof Error ? error.message : 'No se pudo validar el video seleccionado.');
+        return;
+      }
+
       setVideoFile(file);
       setVideoPreview(file ? URL.createObjectURL(file) : '');
       return;
@@ -782,7 +848,9 @@ const Admin = () => {
                     </h3>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {form.mediaType === 'video' ? 'MP4, MOV, WEBM' : 'PNG, JPG, WEBP, PDF y otros archivos'}
+                    {form.mediaType === 'video'
+                      ? `MP4 hasta 15 minutos y ${formatFileSize(MAX_ADMIN_VIDEO_SIZE_BYTES)}`
+                      : 'PNG, JPG, WEBP, PDF y otros archivos'}
                   </p>
                 </div>
 
@@ -794,7 +862,7 @@ const Admin = () => {
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={(event) => handleMainMediaChange(event.target.files?.[0] ?? null, 'image')}
+                        onChange={(event) => void handleMainMediaChange(event.target.files?.[0] ?? null, 'image')}
                         className="hidden"
                       />
                     </label>
@@ -805,8 +873,8 @@ const Admin = () => {
                     {form.mediaType === 'video' ? (videoFile ? 'Cambiar video' : 'Seleccionar video') : (thumbnailFile ? 'Cambiar articulo' : 'Seleccionar articulo')}
                     <input
                       type="file"
-                      accept={form.mediaType === 'video' ? 'video/*' : 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt'}
-                      onChange={(event) => handleMainMediaChange(event.target.files?.[0] ?? null, form.mediaType)}
+                      accept={form.mediaType === 'video' ? 'video/mp4,.mp4' : 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt'}
+                      onChange={(event) => void handleMainMediaChange(event.target.files?.[0] ?? null, form.mediaType)}
                       className="hidden"
                     />
                   </label>
@@ -846,7 +914,9 @@ const Admin = () => {
                   {form.mediaType === 'video' ? <Video className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
                   <span className="truncate">
                     {form.mediaType === 'video'
-                      ? videoFile?.name || 'Aun no seleccionaste un video.'
+                      ? videoFile
+                        ? `${videoFile.name} (${formatFileSize(videoFile.size)})`
+                        : 'Aun no seleccionaste un video.'
                       : thumbnailFile?.name || 'Aun no seleccionaste un articulo.'}
                   </span>
                 </div>
@@ -1048,7 +1118,12 @@ const Admin = () => {
                   await createMutation.mutateAsync(formData);
                   setPublishSuccess(true);
                 } catch (error) {
-                  setPublishError(error instanceof Error ? error.message : 'No se pudo publicar el contenido.');
+                  const message = error instanceof Error ? error.message : 'No se pudo publicar el contenido.';
+                  setPublishError(
+                    message.toLowerCase().includes('file too large')
+                      ? 'El video es demasiado grande para el limite actual de subida. Intenta nuevamente cuando el backend desplegado tenga el ajuste de chunks.'
+                      : message,
+                  );
                 } finally {
                   setIsPublishingContent(false);
                   setVideoUploadProgress(0);

@@ -100,7 +100,7 @@ type NewsCommentMutationResponse = {
   comment: NewsComment;
 };
 
-const ADMIN_VIDEO_CHUNK_SIZE = 8 * 1024 * 1024;
+const ADMIN_VIDEO_CHUNK_SIZE = 5 * 1024 * 1024;
 
 export function getStoredToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
