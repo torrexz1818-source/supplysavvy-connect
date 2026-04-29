@@ -30,6 +30,17 @@
     transform: translateX(2px);
   }
 
+  .supplier-sidebar-link-active {
+    background: var(--color-white);
+    color: #b2eb4a;
+    box-shadow: inset 4px 0 0 #b2eb4a, 0 10px 24px rgba(255, 255, 255, 0.18);
+    transform: translateX(2px);
+  }
+
+  .supplier-sidebar-link-active:hover {
+    color: #b2eb4a;
+  }
+
   .topbar-shell {
     background: var(--topbar-bg);
     color: var(--text-on-light);

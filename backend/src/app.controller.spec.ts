@@ -20,7 +20,7 @@ describe('AppController', () => {
               port: '587',
               hasUser: false,
               hasPassword: false,
-              from: 'no-reply@supplynexu.com',
+              hasFrom: true,
             })),
           },
         },

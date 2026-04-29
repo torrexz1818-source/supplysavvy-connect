@@ -39,27 +39,27 @@ const BuyerDirectoryPage = () => {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-3xl border border-secondary/15 bg-[var(--gradient-soft)] text-foreground shadow-sm">
-        <div className="grid gap-4 px-6 py-8 md:grid-cols-[1.25fr_0.9fr] md:px-8">
+      <section className="overflow-hidden rounded-3xl bg-[linear-gradient(110deg,#1f20b7_0%,#3620b6_50%,#6235de_100%)] text-white shadow-[0_18px_44px_rgba(14,16,158,0.16)]">
+        <div className="grid gap-8 px-8 py-8 md:grid-cols-[1.25fr_0.9fr] md:px-10 md:py-9 lg:px-12">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-destructive">Directorio de compradores</h1>
-            <p className="mt-3 max-w-2xl text-sm text-muted-foreground md:text-base">
+            <h1 className="text-3xl font-bold tracking-tight text-white">Directorio de compradores</h1>
+            <p className="mt-3 max-w-2xl text-sm text-white/88 md:text-base">
               Explora compradores agrupados por sector con el mismo lenguaje visual del resto del modulo.
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-1">
-            <Card className="border-secondary/15 bg-white/85 text-foreground shadow-none">
+            <Card className="border-0 bg-[#6B49D8] text-white shadow-none">
               <CardContent className="p-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-secondary">Sectores</p>
-                <p className="mt-2 text-3xl font-bold">{data?.length ?? 0}</p>
-                <p className="mt-1 text-sm text-muted-foreground">Rubros listos para explorar.</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-white/78">Sectores</p>
+                <p className="mt-2 text-3xl font-bold text-white">{data?.length ?? 0}</p>
+                <p className="mt-1 text-sm text-white/78">Rubros listos para explorar.</p>
               </CardContent>
             </Card>
-            <Card className="border-secondary/15 bg-white/85 text-foreground shadow-none">
+            <Card className="border-0 bg-[#6B49D8] text-white shadow-none">
               <CardContent className="p-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-destructive">Compradores</p>
-                <p className="mt-2 text-3xl font-bold text-destructive">{totalBuyers}</p>
-                <p className="mt-1 text-sm text-muted-foreground">Perfiles organizados por sector.</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-white/78">Compradores</p>
+                <p className="mt-2 text-3xl font-bold text-white">{totalBuyers}</p>
+                <p className="mt-1 text-sm text-white/78">Perfiles organizados por sector.</p>
               </CardContent>
             </Card>
           </div>

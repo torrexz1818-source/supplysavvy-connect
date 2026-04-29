@@ -42,7 +42,7 @@ const SupplierLayout = () => {
     : {
         label: 'Proveedor',
         icon: Store,
-        className: 'bg-success/20 border border-success/40 text-white/90',
+        className: 'bg-[#B2EB4A]/10 border border-[#B2EB4A] text-[#B2EB4A]',
       };
 
   const navSections = isAdmin
@@ -146,7 +146,7 @@ const SupplierLayout = () => {
                       to={item.to}
                       className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                         isActive(item.to)
-                          ? 'sidebar-link-active'
+                          ? isAdmin ? 'sidebar-link-active' : 'supplier-sidebar-link-active'
                           : 'sidebar-link'
                       }`}
                     >
@@ -160,7 +160,7 @@ const SupplierLayout = () => {
                           to={child.to}
                           className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                             isActive(child.to)
-                              ? 'sidebar-link-active'
+                              ? isAdmin ? 'sidebar-link-active' : 'supplier-sidebar-link-active'
                               : 'sidebar-link'
                           }`}
                         >
@@ -176,7 +176,7 @@ const SupplierLayout = () => {
                     to={item.to}
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       isActive(item.to)
-                        ? 'sidebar-link-active'
+                        ? isAdmin ? 'sidebar-link-active' : 'supplier-sidebar-link-active'
                         : 'sidebar-link'
                     }`}
                   >

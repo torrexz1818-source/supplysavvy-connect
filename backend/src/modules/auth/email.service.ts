@@ -79,7 +79,7 @@ export class EmailService {
       port: smtpPort,
       hasUser: Boolean(smtpUser),
       hasPassword: Boolean(smtpPass),
-      from: this.from,
+      hasFrom: Boolean(this.from),
     };
   }
 

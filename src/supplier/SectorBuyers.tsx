@@ -128,10 +128,10 @@ const SectorBuyers = () => {
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">{buyer.description}</p>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                  <span className="px-2 py-1 rounded-full bg-muted text-muted-foreground">
+                  <span className="px-2 py-1 rounded-full bg-[#0E109E]/10 text-[#0E109E]">
                     {buyer.sector}
                   </span>
-                  <span className="px-2 py-1 rounded-full bg-muted text-muted-foreground">
+                  <span className="px-2 py-1 rounded-full bg-[#0E109E]/10 text-[#0E109E]">
                     {buyer.location}
                   </span>
                   <span
