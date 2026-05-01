@@ -123,7 +123,7 @@ export class EmailService {
         error instanceof Error ? error.stack : undefined,
       );
       throw new ServiceUnavailableException(
-        'No se pudo enviar el correo de recuperacion. Revisa las credenciales SMTP del servidor.',
+        'No pudimos enviar el correo de recuperacion en este momento. Intentalo nuevamente mas tarde.',
       );
     }
   }
@@ -177,7 +177,7 @@ export class EmailService {
         error instanceof Error ? error.stack : undefined,
       );
       throw new ServiceUnavailableException(
-        'No se pudo enviar el correo de confirmacion. Revisa las credenciales SMTP del servidor.',
+        'No pudimos enviar el correo de confirmacion en este momento. Intentalo nuevamente mas tarde.',
       );
     }
   }
@@ -185,7 +185,7 @@ export class EmailService {
   private ensureConfigured() {
     if (!this.isConfigured()) {
       throw new ServiceUnavailableException(
-        'El envio de correos no esta configurado por ahora. Configura SMTP_HOST, SMTP_USER y SMTP_PASS en el servidor.',
+        'El envio de correos no esta disponible por ahora. Intentalo nuevamente mas tarde.',
       );
     }
   }
