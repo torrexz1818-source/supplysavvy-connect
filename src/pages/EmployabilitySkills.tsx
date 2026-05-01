@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Post, PostResource } from '@/types';
 
 const SKILL_CATEGORY_SLUG = 'mejorar-skill';
+const VIDEO_TYPE_COLOR = '#f3313f';
+const ARTICLE_TYPE_COLOR = '#b2eb4a';
 
 const formatPostDate = (date: string) =>
   new Date(date).toLocaleDateString('es-PE', {
@@ -24,6 +26,14 @@ function getResourceLabel(resource: PostResource) {
   return 'Archivo';
 }
 
+function getMediaTypeBadgeStyle(isVideo: boolean) {
+  return {
+    backgroundColor: isVideo ? VIDEO_TYPE_COLOR : ARTICLE_TYPE_COLOR,
+    borderColor: isVideo ? VIDEO_TYPE_COLOR : ARTICLE_TYPE_COLOR,
+    color: '#ffffff',
+  };
+}
+
 const SkillContentCard = ({ post }: { post: Post }) => {
   const navigate = useNavigate();
   const primaryResource = post.resources?.[0];
@@ -31,9 +41,9 @@ const SkillContentCard = ({ post }: { post: Post }) => {
   const isVideo = post.mediaType === 'video' || Boolean(post.videoUrl);
 
   return (
-    <Card className="group h-full overflow-hidden rounded-[26px] border-primary/10 bg-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevated)]">
+    <Card className="group h-full overflow-hidden rounded-[26px] border-0 bg-[#EEF3FF] shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevated)]">
       <CardContent className="flex h-full flex-col p-0">
-        <div className="relative aspect-[16/10] overflow-hidden bg-primary/5">
+        <div className="relative aspect-[16/10] overflow-hidden bg-[#E6ECFF]">
           {hasThumbnail ? (
             <img
               src={resolveApiAssetUrl(post.thumbnailUrl)}
@@ -41,7 +51,7 @@ const SkillContentCard = ({ post }: { post: Post }) => {
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
-            <div className="flex h-full w-full items-end bg-[var(--gradient-brand)] p-5 text-white">
+            <div className="flex h-full w-full items-end bg-[#0E109E] p-5 text-white">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/80">
                   Mejorar skill
@@ -53,7 +63,10 @@ const SkillContentCard = ({ post }: { post: Post }) => {
             </div>
           )}
           {hasThumbnail && <div className="absolute inset-0 bg-gradient-to-t from-primary/55 via-primary/10 to-transparent" />}
-          <Badge className="absolute left-4 top-4 rounded-full bg-white text-primary shadow-sm hover:bg-white">
+          <Badge
+            className="absolute left-4 top-4 rounded-full border shadow-sm"
+            style={getMediaTypeBadgeStyle(isVideo)}
+          >
             {isVideo ? 'Video' : primaryResource ? getResourceLabel(primaryResource) : 'Articulo'}
           </Badge>
           {isVideo && (
@@ -77,7 +90,7 @@ const SkillContentCard = ({ post }: { post: Post }) => {
                   href={resolveApiAssetUrl(resource.url)}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex min-w-0 items-center gap-2 rounded-xl bg-primary/5 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+                  className="flex min-w-0 items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-white"
                 >
                   {resource.type === 'link' ? <Link2 className="h-3.5 w-3.5 shrink-0" /> : null}
                   {resource.type === 'image' ? <ImageIcon className="h-3.5 w-3.5 shrink-0" /> : null}

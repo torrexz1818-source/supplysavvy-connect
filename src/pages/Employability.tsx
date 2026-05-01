@@ -408,7 +408,7 @@ const Employability = () => {
         </div>
       </section>
 
-      <Card className="rounded-[28px] border-secondary/15 bg-white shadow-sm">
+      <Card className="rounded-[28px] border-primary/10 bg-[#EEF3FF] shadow-sm">
         <CardContent className="p-5">
           {activeSection === 'jobs' ? (
             <div className="relative w-full">
@@ -421,17 +421,17 @@ const Employability = () => {
               />
             </div>
           ) : (
-            <div className="rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-primary/15 bg-white/65 px-4 py-3 text-sm text-muted-foreground">
               Explora perfiles publicados y crea el tuyo dentro de esta sección.
             </div>
           )}
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden rounded-[28px] border-secondary/15 bg-white shadow-sm">
+      <Card className="overflow-hidden rounded-[28px] border-primary/10 bg-[#EEF3FF] shadow-sm">
         <CardContent className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[1fr_auto] lg:items-center">
           <div className="flex min-w-0 gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-secondary/12 text-secondary">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-secondary">
               <BookOpen className="h-6 w-6" />
             </div>
             <div className="min-w-0">
@@ -443,7 +443,7 @@ const Employability = () => {
           </div>
           <Button
             type="button"
-            className="w-full rounded-2xl bg-secondary/15 px-5 text-secondary hover:bg-secondary/20 sm:w-fit"
+            className="w-full rounded-2xl bg-white/70 px-5 text-secondary hover:bg-white sm:w-fit"
             onClick={() => navigate('/empleabilidad/mejorar-skill')}
           >
             Mejorar skill
@@ -453,7 +453,7 @@ const Employability = () => {
 
       {showJobForm && canPublishJob && activeSection === 'jobs' && (
         <div ref={jobFormRef}>
-        <Card className="rounded-[28px] border-primary/15 shadow-sm">
+        <Card className="rounded-[28px] border-primary/10 bg-[#EEF3FF] shadow-sm">
           <CardHeader>
             <CardTitle className="text-xl">{editingJobId ? 'Editar empleo' : 'Publicar empleo'}</CardTitle>
             <CardDescription>
@@ -603,7 +603,7 @@ const Employability = () => {
         {!feedQuery.isLoading && !feedQuery.isError && (
           <div className="grid gap-4">
             {jobs.map((job) => (
-              <Card key={job.id} className="rounded-[28px] border-primary/15 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+              <Card key={job.id} className="rounded-[28px] border-primary/10 bg-[#EEF3FF] shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
                 <CardContent className="p-6">
                   <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-4">
@@ -621,13 +621,13 @@ const Employability = () => {
                         </div>
                       </div>
 
-                      <p className="rounded-2xl bg-primary/5 px-4 py-3 text-sm leading-6 text-muted-foreground">{job.description}</p>
+                      <p className="rounded-2xl bg-white/65 px-4 py-3 text-sm leading-6 text-muted-foreground">{job.description}</p>
 
                       <div className="space-y-2">
                         <p className="text-sm font-medium text-foreground">Requisitos (skills)</p>
                         <div className="flex flex-wrap gap-2">
                           {job.skillsRequired.map((skill) => (
-                            <Badge key={skill} variant="secondary" className="bg-primary/10 text-foreground/80">
+                            <Badge key={skill} variant="secondary" className="bg-white/70 text-foreground/80">
                               {skill}
                             </Badge>
                           ))}
@@ -725,7 +725,7 @@ const Employability = () => {
 
           {showTalentForm && (
             <div ref={talentFormRef}>
-            <Card className="rounded-[28px] border-primary/15 shadow-sm">
+            <Card className="rounded-[28px] border-primary/10 bg-[#EEF3FF] shadow-sm">
               <CardHeader>
                 <CardTitle className="text-xl">
                   {isEditingTalent ? 'Editar perfil profesional' : 'Publicarme como profesional'}
@@ -804,7 +804,7 @@ const Employability = () => {
 
           <div className="grid gap-4 xl:grid-cols-2">
             {talentProfiles.map((profile) => (
-              <Card key={profile.id} className="rounded-[28px] border-primary/15 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+              <Card key={profile.id} className="rounded-[28px] border-primary/10 bg-[#EEF3FF] shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
                 <CardContent className="p-6">
                   <div className="flex flex-col gap-5">
                     <div className="space-y-4">
@@ -827,13 +827,13 @@ const Employability = () => {
                         </p>
                       </div>
 
-                      <p className="rounded-2xl bg-primary/5 px-4 py-3 text-sm leading-6 text-muted-foreground">{profile.description}</p>
+                      <p className="rounded-2xl bg-white/65 px-4 py-3 text-sm leading-6 text-muted-foreground">{profile.description}</p>
 
                       <div>
                         <p className="text-sm font-medium text-foreground">Skills</p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {profile.skills.map((skill) => (
-                            <Badge key={skill} variant="secondary" className="bg-primary/10 text-foreground/80">
+                            <Badge key={skill} variant="secondary" className="bg-white/70 text-foreground/80">
                               {skill}
                             </Badge>
                           ))}
@@ -841,11 +841,11 @@ const Employability = () => {
                       </div>
 
                       <div className="grid gap-3 md:grid-cols-2">
-                        <div className="rounded-2xl bg-primary/5 p-4">
+                        <div className="rounded-2xl bg-white/65 p-4">
                           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground/70">Experiencia</p>
                           <p className="mt-2 text-sm text-foreground/80">{profile.experience}</p>
                         </div>
-                        <div className="rounded-2xl bg-primary/5 p-4">
+                        <div className="rounded-2xl bg-white/65 p-4">
                           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground/70">Certificaciones</p>
                           <div className="mt-2 flex flex-wrap gap-2">
                             {profile.certifications.length > 0 ? (

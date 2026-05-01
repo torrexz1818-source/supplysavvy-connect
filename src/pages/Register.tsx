@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Copy, Share2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
@@ -301,7 +301,9 @@ function ProgressBar({ form }: { form: FormState }) {
 
 const Register = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { register } = useAuth();
+  const requestedRole = searchParams.get('role');
 
   const [form, setForm] = useState<FormState>({
     fullName: '',
@@ -314,7 +316,7 @@ const Register = () => {
     phone: '',
     email: '',
     password: '',
-    role: '',
+    role: requestedRole === 'supplier' || requestedRole === 'buyer' ? requestedRole : '',
     linkedin: '',
     website: '',
     whatsapp: '',

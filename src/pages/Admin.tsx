@@ -54,6 +54,8 @@ const SKILL_CATEGORY_SLUG = 'mejorar-skill';
 const PROFESSIONAL_ROUTE_ID: LearningRouteId = 'ruta-5';
 const MAX_ADMIN_VIDEO_DURATION_SECONDS = 15 * 60;
 const MAX_ADMIN_VIDEO_SIZE_BYTES = 2 * 1024 * 1024 * 1024;
+const VIDEO_TYPE_COLOR = '#f3313f';
+const ARTICLE_TYPE_COLOR = '#b2eb4a';
 
 type ContentStatus = 'draft' | 'published' | 'archived';
 type AccessType = 'free' | 'professional' | 'premium';
@@ -443,6 +445,16 @@ const Admin = () => {
     if (accessType === 'premium') return 'Premium';
     return 'Gratuito';
   };
+
+  const isVideoPost = (post: Pick<Post, 'mediaType' | 'videoUrl'>) => post.mediaType === 'video' || Boolean(post.videoUrl);
+
+  const getMediaTypeLabel = (post: Pick<Post, 'mediaType' | 'videoUrl'>) => (isVideoPost(post) ? 'Video' : 'Articulo');
+
+  const getMediaTypeBadgeStyle = (isVideo: boolean) => ({
+    backgroundColor: isVideo ? VIDEO_TYPE_COLOR : ARTICLE_TYPE_COLOR,
+    borderColor: isVideo ? VIDEO_TYPE_COLOR : ARTICLE_TYPE_COLOR,
+    color: '#ffffff',
+  });
 
   const getPublishErrorMessage = () => {
     const rawMessage =
@@ -1156,13 +1168,19 @@ const Admin = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     {form.mediaType === 'video' ? (
-                      <Video className="h-4 w-4 text-primary" />
+                      <Video className="h-4 w-4" style={{ color: VIDEO_TYPE_COLOR }} />
                     ) : (
-                      <FileText className="h-4 w-4 text-primary" />
+                      <FileText className="h-4 w-4" style={{ color: ARTICLE_TYPE_COLOR }} />
                     )}
                     <h3 className="text-[15px] font-medium">
                       {form.mediaType === 'video' ? 'Video y vista previa' : 'Articulo y vista previa'}
                     </h3>
+                    <span
+                      className="rounded-full border px-3 py-1 text-[11px] font-semibold"
+                      style={getMediaTypeBadgeStyle(form.mediaType === 'video')}
+                    >
+                      {form.mediaType === 'video' ? 'Video' : 'Articulo'}
+                    </span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {form.mediaType === 'video'
@@ -1256,7 +1274,10 @@ const Admin = () => {
               </div>
 
               <div className="flex flex-col gap-3 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="inline-flex max-w-full items-center gap-2 rounded-full bg-primary/15 px-3 py-1.5 text-xs font-medium text-primary">
+                <div
+                  className="inline-flex max-w-full items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium"
+                  style={getMediaTypeBadgeStyle(form.mediaType === 'video')}
+                >
                   {form.mediaType === 'video' ? <Video className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
                   <span className="truncate">
                     {form.mediaType === 'video'
@@ -1499,6 +1520,13 @@ const Admin = () => {
                             <div>
                               <div className="flex flex-wrap items-center gap-2">
                                 <p className="font-medium text-foreground">{post.title}</p>
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs"
+                                  style={getMediaTypeBadgeStyle(isVideoPost(post))}
+                                >
+                                  {getMediaTypeLabel(post)}
+                                </Badge>
                                 {post.isFeatured && (
                                   <Badge className="bg-secondary/15 text-secondary hover:bg-secondary/15">
                                     Destacado

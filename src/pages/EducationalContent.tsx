@@ -27,7 +27,19 @@ const formatPostDate = (date: string) =>
     year: 'numeric',
   });
 
+const VIDEO_TYPE_COLOR = '#f3313f';
+const ARTICLE_TYPE_COLOR = '#b2eb4a';
+
+function getMediaTypeBadgeStyle(isVideo: boolean) {
+  return {
+    backgroundColor: isVideo ? VIDEO_TYPE_COLOR : ARTICLE_TYPE_COLOR,
+    borderColor: isVideo ? VIDEO_TYPE_COLOR : ARTICLE_TYPE_COLOR,
+    color: '#ffffff',
+  };
+}
+
 const resolvePostLearningRoute = (post: Post) => normalizeLearningRouteId(post.learningRoute);
+const EDUCATIONAL_CONTENT_ROUTES = LEARNING_ROUTES.filter((route) => route.id !== 'ruta-5');
 
 interface LearningRoutesSectionProps {
   activeRouteId: LearningRouteId | null;
@@ -51,7 +63,7 @@ const LearningRoutesSection = ({
     </div>
 
     <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-      {LEARNING_ROUTES.map((route, index) => {
+      {EDUCATIONAL_CONTENT_ROUTES.map((route, index) => {
         const firstPost = firstPostByRoute[route.id];
 
         return (
@@ -114,7 +126,7 @@ const EducationalPostCard = ({ post, index, onOpen }: EducationalPostCardProps) 
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.06, duration: 0.35 }}
       onClick={onOpen}
-      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-border/80 bg-card shadow-smooth transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-smooth-hover"
+      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border-0 bg-card shadow-smooth transition-all hover:-translate-y-1 hover:shadow-smooth-hover"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">
         {hasMedia ? (
@@ -124,7 +136,7 @@ const EducationalPostCard = ({ post, index, onOpen }: EducationalPostCardProps) 
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full w-full items-end bg-[var(--gradient-brand)] px-5 py-5 text-left">
+          <div className="flex h-full w-full items-end bg-[#0E109E] px-5 py-5 text-left">
             <div>
               <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/80">
                 Contenido educativo
@@ -139,11 +151,7 @@ const EducationalPostCard = ({ post, index, onOpen }: EducationalPostCardProps) 
         {hasMedia && <div className="absolute inset-0 bg-gradient-to-t from-primary/55 via-primary/10 to-transparent" />}
         <div
           className="absolute left-4 top-4 rounded-full border px-3 py-1 text-[11px] font-medium shadow-[0_8px_18px_rgba(14,16,158,0.08)] backdrop-blur-sm"
-          style={{
-            backgroundColor: `${routeColor}24`,
-            borderColor: `${routeColor}42`,
-            color: routeColor,
-          }}
+          style={getMediaTypeBadgeStyle(post.mediaType === 'video' || Boolean(post.videoUrl))}
         >
           {post.mediaType === 'video' || post.videoUrl ? 'Video' : 'Articulo'}
         </div>

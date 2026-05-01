@@ -13,11 +13,22 @@ interface PostCardProps {
   index?: number;
 }
 
+const VIDEO_TYPE_COLOR = '#f3313f';
+const ARTICLE_TYPE_COLOR = '#b2eb4a';
+
 function getCategoryStyles(slug?: string) {
   if (slug === 'experiencia') return 'border border-[#F72A3A]/20 bg-[#F72A3A]/12 text-[#D91F2E] hover:bg-[#F72A3A]/18';
   if (slug === 'pregunta') return 'border border-[#A7E13F]/35 bg-[#A7E13F]/22 text-[#0E109E] hover:bg-[#A7E13F]/30';
   if (slug === 'tips') return 'border border-[#5A36D8]/20 bg-[#5A36D8]/12 text-[#4B2BC7] hover:bg-[#5A36D8]/18';
   return 'border border-[#1512A8]/20 bg-[#1512A8]/12 text-[#1512A8] hover:bg-[#1512A8]/18';
+}
+
+function getMediaTypeBadgeStyle(isVideo: boolean) {
+  return {
+    backgroundColor: isVideo ? VIDEO_TYPE_COLOR : ARTICLE_TYPE_COLOR,
+    borderColor: isVideo ? VIDEO_TYPE_COLOR : ARTICLE_TYPE_COLOR,
+    color: '#ffffff',
+  };
 }
 
 const PostCard = ({ post, index = 0 }: PostCardProps) => {
@@ -82,7 +93,7 @@ const PostCard = ({ post, index = 0 }: PostCardProps) => {
       }
       className={`cursor-pointer overflow-hidden border-0 bg-card transition-all ${
         isEducational
-          ? 'rounded-2xl shadow-smooth hover:-translate-y-0.5 hover:shadow-smooth-hover'
+          ? 'rounded-2xl bg-[#EEF3FF] shadow-smooth hover:-translate-y-0.5 hover:shadow-smooth-hover'
           : 'rounded-[26px] bg-white/95 shadow-[0_18px_52px_rgba(14,16,158,0.09)] ring-1 ring-white/75 hover:-translate-y-0.5 hover:shadow-[0_24px_70px_rgba(14,16,158,0.13)]'
       }`}
     >
@@ -92,7 +103,11 @@ const PostCard = ({ post, index = 0 }: PostCardProps) => {
             <h3 className="line-clamp-2 text-2xl font-bold leading-tight text-foreground">{post.title}</h3>
             <p className="mt-2 text-sm text-muted-foreground">{timeAgo}</p>
           </div>
-          <Badge variant="default" className="shrink-0 rounded-full px-3 py-1 text-xs">
+          <Badge
+            variant="outline"
+            className="shrink-0 rounded-full px-3 py-1 text-xs"
+            style={getMediaTypeBadgeStyle(post.mediaType === 'video' || Boolean(post.videoUrl))}
+          >
             {educationalBadgeLabel}
           </Badge>
         </div>
@@ -139,7 +154,7 @@ const PostCard = ({ post, index = 0 }: PostCardProps) => {
       {(post.videoUrl || post.thumbnailUrl) && (
         <div
           className={`group relative flex items-center justify-center overflow-hidden bg-muted ${
-            isEducational ? 'mx-6 mb-4 h-56 rounded-xl ring-1 ring-border/50' : 'h-72 sm:h-80'
+            isEducational ? 'mx-6 mb-4 h-56 rounded-xl bg-[#E6ECFF] ring-1 ring-primary/10' : 'h-72 sm:h-80'
           }`}
         >
           {post.thumbnailUrl ? (
