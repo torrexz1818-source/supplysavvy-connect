@@ -9,6 +9,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
 
     steps:
       - name: Checkout
@@ -87,6 +89,10 @@ jobs:
           local-dir: ./.deploy/restart/
           server-dir: ${{ vars.CPANEL_PASSENGER_TMP_DIR || '/api.buyernodus.com/tmp/' }}
           state-name: .ftp-state-restart.json
+
+      - name: Trigger Render backend deploy
+        if: ${{ env.RENDER_DEPLOY_HOOK_URL != '' }}
+        run: curl -fsS -X POST "$RENDER_DEPLOY_HOOK_URL"
 
       - name: Install backend dependencies and restart app over SSH
         if: ${{ env.CPANEL_SSH_HOST != '' }}
