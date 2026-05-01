@@ -1,5 +1,6 @@
 import {
   ForbiddenException,
+  BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -169,6 +170,18 @@ export class NewsService {
   ): Promise<{ comment: NewsCommentResponse }> {
     const author = await this.usersService.requireActiveUser(data.authorId);
     const post = await this.findPost(postId);
+    const content = data.content.trim();
+
+    if (author.role !== UserRole.BUYER && author.role !== UserRole.ADMIN) {
+      throw new ForbiddenException(
+        'Solo compradores y administradores pueden comentar novedades',
+      );
+    }
+
+    if (!content) {
+      throw new BadRequestException('El comentario no puede estar vacio');
+    }
+
     const parentComment = data.parentId
       ? await this.commentsCollection().findOne({ id: data.parentId, postId })
       : null;
@@ -182,7 +195,7 @@ export class NewsService {
       id: crypto.randomUUID(),
       postId,
       userId: author.id,
-      content: data.content.trim(),
+      content,
       parentId: data.parentId,
       createdAt: now,
       updatedAt: now,
@@ -259,15 +272,19 @@ export class NewsService {
     comments: NewsCommentRecord[],
     usersMap: Map<string, User>,
   ): NewsCommentResponse[] {
-    const byParent = new Map<string | undefined, NewsCommentRecord[]>();
+    const byParent = new Map<string, NewsCommentRecord[]>();
+    const commentIds = new Set(comments.map((comment) => comment.id));
 
     comments.forEach((comment) => {
-      const items = byParent.get(comment.parentId) ?? [];
+      const parentKey = comment.parentId && commentIds.has(comment.parentId)
+        ? comment.parentId
+        : 'root';
+      const items = byParent.get(parentKey) ?? [];
       items.push(comment);
-      byParent.set(comment.parentId, items);
+      byParent.set(parentKey, items);
     });
 
-    const buildTree = (parentId?: string): NewsCommentResponse[] =>
+    const buildTree = (parentId = 'root'): NewsCommentResponse[] =>
       (byParent.get(parentId) ?? []).map((comment) => {
         const user = usersMap.get(comment.userId);
 
@@ -285,7 +302,7 @@ export class NewsService {
         };
       });
 
-    return buildTree(undefined);
+    return buildTree();
   }
 
   private async createUsersMap(userIds: string[]): Promise<Map<string, User>> {

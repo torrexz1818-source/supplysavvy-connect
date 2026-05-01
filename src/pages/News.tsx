@@ -32,12 +32,14 @@ const CommentBranch = ({
   comment,
   postId,
   onReply,
+  canComment,
   autoExpandReply,
   isReply = false,
 }: {
   comment: NewsComment;
   postId: string;
   onReply: (postId: string, payload: { content: string; parentId?: string }) => Promise<void>;
+  canComment: boolean;
   autoExpandReply?: boolean;
   isReply?: boolean;
 }) => {
@@ -90,14 +92,16 @@ const CommentBranch = ({
               {comment.user.company} · {formatRelativeTime(comment.createdAt)}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setReplyOpen((current) => !current)}
-            className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-[#0E109E] transition-colors hover:bg-[rgba(14,16,158,0.06)]"
-          >
-            <MessageCircle className="h-3.5 w-3.5" />
-            Responder
-          </button>
+          {canComment && (
+            <button
+              type="button"
+              onClick={() => setReplyOpen((current) => !current)}
+              className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-[#0E109E] transition-colors hover:bg-[rgba(14,16,158,0.06)]"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              Responder
+            </button>
+          )}
           {comment.replies.length > 0 && (
             <button
               type="button"
@@ -143,6 +147,7 @@ const CommentBranch = ({
           comment={reply}
           postId={postId}
           onReply={onReply}
+          canComment={canComment}
           isReply
         />
       ))}
@@ -153,11 +158,13 @@ const CommentBranch = ({
 const NewsCard = ({
   post,
   highlighted,
+  canComment,
   onToggleLike,
   onComment,
 }: {
   post: NewsPost;
   highlighted: boolean;
+  canComment: boolean;
   onToggleLike: (postId: string) => Promise<void>;
   onComment: (postId: string, payload: { content: string; parentId?: string }) => Promise<void>;
 }) => {
@@ -195,21 +202,23 @@ const NewsCard = ({
       layout
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`overflow-hidden rounded-[28px] border bg-white/90 shadow-[0_18px_50px_rgba(14, 16, 158, 0.10)] ${
-        highlighted ? 'border-primary/40 ring-4 ring-primary/20' : 'border-white/70'
+      className={`overflow-hidden rounded-[26px] bg-white/95 shadow-[0_18px_52px_rgba(14,16,158,0.09)] ring-1 ring-white/75 transition-all hover:-translate-y-0.5 hover:shadow-[0_24px_70px_rgba(14,16,158,0.13)] ${
+        highlighted ? 'ring-4 ring-primary/20' : ''
       }`}
     >
       {post.imageUrl && (
-        <div className="aspect-[16/8] overflow-hidden bg-primary/10">
+        <div className="h-72 overflow-hidden bg-primary/5 sm:h-80">
           <img src={resolveApiAssetUrl(post.imageUrl)} alt={post.title} className="h-full w-full object-cover" />
         </div>
       )}
 
-      <div className="space-y-5 p-6 md:p-8">
-        <div className="space-y-3">
-          <h2 className="text-2xl font-bold tracking-tight text-foreground md:text-4xl">{post.title}</h2>
-          <p className="text-sm text-muted-foreground/70">{formatRelativeTime(post.timestamp)}</p>
-          {post.body && <p className="max-w-3xl whitespace-pre-wrap text-base leading-7 text-foreground/80">{post.body}</p>}
+      <div className="space-y-5 p-5 sm:p-6">
+        <div className="space-y-3.5">
+          <div>
+            <h2 className="text-xl font-bold leading-snug tracking-tight text-foreground md:text-2xl">{post.title}</h2>
+            <p className="mt-1 text-xs font-medium text-[rgba(14,16,158,0.58)]">{formatRelativeTime(post.timestamp)}</p>
+          </div>
+          {post.body && <p className="max-w-3xl whitespace-pre-wrap text-sm leading-7 text-foreground/80 sm:text-[15px]">{post.body}</p>}
           {(post.pdfUrl || post.resourceUrl) && (
             <div className="flex flex-wrap gap-3 pt-1">
               {post.pdfUrl && (
@@ -217,7 +226,7 @@ const NewsCard = ({
                   href={resolveApiAssetUrl(post.pdfUrl)}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-[#0E109E]/10 px-4 py-2 text-sm font-medium text-[#0E109E] transition-colors hover:bg-[#0E109E]/16"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#0E109E]/10 px-4 py-2 text-sm font-medium text-[#0E109E] transition-colors hover:bg-[#0E109E]/15"
                 >
                   <FileText className="h-4 w-4" />
                   Ver PDF
@@ -228,7 +237,7 @@ const NewsCard = ({
                   href={post.resourceUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-[#0E109E]/10 px-4 py-2 text-sm font-medium text-[#0E109E] transition-colors hover:bg-[#0E109E]/16"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#0E109E]/10 px-4 py-2 text-sm font-medium text-[#0E109E] transition-colors hover:bg-[#0E109E]/15"
                 >
                   <ExternalLink className="h-4 w-4" />
                   Abrir URL
@@ -238,14 +247,14 @@ const NewsCard = ({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 border-t border-primary/15 pt-4">
+        <div className="-mx-5 flex flex-wrap items-center gap-2 bg-[rgba(14,16,158,0.025)] px-3 py-3 sm:-mx-6 sm:px-5">
           <button
             type="button"
             onClick={() => void onToggleLike(post.id)}
-            className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+            className={`inline-flex items-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors ${
               post.isLiked
-                ? 'border-red-500/20 bg-red-500/10 text-red-600'
-                : 'border-primary/15 text-muted-foreground hover:bg-red-500/10 hover:text-red-600'
+                ? 'bg-[rgba(247,42,58,0.11)] text-red-600'
+                : 'bg-white/75 text-[#0E109E] hover:bg-[rgba(247,42,58,0.12)] hover:text-red-600'
             }`}
           >
             <Heart className={`h-4 w-4 ${post.isLiked ? 'fill-current' : ''}`} />
@@ -254,10 +263,10 @@ const NewsCard = ({
           <button
             type="button"
             onClick={() => setCommentsOpen((current) => !current)}
-            className="inline-flex items-center gap-2 rounded-full border border-[#0E109E]/15 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#0E109E]/10 hover:text-[#0E109E]"
+            className="inline-flex items-center gap-2 rounded-2xl bg-white/75 px-3 py-2.5 text-sm font-medium text-[#1D1AAE] transition-colors hover:bg-[rgba(29,26,174,0.06)] hover:text-[#1512A8]"
           >
             <MessageCircle className="h-4 w-4" />
-            Comentar
+            {post.commentsCount > 0 ? `${post.commentsCount} comentarios` : 'Comentar'}
           </button>
         </div>
 
@@ -280,31 +289,37 @@ const NewsCard = ({
                   </button>
                 </div>
 
-                <div className="rounded-[24px] border border-[#0E109E] bg-white p-3 shadow-sm">
-                  <Textarea
-                    value={commentText}
-                    onChange={(event) => setCommentText(event.target.value)}
-                    onKeyDown={handleCommentKeyDown}
-                    placeholder="Escribe un comentario publico..."
-                    className="min-h-[96px] w-full resize-none border-0 bg-transparent px-0 py-0 text-sm leading-6 shadow-none focus-visible:ring-0"
-                  />
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 text-xs text-[#0E109E]">
-                      <Heart className="h-4 w-4" />
-                      <span>Comenta como en una publicacion social</span>
+                {canComment ? (
+                  <div className="rounded-[24px] border border-[#0E109E] bg-white p-3 shadow-sm">
+                    <Textarea
+                      value={commentText}
+                      onChange={(event) => setCommentText(event.target.value)}
+                      onKeyDown={handleCommentKeyDown}
+                      placeholder="Escribe un comentario publico..."
+                      className="min-h-[96px] w-full resize-none border-0 bg-transparent px-0 py-0 text-sm leading-6 shadow-none focus-visible:ring-0"
+                    />
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 text-xs text-[#0E109E]">
+                        <Heart className="h-4 w-4" />
+                        <span>Comenta como en una publicacion social</span>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="min-w-[132px] rounded-full bg-[#B2EB4A] px-5 text-[#0E109E] hover:bg-[#B2EB4A]/85"
+                        disabled={!commentText.trim() || isSubmittingComment}
+                        onClick={() => void handleSubmitComment()}
+                      >
+                        <Send className="mr-1 h-4 w-4" />
+                        Publicar
+                      </Button>
                     </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="min-w-[132px] rounded-full bg-[#B2EB4A] px-5 text-[#0E109E] hover:bg-[#B2EB4A]/85"
-                      disabled={!commentText.trim() || isSubmittingComment}
-                      onClick={() => void handleSubmitComment()}
-                    >
-                      <Send className="mr-1 h-4 w-4" />
-                      Publicar
-                    </Button>
                   </div>
-                </div>
+                ) : (
+                  <p className="rounded-2xl border border-dashed border-primary/15 bg-primary/5 px-4 py-4 text-center text-sm text-muted-foreground/70">
+                    Solo compradores y administradores pueden comentar novedades.
+                  </p>
+                )}
 
                 <div className="space-y-4">
                   {post.comments.length === 0 && (
@@ -318,6 +333,7 @@ const NewsCard = ({
                       comment={comment}
                       postId={post.id}
                       onReply={onComment}
+                      canComment={canComment}
                       autoExpandReply={highlighted}
                     />
                   ))}
@@ -377,6 +393,7 @@ const News = () => {
 
   const highlightedPostId = searchParams.get('post');
   const isAdmin = user?.role === 'admin';
+  const canCommentNews = user?.role === 'buyer' || user?.role === 'admin';
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
@@ -500,6 +517,7 @@ const News = () => {
               key={post.id}
               post={post}
               highlighted={highlightedPostId === post.id}
+              canComment={canCommentNews}
               onToggleLike={async (postId) => {
                 await likeMutation.mutateAsync(postId);
               }}
