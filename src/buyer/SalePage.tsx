@@ -278,22 +278,22 @@ const SalePage = () => {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="bg-white rounded-3xl shadow-sm overflow-hidden"
+            className="overflow-hidden rounded-[26px] bg-white/95 shadow-[0_18px_52px_rgba(14,16,158,0.09)] ring-1 ring-white/75 transition-all hover:-translate-y-0.5 hover:shadow-[0_24px_70px_rgba(14,16,158,0.13)]"
           >
-            <div className="p-5">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center">
+            <div className="p-5 pb-4 sm:p-6 sm:pb-5">
+              <div className="mb-5 flex items-center gap-3.5">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#2620bf,#5a31d5)] text-sm font-semibold text-white shadow-[0_12px_26px_rgba(14,16,158,0.20)] ring-4 ring-[rgba(14,16,158,0.07)]">
                   <Building2 className="w-4 h-4 text-primary-foreground" />
                 </div>
                 <div>
                   <button
                     type="button"
                     onClick={() => navigate(`/perfil/${post.author.role}/${post.author.id}`)}
-                    className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                    className="text-sm font-semibold text-foreground transition-colors hover:text-primary"
                   >
                     {post.author.company}
                   </button>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-[rgba(14,16,158,0.58)]">
                     {new Date(post.createdAt).toLocaleString()}
                   </p>
                 </div>
@@ -302,21 +302,21 @@ const SalePage = () => {
 
             {post.thumbnailUrl && (
               <div
-                className="w-full max-h-[220px] border-y border-border overflow-hidden bg-primary/5 flex items-center justify-center"
+                className="flex h-72 w-full items-center justify-center overflow-hidden bg-primary/5 sm:h-80"
               >
                 <img
                   src={resolveApiAssetUrl(post.thumbnailUrl)}
                   alt={`Imagen de ${post.title}`}
                   loading="lazy"
-                  className="w-full max-h-[220px] object-contain"
+                  className="h-full w-full object-contain"
                 />
               </div>
             )}
 
-            <div className="p-5">
-              <h3 className="text-base font-medium text-foreground mb-1">{post.title}</h3>
+            <div className="px-5 py-4 sm:px-6">
+              <h3 className="mb-2 text-xl font-bold leading-snug tracking-tight text-foreground">{post.title}</h3>
               <p
-                className="text-sm text-foreground leading-relaxed mb-3"
+                className="mb-3 text-sm leading-7 text-foreground/80 sm:text-[15px]"
                 style={{
                   display: '-webkit-box',
                   WebkitLineClamp: 3,
@@ -331,7 +331,7 @@ const SalePage = () => {
                   href={post.videoUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-primary hover:underline inline-block mb-1 max-w-[280px] overflow-hidden text-ellipsis whitespace-nowrap"
+                  className="mb-1 inline-block max-w-[280px] overflow-hidden text-ellipsis whitespace-nowrap rounded-full bg-primary/5 px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
                   title={post.videoUrl}
                 >
                   {cleanUrl(post.videoUrl)}
@@ -339,7 +339,7 @@ const SalePage = () => {
               )}
             </div>
 
-            <div className="border-t border-border px-5 py-3 flex flex-wrap items-center gap-6">
+            <div className="flex flex-wrap items-center gap-2 bg-[rgba(14,16,158,0.025)] p-3 sm:px-5">
               <button
                 type="button"
                 onClick={() => {
@@ -353,10 +353,10 @@ const SalePage = () => {
                   }
                   likeMutation.mutate(post.id);
                 }}
-                className={`flex items-center gap-1.5 text-sm transition-colors ${
+                className={`flex items-center gap-1.5 rounded-2xl bg-white/75 px-3 py-2.5 text-sm font-medium transition-colors ${
                   post.isLiked
-                    ? 'text-red-600 font-medium'
-                    : 'text-muted-foreground hover:text-red-600'
+                    ? 'text-red-600'
+                    : 'text-[#0E109E] hover:bg-[rgba(247,42,58,0.12)] hover:text-red-600'
                 }`}
               >
                 <Heart className={`w-4 h-4 ${post.isLiked ? 'fill-red-600' : ''}`} /> {post.likes}
@@ -364,7 +364,7 @@ const SalePage = () => {
               <button
                 type="button"
                 onClick={() => handleShare(post.id)}
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1.5 rounded-2xl bg-white/75 px-3 py-2.5 text-sm font-medium text-[#1D1AAE] transition-colors hover:bg-[rgba(29,26,174,0.06)] hover:text-[#1512A8]"
               >
                 <Share2 className="w-4 h-4" /> Compartir
               </button>
@@ -373,7 +373,7 @@ const SalePage = () => {
                 onClick={() =>
                   navigate(user?.role === 'supplier' ? `/supplier/sale/${post.id}` : `/buyer/sale/${post.id}`)
                 }
-                className="flex items-center gap-1.5 text-sm text-success-foreground hover:text-success-foreground transition-colors font-medium"
+                className="flex items-center gap-1.5 rounded-2xl bg-white/75 px-3 py-2.5 text-sm font-medium text-[#1D1AAE] transition-colors hover:bg-[rgba(29,26,174,0.06)] hover:text-[#1512A8]"
               >
                 <Info className="w-4 h-4" /> Mas informacion
               </button>

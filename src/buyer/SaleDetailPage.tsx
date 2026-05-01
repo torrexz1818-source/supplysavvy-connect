@@ -163,10 +163,10 @@ const SaleDetailPage = () => {
           <button
             key={post.id}
             onClick={() => navigate(user?.role === 'supplier' ? `/supplier/sale/${post.id}` : `/buyer/sale/${post.id}`)}
-            className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+            className={`flex-shrink-0 rounded-full px-4 py-2 text-sm font-medium shadow-sm transition-all ${
               selectedPost.id === post.id
-                ? 'border-primary/25 bg-primary/10 text-primary shadow-[0_8px_18px_rgba(14,16,158,0.08)] hover:bg-primary/15 active:bg-primary/20'
-                : 'bg-card border-border text-muted-foreground hover:text-foreground'
+                ? 'bg-primary/10 text-primary ring-1 ring-primary/25 shadow-[0_10px_22px_rgba(14,16,158,0.10)] hover:bg-primary/15 active:bg-primary/20'
+                : 'bg-card/95 text-primary ring-1 ring-primary/20 hover:bg-primary/5 hover:ring-primary/30'
             }`}
           >
             {post.author.company}
@@ -175,7 +175,7 @@ const SaleDetailPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr_1fr] gap-4 items-start">
-        <div className="bg-card rounded-xl overflow-hidden min-h-[420px] flex items-center justify-center">
+        <div className="bg-card rounded-2xl overflow-hidden min-h-[420px] flex items-center justify-center shadow-sm ring-1 ring-black/5">
           {selectedPost.thumbnailUrl ? (
             <img
               src={resolveApiAssetUrl(selectedPost.thumbnailUrl)}
@@ -183,22 +183,22 @@ const SaleDetailPage = () => {
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full min-h-[420px] bg-muted flex items-center justify-center">
+            <div className="w-full h-full min-h-[420px] bg-muted/60 flex items-center justify-center">
               <span className="text-muted-foreground text-sm">Sin imagen</span>
             </div>
           )}
         </div>
 
-        <div className="bg-card rounded-xl overflow-hidden flex flex-col">
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-sm flex-shrink-0">
+        <div className="bg-card rounded-2xl overflow-hidden flex flex-col shadow-sm ring-1 ring-black/5">
+          <div className="flex items-center gap-3 px-4 py-4">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm flex-shrink-0 ring-1 ring-primary/10">
               {selectedPost.author.company.charAt(0)}
             </div>
             <div>
               <button
                 type="button"
                 onClick={() => navigate(`/perfil/${selectedPost.author.role}/${selectedPost.author.id}`)}
-                className="text-sm font-medium text-foreground leading-tight hover:text-primary"
+                className="text-sm font-semibold text-foreground leading-tight hover:text-primary"
               >
                 {selectedPost.author.company}
               </button>
@@ -206,8 +206,8 @@ const SaleDetailPage = () => {
             </div>
           </div>
 
-          <div className="px-4 py-4 flex-1">
-            <p className="text-sm text-foreground leading-relaxed">
+          <div className="px-4 py-3 flex-1">
+            <p className="text-sm text-foreground leading-7">
               {selectedPost.description}
             </p>
             {selectedPost.videoUrl && (
@@ -215,27 +215,27 @@ const SaleDetailPage = () => {
                 href={selectedPost.videoUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="text-sm text-primary hover:underline inline-block mt-3"
+                className="inline-block mt-3 rounded-full bg-primary/5 px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
               >
                 Ver enlace de la publicacion
               </a>
             )}
           </div>
 
-          <div className="px-4 pb-4 border-t border-border pt-4">
-            <p className="text-xs font-medium text-muted-foreground mb-2">
+          <div className="px-4 pb-4 pt-3">
+            <p className="text-xs font-medium text-primary mb-2">
               {canContact ? `Contactar ${authorRoleLabel}` : `Publicacion del ${authorRoleLabel}`}
             </p>
             <Textarea
               value={mensaje}
               onChange={(e) => setMensaje(e.target.value)}
               placeholder={`Escribe tu mensaje para contactar al ${authorRoleLabel}...`}
-              className="text-sm resize-none mb-2"
+              className="text-sm resize-none mb-2 rounded-2xl border-primary/25 bg-primary/5 shadow-none focus-visible:ring-primary/25"
               rows={3}
             />
             <Button
               size="sm"
-              className="w-full"
+              className="w-full rounded-full bg-secondary text-secondary-foreground shadow-none transition-all hover:bg-secondary/90 disabled:opacity-60"
               onClick={() => {
                 if (!canContact) {
                   setFeedback(`Solo el perfil opuesto puede contactar a este ${authorRoleLabel}.`);
@@ -250,7 +250,7 @@ const SaleDetailPage = () => {
             </Button>
           </div>
 
-          <div className="px-4 py-3 border-t border-border flex items-center gap-2">
+          <div className="px-4 pb-4 pt-1 flex items-center gap-2">
             <button
               onClick={() => {
                 if (user?.role !== 'buyer') {
@@ -263,7 +263,7 @@ const SaleDetailPage = () => {
                 }
                 likeMutation.mutate(selectedPost.id);
               }}
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-red-600 transition-colors"
+              className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600"
             >
               <Heart
                 className={`w-4 h-4 ${
@@ -281,11 +281,11 @@ const SaleDetailPage = () => {
         </div>
 
         <div className="flex flex-col gap-4">
-          <div className="bg-card rounded-xl p-4">
+          <div className="bg-card rounded-2xl p-4 shadow-sm ring-1 ring-black/5">
             <button
               type="button"
               onClick={() => navigate(`/perfil/${selectedPost.author.role}/${selectedPost.author.id}`)}
-              className="font-medium text-foreground mb-1 hover:text-primary"
+              className="font-semibold text-foreground mb-1 hover:text-primary"
             >
               {selectedPost.author.company}
             </button>
@@ -293,11 +293,11 @@ const SaleDetailPage = () => {
               {authorProfile?.description ?? 'Sin descripcion registrada.'}
             </p>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-              <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+              <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-primary" />
               {authorProfile?.location ?? 'Sin ubicacion'}
             </div>
             <div className="flex items-center gap-2 mt-2">
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="rounded-full bg-primary/10 px-3 text-xs text-primary ring-1 ring-primary/15">
                 {authorProfile?.sector ?? selectedPost.author.sector ?? 'General'}
               </Badge>
               {isSupplierAuthor && authorProfile && 'averageRating' in authorProfile && 'reviewsCount' in authorProfile && (
@@ -310,7 +310,7 @@ const SaleDetailPage = () => {
             </div>
           </div>
 
-          <div className="bg-card rounded-xl p-4">
+          <div className="bg-card rounded-2xl p-4 shadow-sm ring-1 ring-black/5">
             <p className="text-sm font-medium text-foreground mb-3">
               {isSupplierAuthor ? 'Comentarios de compradores' : 'Comentarios de la publicacion'}
             </p>

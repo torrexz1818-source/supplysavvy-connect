@@ -122,22 +122,22 @@ const CommunityPostDetail = () => {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
+    <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:py-8">
       <button
         onClick={() => navigate(-1)}
-        className="mb-6 flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        className="mb-6 inline-flex items-center gap-2 rounded-full px-2 py-1 text-sm font-medium text-[#0E109E] transition-colors hover:bg-[rgba(14,16,158,0.06)]"
       >
         <ArrowLeft className="h-4 w-4" />
         Volver
       </button>
 
-      <div className="overflow-hidden rounded-[28px] border-0 bg-card shadow-smooth">
-        <div className="p-5 sm:p-6">
-          <div className="flex items-start gap-3">
+      <div className="overflow-hidden rounded-[30px] border border-white/75 bg-white/95 shadow-[0_22px_70px_rgba(14,16,158,0.12)] backdrop-blur">
+        <div className="p-5 sm:p-7">
+          <div className="flex items-start gap-4">
             <button
               type="button"
               onClick={() => navigate(`/perfil/${post.author.role}/${post.author.id}`)}
-              className="flex h-12 w-12 items-center justify-center rounded-full gradient-primary text-sm font-medium text-primary-foreground shadow-sm"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#2620bf,#5a31d5)] text-sm font-semibold text-white shadow-[0_12px_28px_rgba(14,16,158,0.22)] ring-4 ring-[rgba(14,16,158,0.08)]"
               aria-label={`Ver perfil de ${post.author.fullName}`}
             >
               {initials}
@@ -147,7 +147,7 @@ const CommunityPostDetail = () => {
                 <button
                   type="button"
                   onClick={() => navigate(`/perfil/${post.author.role}/${post.author.id}`)}
-                  className="text-left text-base font-medium text-foreground transition-colors hover:text-primary sm:text-lg"
+                  className="text-left text-base font-semibold text-foreground transition-colors hover:text-primary sm:text-lg"
                 >
                   {post.author.fullName}
                 </button>
@@ -155,8 +155,8 @@ const CommunityPostDetail = () => {
                   {post.category.name}
                 </Badge>
               </div>
-              <p className="truncate text-sm text-muted-foreground">{post.author.company}</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="truncate text-sm font-medium text-[rgba(14,16,158,0.72)]">{post.author.company}</p>
+              <p className="text-xs text-[rgba(14,16,158,0.58)]">
                 {new Date(post.createdAt).toLocaleString('es-PE', {
                   dateStyle: 'full',
                   timeStyle: 'short',
@@ -165,9 +165,9 @@ const CommunityPostDetail = () => {
             </div>
           </div>
 
-          <div className="mt-5 space-y-3">
-            <h2 className="text-2xl font-bold leading-tight text-foreground">{post.title}</h2>
-            <p className="whitespace-pre-wrap break-words text-sm leading-7 text-foreground/85 sm:text-[15px]">
+          <div className="mt-7 space-y-4">
+            <h2 className="text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl">{post.title}</h2>
+            <p className="max-w-3xl whitespace-pre-wrap break-words text-sm leading-7 text-foreground/82 sm:text-base">
               {post.description}
             </p>
           </div>
@@ -189,14 +189,14 @@ const CommunityPostDetail = () => {
           </div>
         )}
 
-        <div className="px-5 py-3 text-sm text-muted-foreground sm:px-6">
+        <div className="border-t border-[rgba(14,16,158,0.10)] px-5 py-3 text-sm text-[rgba(14,16,158,0.76)] sm:px-7">
           <div className="flex items-center justify-between gap-3">
             <span>{post.likes.toLocaleString()} Me gusta</span>
             <span>{visibleCommentCount.toLocaleString()} comentarios</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-1 p-2">
+        <div className="grid grid-cols-2 gap-3 border-y border-[rgba(14,16,158,0.10)] bg-[rgba(14,16,158,0.025)] p-3 sm:px-5">
           <button
             onClick={() => {
               if (user?.role !== 'buyer' && user?.role !== 'supplier') {
@@ -208,8 +208,8 @@ const CommunityPostDetail = () => {
               }
             }}
             disabled={likeMutation.isPending}
-            className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
-              post.isLiked ? 'bg-[rgba(243,49,63,0.10)] text-[#F3313F]' : 'text-[#0E109E] hover:bg-[rgba(243,49,63,0.14)] hover:text-[#F3313F]'
+            className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium transition-colors ${
+              post.isLiked ? 'bg-[rgba(243,49,63,0.11)] text-[#F3313F]' : 'bg-white/70 text-[#0E109E] hover:bg-[rgba(243,49,63,0.12)] hover:text-[#F3313F]'
             }`}
           >
             <Heart className={`h-4 w-4 text-[#F3313F] ${post.isLiked ? 'fill-[#F3313F]' : ''}`} />
@@ -220,14 +220,14 @@ const CommunityPostDetail = () => {
               const commentsHeading = document.getElementById('community-comments');
               commentsHeading?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }}
-            className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-[#0E109E] transition-colors hover:bg-[rgba(14,16,158,0.06)]"
+            className="flex items-center justify-center gap-2 rounded-2xl bg-white/70 px-4 py-3 text-sm font-medium text-[#0E109E] transition-colors hover:bg-[rgba(14,16,158,0.07)]"
           >
             <MessageCircle className="h-4 w-4" />
             Comentar
           </button>
         </div>
 
-        <div id="community-comments" className="p-5 sm:p-6">
+        <div id="community-comments" className="bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,248,255,0.94))] p-5 sm:p-7">
           <CommentSection
             postId={id}
             comments={comments}

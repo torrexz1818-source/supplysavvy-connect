@@ -83,6 +83,8 @@ const adminUploadMaxFileSize =
 const adminUploadChunkSize =
   Number.parseInt(process.env.ADMIN_UPLOAD_CHUNK_SIZE_BYTES?.trim() || '', 10) || 5 * 1024 * 1024;
 const adminUploadChunkLimit = adminUploadChunkSize + 1024 * 1024;
+const skillCategoryId = 'cat-8';
+const professionalRouteId = 'ruta-5';
 
 @Controller('admin')
 @UseGuards(AuthenticatedGuard, AdminGuard)
@@ -272,13 +274,15 @@ export class AdminController {
       rmSync(thumbnail.path, { force: true });
     }
 
+    const normalizedDestination = this.normalizeManagedContentDestination(body);
+
     return this.postsService.createPost({
       title: body.title,
       description: body.description,
       contentBody: body.contentBody,
-      categoryId: body.categoryId,
+      categoryId: normalizedDestination.categoryId,
       type: body.type,
-      learningRoute: body.learningRoute,
+      learningRoute: normalizedDestination.learningRoute,
       mediaType: body.mediaType,
       videoUrl: uploadedVideoUrl ?? body.videoUrl,
       thumbnailUrl: uploadedThumbnailUrl ?? uploadedImageUrl ?? body.thumbnailUrl,
@@ -362,13 +366,15 @@ export class AdminController {
       rmSync(thumbnail.path, { force: true });
     }
 
+    const normalizedDestination = this.normalizeManagedContentDestination(body);
+
     return this.postsService.updatePost(id, {
       title: body.title,
       description: body.description,
       contentBody: body.contentBody,
-      categoryId: body.categoryId,
+      categoryId: normalizedDestination.categoryId,
       type: body.type,
-      learningRoute: body.learningRoute,
+      learningRoute: normalizedDestination.learningRoute,
       mediaType: body.mediaType,
       videoUrl: uploadedVideoUrl ?? body.videoUrl,
       thumbnailUrl: uploadedThumbnailUrl ?? uploadedImageUrl ?? body.thumbnailUrl,
@@ -453,6 +459,16 @@ export class AdminController {
     }
 
     return undefined;
+  }
+
+  private normalizeManagedContentDestination(body: CreateManagedPostBody) {
+    const isProfessionalRoute = body.learningRoute === professionalRouteId;
+    const isSkillCategory = body.categoryId === skillCategoryId;
+
+    return {
+      categoryId: isProfessionalRoute ? skillCategoryId : body.categoryId,
+      learningRoute: isSkillCategory ? professionalRouteId : body.learningRoute,
+    };
   }
 
   private getUploadDir() {

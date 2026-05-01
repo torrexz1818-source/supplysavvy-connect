@@ -80,8 +80,10 @@ const PostCard = ({ post, index = 0 }: PostCardProps) => {
           state: isCommunity ? { post } : undefined,
         })
       }
-      className={`cursor-pointer overflow-hidden rounded-2xl border-0 bg-card shadow-smooth transition-all hover:shadow-smooth-hover ${
-        isEducational ? 'hover:-translate-y-0.5' : ''
+      className={`cursor-pointer overflow-hidden border-0 bg-card transition-all ${
+        isEducational
+          ? 'rounded-2xl shadow-smooth hover:-translate-y-0.5 hover:shadow-smooth-hover'
+          : 'rounded-[26px] bg-white/95 shadow-[0_18px_52px_rgba(14,16,158,0.09)] ring-1 ring-white/75 hover:-translate-y-0.5 hover:shadow-[0_24px_70px_rgba(14,16,158,0.13)]'
       }`}
     >
       {isEducational ? (
@@ -95,33 +97,33 @@ const PostCard = ({ post, index = 0 }: PostCardProps) => {
           </Badge>
         </div>
       ) : (
-        <div className="relative p-5 pb-4">
-          <Badge className={`absolute right-5 top-5 rounded-full px-3 py-1 text-[11px] ${getCategoryStyles(post.category.slug)}`}>
+        <div className="relative p-5 pb-4 sm:p-6 sm:pb-5">
+          <Badge className={`absolute right-5 top-5 rounded-full px-3 py-1 text-[11px] font-medium shadow-[0_8px_18px_rgba(14,16,158,0.06)] sm:right-6 sm:top-6 ${getCategoryStyles(post.category.slug)}`}>
             {post.category.name}
           </Badge>
-          <div className="mb-4 flex items-start gap-3">
+          <div className="mb-5 flex items-start gap-3.5">
             <button
               type="button"
               onClick={openAuthorProfile}
-              className="flex h-11 w-11 items-center justify-center rounded-full gradient-primary text-sm font-medium text-primary-foreground shadow-sm"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#2620bf,#5a31d5)] text-sm font-semibold text-white shadow-[0_12px_26px_rgba(14,16,158,0.20)] ring-4 ring-[rgba(14,16,158,0.07)]"
               aria-label={`Ver perfil de ${post.author.fullName}`}
             >
               {initials}
             </button>
             <button type="button" onClick={openAuthorProfile} className="min-w-0 flex-1 text-left">
               <div className="flex flex-wrap items-center gap-2 pr-20">
-                <h4 className="text-sm font-medium text-foreground transition-colors hover:text-primary">
+                <h4 className="text-sm font-semibold text-foreground transition-colors hover:text-primary">
                   {post.author.fullName}
                 </h4>
               </div>
-              <p className="truncate text-xs text-muted-foreground">{post.author.company}</p>
-              <p className="text-xs text-muted-foreground">{timeAgo} - {createdAtLabel}</p>
+              <p className="truncate text-xs font-medium text-[rgba(14,16,158,0.68)]">{post.author.company}</p>
+              <p className="text-xs text-[rgba(14,16,158,0.58)]">{timeAgo} - {createdAtLabel}</p>
             </button>
           </div>
 
-          <div className="space-y-3">
-            <h3 className="text-lg font-medium leading-snug text-foreground">{post.title}</h3>
-            <p className="whitespace-pre-wrap break-words text-sm leading-7 text-foreground/85">
+          <div className="space-y-3.5">
+            <h3 className="text-xl font-bold leading-snug tracking-tight text-foreground">{post.title}</h3>
+            <p className="whitespace-pre-wrap break-words text-sm leading-7 text-foreground/80 sm:text-[15px]">
               {post.description}
             </p>
           </div>
@@ -167,7 +169,7 @@ const PostCard = ({ post, index = 0 }: PostCardProps) => {
       )}
 
       {isCommunity && (
-        <div className="px-5 py-3 text-xs text-muted-foreground">
+        <div className="border-t border-[rgba(14,16,158,0.08)] px-5 py-3 text-xs text-[rgba(14,16,158,0.72)] sm:px-6">
           <div className="flex items-center justify-between gap-3">
             <span>{likeCount.toLocaleString()} Me gusta</span>
             <span>{post.comments.toLocaleString()} comentarios</span>
@@ -175,11 +177,15 @@ const PostCard = ({ post, index = 0 }: PostCardProps) => {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-1 p-2">
+      <div className={`grid grid-cols-2 gap-2 ${isCommunity ? 'bg-[rgba(14,16,158,0.025)] p-3 sm:px-5' : 'p-2'}`}>
         <button
           onClick={(e) => void handleLike(e)}
-          className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-            liked ? 'bg-[rgba(247,42,58,0.10)] text-[#F72A3A]' : 'text-[#61708F] hover:bg-[rgba(247,42,58,0.14)] hover:text-[#F72A3A]'
+          className={`flex items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors ${
+            liked
+              ? 'bg-[rgba(247,42,58,0.11)] text-[#F72A3A]'
+              : isCommunity
+                ? 'bg-white/75 text-[#0E109E] hover:bg-[rgba(247,42,58,0.12)] hover:text-[#F72A3A]'
+                : 'text-[#61708F] hover:bg-[rgba(247,42,58,0.14)] hover:text-[#F72A3A]'
           }`}
         >
           <Heart className={`h-4 w-4 text-[#F72A3A] ${liked ? 'fill-[#F72A3A]' : ''}`} />
@@ -196,7 +202,9 @@ const PostCard = ({ post, index = 0 }: PostCardProps) => {
             }
             navigate(`/post/${post.id}`);
           }}
-          className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-[#1D1AAE] transition-colors hover:bg-[rgba(29,26,174,0.06)] hover:text-[#1512A8]"
+          className={`flex items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-medium text-[#1D1AAE] transition-colors hover:bg-[rgba(29,26,174,0.06)] hover:text-[#1512A8] ${
+            isCommunity ? 'bg-white/75' : ''
+          }`}
         >
           <MessageCircle className="h-4 w-4" />
           Comentar

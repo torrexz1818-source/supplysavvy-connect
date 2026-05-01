@@ -340,6 +340,10 @@ const Admin = () => {
   const isEducationalDestination =
     form.categoryId === educationalCategory?.id || (!educationalCategory && form.categoryId === 'cat-7');
   const requiresLearningRoute = isEducationalDestination || isSkillDestination;
+  const effectiveLearningRoute =
+    normalizeLearningRouteId(form.learningRoute || undefined) ??
+    (isSkillDestination ? PROFESSIONAL_ROUTE_ID : undefined);
+  const hasRequiredLearningRoute = !requiresLearningRoute || Boolean(effectiveLearningRoute);
   const educationalContentPosts = useMemo(
     () => (data?.posts ?? []).filter((post) => post.type === 'educational'),
     [data?.posts],
@@ -438,6 +442,25 @@ const Admin = () => {
     if (accessType === 'professional') return 'Profesional';
     if (accessType === 'premium') return 'Premium';
     return 'Gratuito';
+  };
+
+  const getPublishErrorMessage = () => {
+    const rawMessage =
+      publishError ||
+      (createMutation.error instanceof Error
+        ? createMutation.error.message
+        : updatePostMutation.error instanceof Error
+          ? updatePostMutation.error.message
+          : '');
+
+    if (
+      hasRequiredLearningRoute &&
+      /selecciona una ruta|ruta tematica|ruta temática/i.test(rawMessage)
+    ) {
+      return '';
+    }
+
+    return rawMessage;
   };
 
   const renderManagedUsers = (users: typeof buyerUsers, roleLabel: string) => (
@@ -644,6 +667,10 @@ const Admin = () => {
   const handleLearningRouteChange = (value: string) => {
     const nextRoute = normalizeLearningRouteId(value) ?? DEFAULT_LEARNING_ROUTE_ID;
 
+    createMutation.reset();
+    updatePostMutation.reset();
+    setPublishError('');
+    setPublishSuccess(false);
     setForm((current) => ({
       ...current,
       learningRoute: nextRoute,
@@ -685,15 +712,18 @@ const Admin = () => {
 
   const buildContentFormData = async () => {
     const formData = new FormData();
-    const isProfessionalRoute = form.learningRoute === PROFESSIONAL_ROUTE_ID;
+    const normalizedRoute =
+      normalizeLearningRouteId(form.learningRoute || undefined) ??
+      (isSkillDestination ? PROFESSIONAL_ROUTE_ID : undefined);
+    const isProfessionalRoute = normalizedRoute === PROFESSIONAL_ROUTE_ID;
 
     formData.set('title', form.title);
     formData.set('description', form.description);
     formData.set('contentBody', form.contentBody);
     formData.set('categoryId', isProfessionalRoute && skillCategory ? skillCategory.id : form.categoryId);
     formData.set('type', 'educational');
-    if (requiresLearningRoute && form.learningRoute) {
-      formData.set('learningRoute', form.learningRoute);
+    if (requiresLearningRoute && normalizedRoute) {
+      formData.set('learningRoute', normalizedRoute);
     }
     formData.set('mediaType', form.mediaType);
     formData.set('resources', JSON.stringify(resources));
@@ -726,6 +756,8 @@ const Admin = () => {
 
   const handleSaveContent = async () => {
     setIsPublishingContent(true);
+    createMutation.reset();
+    updatePostMutation.reset();
     setPublishError('');
     setPublishSuccess(false);
 
@@ -1019,6 +1051,10 @@ const Admin = () => {
                   value={isSkillDestination ? 'skill' : 'educational'}
                   onChange={(event) => {
                     const nextIsSkill = event.target.value === 'skill' && skillCategory;
+                    createMutation.reset();
+                    updatePostMutation.reset();
+                    setPublishError('');
+                    setPublishSuccess(false);
                     setForm((current) => ({
                       ...current,
                       categoryId:
@@ -1047,7 +1083,7 @@ const Admin = () => {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">Ruta educativa</label>
                   <select
-                    value={form.learningRoute || DEFAULT_LEARNING_ROUTE_ID}
+                    value={effectiveLearningRoute ?? DEFAULT_LEARNING_ROUTE_ID}
                     onChange={(event) => handleLearningRouteChange(event.target.value)}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
@@ -1341,14 +1377,9 @@ const Admin = () => {
               </div>
             </div>
 
-            {(publishError || createMutation.error || updatePostMutation.error) && (
+            {getPublishErrorMessage() && (
               <p className="text-sm text-destructive">
-                {publishError ||
-                (createMutation.error instanceof Error
-                  ? createMutation.error.message
-                  : updatePostMutation.error instanceof Error
-                    ? updatePostMutation.error.message
-                    : 'No se pudo guardar el contenido')}
+                {getPublishErrorMessage()}
               </p>
             )}
 
@@ -1384,7 +1415,7 @@ const Admin = () => {
                 !form.title.trim() ||
                 !form.description.trim() ||
                 !form.categoryId ||
-                (requiresLearningRoute && !form.learningRoute)
+                !hasRequiredLearningRoute
               }
               onClick={() => void handleSaveContent()}
             >

@@ -118,7 +118,7 @@ const CommentItem = ({ comment, onReply, onCommentLiked, isReply = false }: Comm
           {initials}
         </button>
         <div className="min-w-0 flex-1">
-          <div className="min-w-0 rounded-[20px] border border-[rgba(14,16,158,0.06)] bg-[rgba(255,255,255,0.92)] px-4 py-3 shadow-[0_8px_22px_rgba(14,16,158,0.04)]">
+          <div className="min-w-0 rounded-[20px] border border-white/80 bg-white px-4 py-3 shadow-[0_10px_28px_rgba(14,16,158,0.07)]">
             <div className="mb-1.5 min-w-0">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <button
@@ -169,7 +169,7 @@ const CommentItem = ({ comment, onReply, onCommentLiked, isReply = false }: Comm
           {showReply && (
             <div className="mt-3 flex min-w-0 gap-3">
               <div className="h-8 w-8 flex-shrink-0 rounded-full bg-[rgba(14,16,158,0.06)]" />
-              <div className="min-w-0 flex-1 rounded-2xl border border-[rgba(14,16,158,0.12)] bg-[rgba(255,255,255,0.92)] p-3">
+              <div className="min-w-0 flex-1 rounded-2xl border border-[rgba(14,16,158,0.14)] bg-white p-3 shadow-[0_8px_20px_rgba(14,16,158,0.04)]">
                 <Textarea
                   ref={replyInputRef}
                   value={replyText}
@@ -285,17 +285,17 @@ const CommentSection = ({
   const visibleCommentCount = commentCount ?? totalComments;
 
   return (
-    <div>
+    <div className="min-w-0">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-lg font-medium text-foreground">{title} ({visibleCommentCount})</h3>
-        <div className="flex gap-1">
+        <h3 className="text-xl font-semibold tracking-tight text-foreground">{title} ({visibleCommentCount})</h3>
+        <div className="flex rounded-full bg-[rgba(14,16,158,0.05)] p-1">
           {(['voted', 'newest'] as const).map((sortValue) => (
             <button
               key={sortValue}
               onClick={() => setSortBy(sortValue)}
               className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                 sortBy === sortValue
-                  ? 'border border-[#5A31D5]/24 bg-[#5A31D5]/16 text-[#4B2BC7]'
+                  ? 'bg-white text-[#0E109E] shadow-[0_6px_16px_rgba(14,16,158,0.10)]'
                   : 'text-[#0E109E] hover:bg-[rgba(14,16,158,0.06)]'
               }`}
             >
@@ -306,10 +306,10 @@ const CommentSection = ({
       </div>
 
       <div className="mb-6 flex min-w-0 gap-3">
-        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full gradient-primary text-xs font-medium text-primary-foreground shadow-sm">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#2620bf,#5a31d5)] text-xs font-semibold text-white shadow-[0_10px_24px_rgba(14,16,158,0.18)]">
           {initials}
         </div>
-        <div className="min-w-0 flex-1 rounded-[24px] border border-[#0E109E] bg-white p-3 shadow-sm">
+        <div className="min-w-0 flex-1 rounded-[24px] border border-[rgba(14,16,158,0.35)] bg-white p-3 shadow-[0_12px_28px_rgba(14,16,158,0.06)]">
           <Textarea
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
@@ -317,14 +317,14 @@ const CommentSection = ({
             placeholder={composerPlaceholder}
             className="min-h-[96px] w-full resize-none border-0 bg-transparent px-0 py-0 text-sm leading-6 shadow-none focus-visible:ring-0"
           />
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-xs text-[#0E109E]">
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-xs text-[rgba(14,16,158,0.72)]">
               <Heart className="h-4 w-4" />
               <span>Comenta como en una publicacion social</span>
             </div>
             <Button
               size="sm"
-              className="min-w-[132px] rounded-full bg-[#B2EB4A] px-5 text-[#0E109E] hover:bg-[#B2EB4A]/85"
+              className="min-w-[132px] rounded-full bg-[#B2EB4A] px-5 text-[#0E109E] shadow-[0_10px_24px_rgba(178,235,74,0.24)] hover:bg-[#B2EB4A]/85"
               disabled={!newComment.trim() || (commentMutation.isPending && !replyingParentId)}
               onClick={() => void submitComment({ content: newComment })}
             >
@@ -343,10 +343,10 @@ const CommentSection = ({
 
       <div className="space-y-1">
         {isLoadingComments && sortedComments.length === 0 && (
-          <p className="text-sm text-[rgba(14,16,158,0.68)]">Cargando comentarios...</p>
+          <p className="rounded-2xl bg-white/75 px-4 py-5 text-center text-sm text-[rgba(14,16,158,0.68)]">Cargando comentarios...</p>
         )}
         {!isLoadingComments && sortedComments.length === 0 && (
-          <p className="text-sm text-[rgba(14,16,158,0.68)]">{emptyMessage}</p>
+          <p className="rounded-2xl border border-dashed border-[rgba(14,16,158,0.16)] bg-white/75 px-4 py-5 text-center text-sm text-[rgba(14,16,158,0.68)]">{emptyMessage}</p>
         )}
         {sortedComments.map((comment) => (
           <CommentItem key={comment.id} comment={comment} onReply={submitComment} onCommentLiked={onCommentLiked} />

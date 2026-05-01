@@ -461,8 +461,9 @@ export class PostsService {
     }
     const category = await this.ensureCategoryExists(data.categoryId);
     const requiresLearningRoute = type === 'educational' && category.slug === 'contenido-educativo';
+    const isSkillContent = type === 'educational' && category.slug === 'mejorar-skill';
     const learningRoute = type === 'educational'
-      ? normalizeLearningRoute(data.learningRoute)
+      ? normalizeLearningRoute(data.learningRoute) ?? (isSkillContent ? 'ruta-5' : undefined)
       : undefined;
 
     if (requiresLearningRoute && !learningRoute) {
@@ -709,10 +710,11 @@ export class PostsService {
     const category = await this.ensureCategoryExists(categoryId);
     const type = data.type ?? currentPost.type;
     const requiresLearningRoute = type === 'educational' && category.slug === 'contenido-educativo';
+    const isSkillContent = type === 'educational' && category.slug === 'mejorar-skill';
     const nextLearningRoute =
-      typeof data.learningRoute === 'string'
+      (typeof data.learningRoute === 'string'
         ? normalizeLearningRoute(data.learningRoute)
-        : normalizeLearningRoute(currentPost.learningRoute);
+        : normalizeLearningRoute(currentPost.learningRoute)) ?? (isSkillContent ? 'ruta-5' : undefined);
 
     if (requiresLearningRoute && !nextLearningRoute) {
       throw new BadRequestException('Selecciona una ruta tematica para publicar contenido educativo.');
